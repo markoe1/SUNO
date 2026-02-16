@@ -1,0 +1,15 @@
+# VyroClipper Dependencies
+# ========================
+
+# Browser automation
+playwright>=1.40.0
+
+# Environment management
+python-dotenv>=1.0.0
+
+# HTTP requests (backup)
+requests>=2.31.0
+aiohttp>=3.9.0
+
+# Async utilities
+asyncio-throttle>=1.0.2
