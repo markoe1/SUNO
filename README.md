@@ -2,6 +2,8 @@
 
 Automated Vyro clipping system for posting 10-15 clips/day across TikTok, Instagram Reels, and YouTube Shorts.
 
+> Product Hunt: launch pack in `launch/producthunt/` (badge/link will be added on launch day).
+
 ## Features
 
 - **Automated Vyro Scraping**: Downloads pre-made clips from Vyro campaigns
