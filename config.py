@@ -45,6 +45,10 @@ YOUTUBE_PASSWORD = os.getenv("YOUTUBE_PASSWORD", "")
 FACEBOOK_EMAIL = os.getenv("FACEBOOK_EMAIL", "")
 FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD", "")
 
+# Optional X/Twitter
+X_USERNAME = os.getenv("X_USERNAME", "")
+X_PASSWORD = os.getenv("X_PASSWORD", "")
+
 # =============================================================================
 # VYRO SETTINGS
 # =============================================================================
