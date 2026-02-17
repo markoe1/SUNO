@@ -87,7 +87,8 @@ POST_DELAY_MIN = 30
 POST_DELAY_MAX = 90
 
 # Platforms to post to
-PLATFORMS = ["tiktok", "instagram", "youtube", "facebook"]
+# Facebook disabled until business page is ready
+PLATFORMS = ["tiktok", "instagram", "youtube"]
 
 # =============================================================================
 # CONTENT SETTINGS
