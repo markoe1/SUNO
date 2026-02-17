@@ -2,7 +2,9 @@
 # ========================
 
 # Browser automation
-playwright>=1.40.0
+playwright
+stripe
+flask
 
 # Environment management
 python-dotenv>=1.0.0

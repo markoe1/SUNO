@@ -14,6 +14,23 @@ Automated Vyro clipping system for posting 10-15 clips/day across TikTok, Instag
 
 ## Quick Start
 
+### Optional: Stripe Checkout (payments)
+To accept payments for SUNO, set these in `.env` and start the billing server:
+
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PRICE_ID_SUNO=price_...
+STRIPE_SUCCESS_URL=http://localhost:5001/success
+STRIPE_CANCEL_URL=http://localhost:5001/cancel
+```
+
+Run:
+```
+python -m pip install -r requirements.txt
+python billing_server.py
+# Then open: http://localhost:5001/checkout  (redirects to Stripe)
+```
+
 ### 1. Install
 
 ```powershell
