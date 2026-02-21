@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUNO - Automated Viral Clip Creation & Posting</title>
+    <meta name="description" content="Turn your videos into viral clips automatically. AI-powered clip detection, editing, and posting to TikTok, Instagram, and YouTube Shorts. Earn $0.50-$20 per 1K views.">
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        nav .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #fff, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #ffd700;
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 10rem 2rem 6rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent);
+            pointer-events: none;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; position: relative; }
+        
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            letter-spacing: -2px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: fadeInUp 0.8s ease;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 300;
+            animation: fadeInUp 0.8s ease 0.2s backwards;
+        }
+        
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 3rem 0;
+            animation: fadeInUp 0.8s ease 0.4s backwards;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ffd700;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 3rem;
+            animation: fadeInUp 0.8s ease 0.6s backwards;
+        }
+        
+        .btn {
+            padding: 1.2rem 3rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #000;
+            box-shadow: 0 10px 30px rgba(255,215,0,0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255,215,0,0.6);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        /* How It Works */
+        .how-it-works {
+            padding: 6rem 2rem;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .how-it-works h2 {
+            text-align: center;
+            font-size: 3.5rem;
+            margin-bottom: 4rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .step {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+        }
+        
+        .step:hover {
+            transform: translateY(-10px);
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .step-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #ffd700;
+            color: #000;
+            border-radius: 50%;
+            line-height: 40px;
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+        
+        .step h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+        
+        /* Features */
+        .features {
+            padding: 6rem 2rem;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+        
+        .features h2 {
+            text-align: center;
+            font-size: 3.5rem;
+            margin-bottom: 4rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .feature {
+            padding: 2.5rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+        
+        .feature p {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.9);
+            line-height: 1.7;
+        }
+        
+        /* Pricing */
+        .pricing {
+            padding: 6rem 2rem;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .pricing h2 {
+            text-align: center;
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .pricing-subtitle {
+            text-align: center;
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 4rem;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .tier {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 2px solid rgba(255,255,255,0.1);
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .tier:hover {
+            transform: translateY(-10px);
+            border-color: #ffd700;
+            box-shadow: 0 20px 50px rgba(255,215,0,0.3);
+        }
+        
+        .tier.popular {
+            border-color: #ffd700;
+            background: rgba(255,215,0,0.1);
+            transform: scale(1.05);
+        }
+        
+        .popular-badge {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #000;
+            padding: 0.5rem 2rem;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .tier-name {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+        
+        .tier-price {
+            font-size: 4rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tier-period {
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        .tier-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+        
+        .tier-features li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 1.1rem;
+        }
+        
+        .tier-features li:before {
+            content: "✓ ";
+            color: #ffd700;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: rgba(0,0,0,0.5);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: #ffd700;
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3rem; }
+            .hero-subtitle { font-size: 1.3rem; }
+            .steps, .features-grid, .pricing-grid { grid-template-columns: 1fr; }
+            .tier.popular { transform: none; }
+            .hero-stats { flex-direction: column; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <div class="logo">🎬 SUNO</div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how">How It Works</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Turn Videos Into Viral Clips</h1>
+            <p class="hero-subtitle">AI-powered automation that creates and posts viral clips to TikTok, Instagram & YouTube Shorts 24/7</p>
+            
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-number">10-15</span>
+                    <span class="stat-label">Clips per Day</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">3</span>
+                    <span class="stat-label">Platforms</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">$0.50-$20</span>
+                    <span class="stat-label">Per 1K Views</span>
+                </div>
+            </div>
+            
+            <div class="cta-buttons">
+                <a href="#pricing" class="btn btn-primary">Start Creating Clips</a>
+                <a href="#how" class="btn btn-secondary">See How It Works</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="how" class="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-icon">📹</div>
+                    <h3>Upload Video</h3>
+                    <p>Upload your long-form content to your YouTube channel</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-icon">✂️</div>
+                    <h3>AI Clips</h3>
+                    <p>Our AI detects the most engaging moments and creates viral clips</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-icon">🚀</div>
+                    <h3>Auto-Post</h3>
+                    <p>Clips automatically post to TikTok, Instagram & YouTube Shorts</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-icon">💰</div>
+                    <h3>Earn Money</h3>
+                    <p>Get paid $0.50-$20 per 1K views through Whop campaigns</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="features" class="features">
+        <div class="container">
+            <h2>Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI Detection</h3>
+                    <p>Advanced AI automatically detects the most viral-worthy moments from your videos</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h3>24/7 Automation</h3>
+                    <p>Set it and forget it. Our system runs 24/7, posting clips on your schedule</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h3>Analytics Dashboard</h3>
+                    <p>Track views, earnings, and engagement across all platforms in one place</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Auto Captions</h3>
+                    <p>AI-generated captions and hashtags optimized for maximum reach</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Multi-Platform</h3>
+                    <p>Post to TikTok, Instagram Reels, and YouTube Shorts simultaneously</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">💎</div>
+                    <h3>Premium Quality</h3>
+                    <p>1080p exports with optimized aspect ratios for each platform</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pricing" class="pricing">
+        <div class="container">
+            <h2>Simple Pricing</h2>
+            <p class="pricing-subtitle">Start creating viral clips today</p>
+            
+            <div class="pricing-grid">
+                <div class="tier">
+                    <div class="tier-name">Starter</div>
+                    <div class="tier-price">$47</div>
+                    <div class="tier-period">per month</div>
+                    <ul class="tier-features">
+                        <li>Up to 50 clips/month</li>
+                        <li>3 platforms (TikTok, IG, YouTube)</li>
+                        <li>AI clip detection</li>
+                        <li>Auto captions & hashtags</li>
+                        <li>Basic analytics</li>
+                    </ul>
+                    <button class="btn btn-secondary" onclick="subscribe('starter')">Get Started</button>
+                </div>
+                
+                <div class="tier popular">
+                    <div class="popular-badge">⭐ MOST POPULAR</div>
+                    <div class="tier-name">Pro</div>
+                    <div class="tier-price">$97</div>
+                    <div class="tier-period">per month</div>
+                    <ul class="tier-features">
+                        <li>Up to 200 clips/month</li>
+                        <li>3 platforms + Facebook</li>
+                        <li>Advanced AI detection</li>
+                        <li>Custom branding</li>
+                        <li>Priority posting</li>
+                        <li>Advanced analytics</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="subscribe('pro')">Get Pro</button>
+                </div>
+                
+                <div class="tier">
+                    <div class="tier-name">Unlimited</div>
+                    <div class="tier-price">$197</div>
+                    <div class="tier-period">per month</div>
+                    <ul class="tier-features">
+                        <li>Unlimited clips</li>
+                        <li>All platforms</li>
+                        <li>White-label options</li>
+                        <li>API access</li>
+                        <li>Custom scheduling</li>
+                        <li>Dedicated support</li>
+                    </ul>
+                    <button class="btn btn-secondary" onclick="subscribe('unlimited')">Go Unlimited</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#about">About</a>
+                <a href="#terms">Terms</a>
+                <a href="#privacy">Privacy</a>
+                <a href="#contact">Contact</a>
+            </div>
+            <p style="color: rgba(255,255,255,0.5);">© 2026 SUNO. Turn videos into viral clips, automatically.</p>
+        </div>
+    </div>
+
+    <script>
+        const stripe = Stripe('pk_test_YOUR_PUBLISHABLE_KEY_HERE');
+        
+        function subscribe(plan) {
+            console.log('Subscribing to:', plan);
+            // Implement Stripe checkout
+            alert('Stripe checkout for ' + plan + ' plan coming soon!');
+        }
+    </script>
+</body>
+</html>
