@@ -1,7 +1,7 @@
 """
-VyroClipper Configuration
+WhopClipper Configuration
 =========================
-All settings for the 24/7 Vyro clipping system.
+All settings for the 24/7 Whop clipping system.
 Edit .env file for credentials, this file for behavior.
 """
 
@@ -9,154 +9,131 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 # =============================================================================
 # PATHS
 # =============================================================================
 BASE_DIR = Path(__file__).parent
-CLIPS_INBOX = BASE_DIR / "clips" / "inbox"      # Downloaded from Vyro
-CLIPS_READY = BASE_DIR / "clips" / "ready"      # Processed, ready to post
-CLIPS_POSTED = BASE_DIR / "clips" / "posted"    # Successfully posted
-CLIPS_FAILED = BASE_DIR / "clips" / "failed"    # Failed to post
-LOGS_DIR = BASE_DIR / "logs"
-DATA_DIR = BASE_DIR / "data"
+CLIPS_INBOX  = BASE_DIR / "clips" / "inbox"    # Clips ready to post (from AI clipper)
+CLIPS_READY  = BASE_DIR / "clips" / "ready"    # Processed
+CLIPS_POSTED = BASE_DIR / "clips" / "posted"   # Successfully posted
+CLIPS_FAILED = BASE_DIR / "clips" / "failed"   # Failed to post
+LOGS_DIR     = BASE_DIR / "logs"
+DATA_DIR     = BASE_DIR / "data"
 
-# Database
-DB_PATH = DATA_DIR / "vyro_clips.db"
+DB_PATH = DATA_DIR / "whop_clips.db"
 
 # =============================================================================
 # CREDENTIALS (from .env)
 # =============================================================================
-VYRO_EMAIL = os.getenv("VYRO_EMAIL", "")
-VYRO_PASSWORD = os.getenv("VYRO_PASSWORD", "")
+WHOP_EMAIL    = os.getenv("WHOP_EMAIL", "")
+WHOP_PASSWORD = os.getenv("WHOP_PASSWORD", "")
 
-# Social media credentials (for browser automation)
 TIKTOK_USERNAME = os.getenv("TIKTOK_USERNAME", "")
 TIKTOK_PASSWORD = os.getenv("TIKTOK_PASSWORD", "")
 
 INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME", "")
 INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")
 
-YOUTUBE_EMAIL = os.getenv("YOUTUBE_EMAIL", "")
+YOUTUBE_EMAIL    = os.getenv("YOUTUBE_EMAIL", "")
 YOUTUBE_PASSWORD = os.getenv("YOUTUBE_PASSWORD", "")
 
-FACEBOOK_EMAIL = os.getenv("FACEBOOK_EMAIL", "")
-FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD", "")
-
-# Optional X/Twitter
-X_USERNAME = os.getenv("X_USERNAME", "")
-X_PASSWORD = os.getenv("X_PASSWORD", "")
-
 # =============================================================================
-# VYRO SETTINGS
+# WHOP SETTINGS
 # =============================================================================
-VYRO_BASE_URL = "https://app.vyro.com"
-VYRO_LOGIN_URL = f"{VYRO_BASE_URL}/login"
-VYRO_DASHBOARD_URL = f"{VYRO_BASE_URL}"
-VYRO_CAMPAIGNS_URL = f"{VYRO_BASE_URL}/campaigns"
+WHOP_BASE_URL      = "https://whop.com"
+WHOP_LOGIN_URL     = "https://whop.com/login"
+WHOP_DISCOVER_URL  = "https://whop.com/discover/clipping"
 
-# Campaigns to target (update with active campaign IDs/names)
-TARGET_CAMPAIGNS = [
-    "beast-games",
-    "mrbeast",
-    "mark-rober",
-]
+# Session file for persistent login
+WHOP_SESSION_FILE  = DATA_DIR / "whop_session.json"
 
-# Minimum CPM to consider a campaign ($3 = 3.0)
-MIN_CPM = 2.5
+# Campaign filters
+MIN_CPM               = 2.50    # Minimum dollars per 1K views
+MIN_BUDGET_REMAINING  = 500.0   # Skip campaigns with less budget left
+FREE_ONLY             = True    # Only join free campaigns
 
 # =============================================================================
 # POSTING SETTINGS
 # =============================================================================
-# Target clips per day
-DAILY_CLIP_TARGET = 15
+DAILY_CLIP_TARGET  = 15
+CLIPS_PER_SESSION  = 5
+SESSIONS_PER_DAY   = 3
 
-# Clips per posting session (spread throughout day)
-CLIPS_PER_SESSION = 5
-
-# Posting sessions per day (3 sessions × 5 clips = 15 clips)
-SESSIONS_PER_DAY = 3
-
-# Peak posting times (24h format, local time)
 POSTING_TIMES = [
-    "08:00",  # Morning - catch early scrollers
-    "12:30",  # Lunch break - high engagement
-    "19:00",  # Evening - prime time
+    "08:00",
+    "12:30",
+    "19:00",
 ]
 
-# Delay between posts (seconds) - avoid rate limits
 POST_DELAY_MIN = 30
 POST_DELAY_MAX = 90
 
-# Platforms to post to
 # Facebook disabled until business page is ready
 PLATFORMS = ["tiktok", "instagram", "youtube"]
 
 # =============================================================================
-# CONTENT SETTINGS
+# ACCOUNT WARMUP
 # =============================================================================
-# Hashtag sets (rotated to avoid spam detection)
-BASE_HASHTAGS = [
-    "#fyp", "#foryou", "#viral", "#trending"
+# Minimum hours before a NEW account can post anything
+WARMUP_HOURS = 36
+
+# Posts-per-day ramp by account age (days)
+# Format: (min_age_days, max_posts_per_day)
+POSTING_RAMP = [
+    (0,  1),   # Day 1–3: 1/day
+    (4,  3),   # Day 4–7: 3/day
+    (14, 6),   # Day 14+: 6/day
+    (30, 10),  # Day 30+: 10/day
 ]
 
+# Minimum gap between posts on same account (minutes)
+MIN_POST_GAP_MINUTES = 360  # 6 hours
+
+# =============================================================================
+# CONTENT SETTINGS
+# =============================================================================
+BASE_HASHTAGS = ["#fyp", "#foryou", "#viral", "#trending"]
+
 NICHE_HASHTAGS = {
-    "mrbeast": ["#mrbeast", "#mrbeastgaming", "#beastreacts", "#beastgames"],
-    "mark-rober": ["#markrober", "#science", "#engineering", "#experiment"],
     "general": ["#entertainment", "#mustwatch", "#mindblown", "#epic"],
 }
 
-# Caption hooks (rotated)
 CAPTION_HOOKS = [
-    "This part hit different 🔥",
-    "Wait for it... 😱",
+    "This part hit different",
+    "Wait for it...",
     "Nobody talks about this moment",
     "The craziest part of the video",
-    "I had to clip this 🎬",
+    "I had to clip this",
     "This deserves more attention",
     "Underrated moment right here",
     "The algorithm needs to see this",
 ]
 
-# Call to actions
 CTAS = [
     "Follow for more clips!",
-    "Save this 🔖",
+    "Save this",
     "Share with someone who needs to see this",
-    "Comment if you agree 👇",
+    "Comment if you agree",
     "Part 2? Let me know!",
 ]
 
 # =============================================================================
-# DAEMON SETTINGS (24/7 operation)
+# DAEMON SETTINGS
 # =============================================================================
-# Check for new Vyro clips every N minutes
-VYRO_CHECK_INTERVAL = 30
-
-# Health check interval (minutes)
-HEALTH_CHECK_INTERVAL = 5
-
-# Max retries for failed posts
-MAX_POST_RETRIES = 3
-
-# Cooldown after rate limit (minutes)
-RATE_LIMIT_COOLDOWN = 15
+WHOP_CHECK_INTERVAL   = 60     # Minutes between campaign refresh
+HEALTH_CHECK_INTERVAL = 5      # Minutes between health checks
+MAX_POST_RETRIES      = 3
+RATE_LIMIT_COOLDOWN   = 15     # Minutes to wait after a rate limit
 
 # =============================================================================
 # BROWSER SETTINGS
 # =============================================================================
-# Headless mode (True for server, False for debugging)
-HEADLESS = False  # Set to False to see browser and debug login
-
-# Browser timeout (seconds)
-BROWSER_TIMEOUT = 60
-
-# Download timeout (seconds)
+HEADLESS        = False   # Must stay False — Cloudflare blocks headless browsers
+BROWSER_TIMEOUT = 60      # seconds
 DOWNLOAD_TIMEOUT = 120
 
-# User agent rotation
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
@@ -166,21 +143,14 @@ USER_AGENTS = [
 # =============================================================================
 # LOGGING
 # =============================================================================
-LOG_LEVEL = "INFO"
-LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+LOG_LEVEL       = "INFO"
+LOG_FORMAT      = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # =============================================================================
-# EARNINGS TRACKING
+# EARNINGS
 # =============================================================================
-# CPM rate (dollars per 1000 views)
-CPM_RATE = 3.0
-
-# Minimum views to qualify for payout
-MIN_VIEWS_FOR_PAYOUT = 5000
-
-# Daily earnings goal
-DAILY_EARNINGS_GOAL = 100.0
-
-# Monthly earnings goal
+CPM_RATE              = 3.0
+MIN_VIEWS_FOR_PAYOUT  = 5000
+DAILY_EARNINGS_GOAL   = 100.0
 MONTHLY_EARNINGS_GOAL = 3000.0

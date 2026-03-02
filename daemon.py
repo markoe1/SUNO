@@ -1,8 +1,8 @@
 """
 Daemon Runner
 =============
-24/7 continuous operation for the Vyro clipping system.
-Handles scheduling, health checks, and automatic recovery.
+24/7 continuous operation for the Whop clipping system.
+Handles scheduling, health checks, warmup gates, and automatic recovery.
 """
 
 import asyncio
@@ -15,8 +15,8 @@ import json
 from pathlib import Path
 
 import config
-from queue_manager import QueueManager, ClipStatus
-from vyro_scraper import VyroScraper
+from queue_manager import QueueManager, ClipStatus, AccountState
+from whop_scraper import WhopScraper
 from platform_poster import PlatformPoster
 from earnings_tracker import EarningsTracker
 
@@ -56,11 +56,12 @@ class VyroDaemon:
         """Start the daemon."""
         self.running = True
         logger.info("="*60)
-        logger.info("VYRO DAEMON STARTING")
+        logger.info("WHOPCLIPPER DAEMON STARTING")
         logger.info("="*60)
         logger.info(f"Target: {config.DAILY_CLIP_TARGET} clips/day")
         logger.info(f"Sessions: {config.SESSIONS_PER_DAY}/day at {config.POSTING_TIMES}")
-        logger.info(f"Vyro check interval: {config.VYRO_CHECK_INTERVAL} minutes")
+        logger.info(f"Whop check interval: {config.WHOP_CHECK_INTERVAL} minutes")
+        logger.info(f"Warmup hold: {config.WARMUP_HOURS} hours")
         logger.info("="*60)
         
         # Setup signal handlers for graceful shutdown
@@ -74,27 +75,28 @@ class VyroDaemon:
         """Handle shutdown signals."""
         logger.info(f"Received signal {signum}, shutting down...")
         self.running = False
-    
+
     async def _main_loop(self):
         """Main daemon loop."""
         while self.running:
             try:
-                now = datetime.now()
-                
                 # Health check
                 if self._should_health_check():
                     await self._health_check()
-                
-                # Check if it's time to fetch new clips
+
+                # Promote NEW accounts that have cleared the warmup hold
+                self._tick_account_warmup()
+
+                # Refresh Whop campaigns periodically
                 if self._should_fetch_clips():
-                    await self._fetch_clips()
-                
-                # Check if it's a posting time
+                    await self._refresh_campaigns()
+
+                # Post session if it's a scheduled posting time
                 if self._should_post():
                     await self._post_session()
-                
-                # Submit any pending URLs to Vyro
-                await self._submit_to_vyro()
+
+                # Submit any unsubmitted clip URLs to Whop
+                await self._submit_pending()
                 
                 # Sleep before next iteration
                 await asyncio.sleep(60)  # Check every minute
@@ -116,126 +118,121 @@ class VyroDaemon:
         return elapsed >= config.HEALTH_CHECK_INTERVAL
     
     def _should_fetch_clips(self) -> bool:
-        """Check if it's time to fetch new clips from Vyro."""
+        """Time to refresh Whop campaigns?"""
         if self.last_fetch is None:
             return True
-        
         elapsed = (datetime.now() - self.last_fetch).total_seconds() / 60
-        return elapsed >= config.VYRO_CHECK_INTERVAL
-    
+        return elapsed >= config.WHOP_CHECK_INTERVAL
+
     def _should_post(self) -> bool:
-        """Check if it's a scheduled posting time."""
+        """Is it a scheduled posting time?"""
         now = datetime.now()
-        current_time = now.strftime("%H:%M")
-        
-        # Check if we're within 5 minutes of a posting time
         for post_time in config.POSTING_TIMES:
-            post_hour, post_min = map(int, post_time.split(':'))
+            post_hour, post_min = map(int, post_time.split(":"))
             post_dt = now.replace(hour=post_hour, minute=post_min, second=0)
-            
             diff = abs((now - post_dt).total_seconds())
-            
-            if diff <= 300:  # Within 5 minutes
-                # Check we haven't already posted in this window
+            if diff <= 300:
                 if self.last_post is None:
                     return True
-                
-                last_post_diff = (now - self.last_post).total_seconds()
-                if last_post_diff > 600:  # More than 10 min since last post
+                if (now - self.last_post).total_seconds() > 600:
                     return True
-        
         return False
-    
+
+    def _tick_account_warmup(self):
+        """
+        Promote NEW accounts that have cleared the warmup hold to WARMING,
+        and WARMING accounts with posts to ACTIVE.
+        """
+        accounts = self.queue.get_all_accounts()
+        for acc in accounts:
+            if acc.state == AccountState.NEW.value and acc.created_at:
+                created  = datetime.fromisoformat(acc.created_at)
+                hours_old = (datetime.now() - created).total_seconds() / 3600
+                if hours_old >= config.WARMUP_HOURS:
+                    self.queue.update_account_state(
+                        acc.platform, acc.username, AccountState.WARMING
+                    )
+                    logger.info(
+                        f"Account {acc.platform}/{acc.username} promoted NEW → WARMING"
+                    )
+            elif acc.state == AccountState.WARMING.value and acc.total_posts >= 5:
+                self.queue.update_account_state(
+                    acc.platform, acc.username, AccountState.ACTIVE
+                )
+                logger.info(
+                    f"Account {acc.platform}/{acc.username} promoted WARMING → ACTIVE"
+                )
+
     async def _health_check(self):
-        """Perform health check."""
-        logger.info("Running health check...")
+        logger.info("Health check...")
         self.last_health_check = datetime.now()
-        
-        # Check queue status
-        pending = self.queue.get_pending_clips(limit=100)
-        posted_today = self.queue.get_daily_stats()
-        
-        logger.info(f"Health: {len(pending)} pending clips, {posted_today.get('clips_posted', 0)} posted today")
-        
-        # Display mini dashboard
+        pending     = self.queue.get_pending_clips(limit=100)
+        today       = self.queue.get_daily_stats()
+        accounts    = self.queue.get_all_accounts()
+        ready_accs  = sum(
+            1 for a in accounts
+            if self.queue.account_can_post(a.platform, a.username)
+        )
+        logger.info(
+            f"Inbox: {len(pending)} clips | Posted today: {today.get('clips_posted', 0)} | "
+            f"Accounts ready: {ready_accs}/{len(accounts)}"
+        )
         self.tracker.display_dashboard()
-    
-    async def _fetch_clips(self):
-        """Fetch new clips from Vyro."""
-        logger.info("Fetching new clips from Vyro...")
+
+    async def _refresh_campaigns(self):
+        """Refresh Whop campaign list."""
+        logger.info("Refreshing Whop campaigns...")
         self.last_fetch = datetime.now()
-        
-        # Check how many clips we need
-        today_stats = self.queue.get_daily_stats()
-        posted_today = today_stats.get('clips_posted', 0)
-        pending = len(self.queue.get_pending_clips(limit=100))
-        
-        needed = config.DAILY_CLIP_TARGET - posted_today - pending
-        
-        if needed <= 0:
-            logger.info(f"Already have enough clips ({pending} pending, {posted_today} posted)")
-            return
-        
         try:
-            async with VyroScraper() as scraper:
-                clips = await scraper.fetch_new_clips(target_count=needed)
-                self.session_stats['clips_fetched'] += len(clips)
-                logger.info(f"Fetched {len(clips)} new clips")
-                
+            async with WhopScraper() as scraper:
+                campaigns = await scraper.refresh_campaigns()
+                self.session_stats['clips_fetched'] += len(campaigns)
+                logger.info(f"Campaigns refreshed: {len(campaigns)} active")
         except Exception as e:
-            logger.error(f"Failed to fetch clips: {e}")
+            logger.error(f"Campaign refresh failed: {e}")
             self.session_stats['errors'] += 1
-    
+
     async def _post_session(self):
-        """Run a posting session."""
-        logger.info("="*40)
-        logger.info("STARTING POSTING SESSION")
-        logger.info("="*40)
-        
+        """Post a batch of clips, respecting warmup gates."""
+        logger.info("=" * 40)
+        logger.info("POSTING SESSION")
+        logger.info("=" * 40)
         self.last_post = datetime.now()
-        
-        # Get pending clips
+
         pending = self.queue.get_pending_clips(limit=config.CLIPS_PER_SESSION)
-        
         if not pending:
-            logger.info("No pending clips to post")
+            logger.info("No pending clips in inbox")
             return
-        
+
+        # Filter to clips whose campaign account can post
+        # (if no accounts registered yet, proceed anyway — gating is per-account)
         logger.info(f"Posting {len(pending)} clips...")
-        
         try:
             async with PlatformPoster() as poster:
                 results = await poster.post_batch(pending)
-                
-                # Count successes
                 success_count = sum(
-                    1 for r in results 
-                    if any(pr.success for pr in r.values())
+                    1 for r in results if any(pr.success for pr in r.values())
                 )
-                
                 self.session_stats['clips_posted'] += success_count
-                logger.info(f"Session complete: {success_count}/{len(pending)} clips posted successfully")
-                
+                logger.info(
+                    f"Session done: {success_count}/{len(pending)} clips posted"
+                )
         except Exception as e:
             logger.error(f"Posting session failed: {e}")
             self.session_stats['errors'] += 1
-    
-    async def _submit_to_vyro(self):
-        """Submit posted URLs back to Vyro."""
-        clips_to_submit = self.queue.get_clips_needing_submission()
-        
-        if not clips_to_submit:
+
+    async def _submit_pending(self):
+        """Submit all posted-but-not-submitted clips to Whop (atomic flow)."""
+        clips = self.queue.get_clips_needing_submission()
+        if not clips:
             return
-        
-        logger.info(f"Submitting {len(clips_to_submit)} clips to Vyro...")
-        
+        logger.info(f"Submitting {len(clips)} clips to Whop...")
         try:
-            async with VyroScraper() as scraper:
-                submitted = await scraper.submit_urls_to_vyro(clips_to_submit)
-                logger.info(f"Submitted {submitted} clips to Vyro")
-                
+            async with WhopScraper() as scraper:
+                submitted = await scraper.submit_batch(clips)
+                logger.info(f"Submitted {submitted}/{len(clips)} clips")
         except Exception as e:
-            logger.error(f"Failed to submit to Vyro: {e}")
+            logger.error(f"Whop submission failed: {e}")
     
     def _save_session_stats(self):
         """Save session stats to file."""
@@ -253,43 +250,33 @@ class DaemonRunner:
     
     @staticmethod
     async def run_once():
-        """Run a single fetch + post cycle."""
+        """Single cycle: refresh campaigns + post pending clips."""
         logger.info("Running single cycle...")
-        
         queue = QueueManager()
-        
-        # Fetch clips
-        async with VyroScraper() as scraper:
-            clips = await scraper.fetch_new_clips(target_count=config.CLIPS_PER_SESSION)
-            logger.info(f"Fetched {len(clips)} clips")
-        
-        # Post clips
+        async with WhopScraper() as scraper:
+            campaigns = await scraper.refresh_campaigns()
+            logger.info(f"Campaigns refreshed: {len(campaigns)}")
         pending = queue.get_pending_clips(limit=config.CLIPS_PER_SESSION)
         if pending:
             async with PlatformPoster() as poster:
                 await poster.post_batch(pending)
-        
-        # Show stats
-        tracker = EarningsTracker()
-        tracker.display_dashboard()
-    
+        EarningsTracker().display_dashboard()
+
     @staticmethod
     async def run_continuous():
         """Run daemon continuously."""
         daemon = VyroDaemon()
         await daemon.start()
-    
+
     @staticmethod
     async def run_fetch_only():
-        """Only fetch clips, don't post."""
-        logger.info("Fetching clips only...")
-        
-        async with VyroScraper() as scraper:
-            clips = await scraper.fetch_new_clips(target_count=config.DAILY_CLIP_TARGET)
-            logger.info(f"Fetched {len(clips)} clips")
-            
-            for clip in clips:
-                print(f"  - {clip.filename}")
+        """Only refresh campaigns, don't post."""
+        logger.info("Refreshing campaigns only...")
+        async with WhopScraper() as scraper:
+            campaigns = await scraper.refresh_campaigns()
+            logger.info(f"Active campaigns: {len(campaigns)}")
+            for c in campaigns:
+                print(f"  {c.name} | CPM ${c.cpm:.2f}")
     
     @staticmethod
     async def run_post_only():
@@ -311,7 +298,7 @@ def main():
     """Entry point for daemon."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Vyro Clipping Daemon")
+    parser = argparse.ArgumentParser(description="WhopClipper Daemon")
     parser.add_argument(
         '--mode', 
         choices=['continuous', 'once', 'fetch', 'post'],
