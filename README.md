@@ -1,71 +1,59 @@
-# VyroClipper
+# SUNO Clips
 
-Automated Vyro clipping system for posting 10-15 clips/day across TikTok, Instagram Reels, and YouTube Shorts.
+Automated clipping. Whop campaigns. 24/7.
 
-> Product Hunt: launch pack in `launch/producthunt/` (badge/link will be added on launch day).
+SUNO Clips scrapes live Whop clipping campaigns, manages your clip queue, and posts to TikTok, Instagram Reels, and YouTube Shorts on a 24/7 schedule — with automatic URL submission back to Whop so every view counts toward your payout.
 
-## Features
+> Product Hunt launch pack in `launch/producthunt/`
 
-- **Automated Vyro Scraping**: Downloads pre-made clips from Vyro campaigns
-- **Multi-Platform Posting**: Posts to TikTok, Instagram, YouTube simultaneously
-- **24/7 Daemon Mode**: Runs continuously with scheduled posting times
-- **Earnings Tracking**: Real-time dashboard showing views and earnings
-- **SQLite Queue**: Tracks all clips, statuses, and URLs
+## How It Works
+
+1. **Campaigns** — Scrapes `whop.com/discover/clipping`, filters by CPM and budget
+2. **Inbox** — Drop AI-clipped `.mp4` files into `clips/inbox/`
+3. **Post** — Parallel posting to TikTok, Instagram, YouTube
+4. **Submit** — URLs submitted to Whop atomically after every post
+5. **Track** — Earnings dashboard shows views and payouts
 
 ## Quick Start
-
-### Optional: Stripe Checkout (payments)
-To accept payments for SUNO, set these in `.env` and start the billing server:
-
-```
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PRICE_ID_SUNO=price_...
-STRIPE_SUCCESS_URL=http://localhost:5001/success
-STRIPE_CANCEL_URL=http://localhost:5001/cancel
-```
-
-Run:
-```
-python -m pip install -r requirements.txt
-python billing_server.py
-# Then open: http://localhost:5001/checkout  (redirects to Stripe)
-```
 
 ### 1. Install
 
 ```powershell
-# Run the installer
 .\install.ps1
 ```
 
 ### 2. Configure
 
-Edit `.env` with your credentials:
+Copy `.env.template` to `.env` and fill in credentials:
 
 ```
-VYRO_EMAIL=your@email.com
-VYRO_PASSWORD=yourpassword
-
+WHOP_EMAIL=your@email.com
 TIKTOK_USERNAME=yourusername
 TIKTOK_PASSWORD=yourpassword
-
 INSTAGRAM_USERNAME=yourusername
 INSTAGRAM_PASSWORD=yourpassword
-
 YOUTUBE_EMAIL=your@gmail.com
 YOUTUBE_PASSWORD=yourpassword
 ```
 
-### 3. Test
+### 3. Login to Whop (one time)
 
 ```powershell
-python main.py --mode test
+python main.py --mode login
 ```
+
+Browser opens. Log in manually. Session saved to `data/whop_session.json` — not needed again.
 
 ### 4. Run
 
 ```powershell
-# Single run (15 clips)
+# Refresh campaigns
+python main.py --mode campaigns
+
+# Post clips from inbox
+python main.py --mode post --count 5
+
+# Full cycle (campaigns + post)
 python main.py --mode run --count 15
 
 # 24/7 daemon
@@ -76,80 +64,62 @@ python main.py --mode daemon
 
 | Command | Description |
 |---------|-------------|
-| `--mode test` | Verify configuration |
-| `--mode status` | Show current status |
-| `--mode dashboard` | Show earnings dashboard |
-| `--mode fetch --count N` | Download N clips from Vyro |
-| `--mode post --count N` | Post N pending clips |
-| `--mode run --count N` | Full workflow (fetch + post) |
-| `--mode daemon` | Run 24/7 automation |
+| `--mode login` | Save Whop session (run once) |
+| `--mode campaigns` | Discover and refresh Whop campaigns |
+| `--mode post --count N` | Post N clips from inbox |
+| `--mode run --count N` | Full cycle (campaigns + post) |
+| `--mode daemon` | 24/7 automation |
+| `--mode status` | Queue + account warmup status |
+| `--mode dashboard` | Earnings overview |
+| `--mode test` | Verify config and credentials |
+
+## Account Warmup
+
+New accounts are held for 36 hours before any posting, then ramped automatically:
+
+| Account Age | Posts/Day |
+|-------------|-----------|
+| Day 1–3 | 1 |
+| Day 4–7 | 3 |
+| Day 14+ | 6 |
+| Day 30+ | 10 |
 
 ## Directory Structure
 
 ```
-VyroClipper/
-├── main.py              # Main entry point
-├── config.py            # All configuration
+SUNO-repo/
+├── main.py              # Entry point
+├── config.py            # All settings
 ├── daemon.py            # 24/7 runner
-├── vyro_scraper.py      # Vyro browser automation
-├── platform_poster.py   # Multi-platform posting
-├── queue_manager.py     # SQLite clip tracking
+├── whop_scraper.py      # Whop campaign scraper + URL submission
+├── platform_poster.py   # TikTok / Instagram / YouTube posting
+├── queue_manager.py     # SQLite clip + account tracking
 ├── earnings_tracker.py  # Dashboard and stats
-├── .env                 # Your credentials (create from template)
+├── .env                 # Credentials (create from .env.template)
 ├── clips/
-│   ├── inbox/           # Downloaded clips
-│   ├── ready/           # Processed clips
+│   ├── inbox/           # Drop clips here to post
 │   ├── posted/          # Successfully posted
 │   └── failed/          # Failed posts
-├── logs/                # Daily logs
-└── data/                # SQLite database
+├── logs/                # Daily daemon logs
+└── data/                # SQLite DB + Whop session
 ```
-
-## Configuration
-
-Edit `config.py` to customize:
-
-- **DAILY_CLIP_TARGET**: Clips per day (default: 15)
-- **POSTING_TIMES**: When to post (default: 8am, 12:30pm, 7pm)
-- **CLIPS_PER_SESSION**: Clips per posting session (default: 5)
-- **CPM_RATE**: Dollars per 1K views (default: $3)
-
-## How It Works
-
-1. **Fetch**: Browser automation logs into Vyro, downloads available clips
-2. **Queue**: Clips stored in SQLite with generated captions/hashtags
-3. **Post**: Parallel posting to all 3 platforms
-4. **Submit**: URLs submitted back to Vyro for view tracking
-5. **Track**: Earnings dashboard shows views/earnings
 
 ## Earnings Math
 
 ```
-15 clips/day × 5,000 views/clip × 3 platforms = 225,000 views
-225,000 ÷ 1,000 × $3 = $675/day potential
+15 clips/day x 5,000 views/clip x 3 platforms = 225,000 views
+225,000 / 1,000 x $3 = $675/day potential
 ```
 
 ## Troubleshooting
 
-### Login Issues
-- Platforms may require manual verification first time
-- Set `HEADLESS = False` in config.py to see browser
-- Complete any CAPTCHAs manually, then re-run
+**Whop login fails** — Run `--mode login`, complete login manually in the browser window.
 
-### Rate Limits
-- System includes delays between posts
-- Increase `POST_DELAY_MIN/MAX` if hitting limits
+**Cloudflare block** — `HEADLESS = False` in config.py is required. Do not change it.
 
-### Missing Clips
-- Check Vyro has active campaigns
-- Verify credentials in `.env`
+**Rate limits** — Increase `POST_DELAY_MIN/MAX` in config.py.
 
-## Safety Notes
-
-- Browser automation can trigger security checks
-- Start with small counts to test
-- Keep credentials secure
-- Don't run multiple instances
+**Zero campaigns found** — Check `data/whop_debug_*.html` for a snapshot of what the scraper saw.
 
 ## License
 
