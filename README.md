@@ -1,126 +1,170 @@
 # SUNO Clips
 
-Automated clipping. Whop campaigns. 24/7.
+Automated Whop clip submission SaaS. Submit clip URLs to Whop campaigns from a clean dashboard.
 
-SUNO Clips scrapes live Whop clipping campaigns, manages your clip queue, and posts to TikTok, Instagram Reels, and YouTube Shorts on a 24/7 schedule — with automatic URL submission back to Whop so every view counts toward your payout.
-
-> Product Hunt launch pack in `launch/producthunt/`
-
-## How It Works
-
-1. **Campaigns** — Scrapes `whop.com/discover/clipping`, filters by CPM and budget
-2. **Inbox** — Drop AI-clipped `.mp4` files into `clips/inbox/`
-3. **Post** — Parallel posting to TikTok, Instagram, YouTube
-4. **Submit** — URLs submitted to Whop atomically after every post
-5. **Track** — Earnings dashboard shows views and payouts
-
-## Quick Start
-
-### 1. Install
-
-```powershell
-.\install.ps1
-```
-
-### 2. Configure
-
-Copy `.env.template` to `.env` and fill in credentials:
-
-```
-WHOP_EMAIL=your@email.com
-TIKTOK_USERNAME=yourusername
-TIKTOK_PASSWORD=yourpassword
-INSTAGRAM_USERNAME=yourusername
-INSTAGRAM_PASSWORD=yourpassword
-YOUTUBE_EMAIL=your@gmail.com
-YOUTUBE_PASSWORD=yourpassword
-```
-
-### 3. Login to Whop (one time)
-
-```powershell
-python main.py --mode login
-```
-
-Browser opens. Log in manually. Session saved to `data/whop_session.json` — not needed again.
-
-### 4. Run
-
-```powershell
-# Refresh campaigns
-python main.py --mode campaigns
-
-# Post clips from inbox
-python main.py --mode post --count 5
-
-# Full cycle (campaigns + post)
-python main.py --mode run --count 15
-
-# 24/7 daemon
-python main.py --mode daemon
-```
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `--mode login` | Save Whop session (run once) |
-| `--mode campaigns` | Discover and refresh Whop campaigns |
-| `--mode post --count N` | Post N clips from inbox |
-| `--mode run --count N` | Full cycle (campaigns + post) |
-| `--mode daemon` | 24/7 automation |
-| `--mode status` | Queue + account warmup status |
-| `--mode dashboard` | Earnings overview |
-| `--mode test` | Verify config and credentials |
-
-## Account Warmup
-
-New accounts are held for 36 hours before any posting, then ramped automatically:
-
-| Account Age | Posts/Day |
-|-------------|-----------|
-| Day 1–3 | 1 |
-| Day 4–7 | 3 |
-| Day 14+ | 6 |
-| Day 30+ | 10 |
-
-## Directory Structure
+## Architecture
 
 ```
 SUNO-repo/
-├── main.py              # Entry point
-├── config.py            # All settings
-├── daemon.py            # 24/7 runner
-├── whop_scraper.py      # Whop campaign scraper + URL submission
-├── platform_poster.py   # TikTok / Instagram / YouTube posting
-├── queue_manager.py     # SQLite clip + account tracking
-├── earnings_tracker.py  # Dashboard and stats
-├── .env                 # Credentials (create from .env.template)
-├── clips/
-│   ├── inbox/           # Drop clips here to post
-│   ├── posted/          # Successfully posted
-│   └── failed/          # Failed posts
-├── logs/                # Daily daemon logs
-└── data/                # SQLite DB + Whop session
+├── api/                  FastAPI app
+│   ├── app.py            App factory, middleware, route mounting
+│   ├── deps.py           FastAPI dependencies (get_db, get_current_user)
+│   ├── middleware.py     Request ID, structured logging, auth wall
+│   └── routes/
+│       ├── auth.py       register/login/logout/refresh
+│       ├── campaigns.py  list, sync trigger
+│       ├── jobs.py       list, cancel, kill switch
+│       ├── submissions.py list, submit, retry
+│       ├── settings.py   Whop cookie import, user prefs
+│       ├── users.py      /api/me
+│       └── health.py     /health /ready
+├── workers/
+│   ├── queue.py          RQ queue setup
+│   └── tasks/
+│       ├── sync_campaigns.py
+│       ├── submit_clip.py
+│       └── monitor_submissions.py
+├── db/
+│   ├── engine.py         Async engine + session factory
+│   ├── models.py         All SQLAlchemy models
+│   └── seed.py           Dev fixtures
+├── services/
+│   ├── auth.py           JWT encode/decode, password hashing
+│   ├── secrets.py        Fernet encrypt/decrypt for user secrets
+│   ├── whop_client.py    WhopClient, DryRunWhopClient
+│   └── logger.py         structlog JSON logger
+├── web/
+│   ├── static/app.css
+│   └── templates/        Jinja2 templates (dark theme)
+├── tests/
+│   ├── conftest.py
+│   ├── test_auth.py
+│   ├── test_secrets.py
+│   └── test_jobs.py
+├── alembic/              Database migrations
+├── docker-compose.yml    Dev (postgres + redis + api + worker)
+├── docker-compose.prod.yml
+├── Dockerfile
+├── Makefile
+├── .env.example
+└── requirements-saas.txt
 ```
 
-## Earnings Math
+## Stack
 
+- **Backend**: FastAPI (Python 3.12)
+- **Database**: PostgreSQL + SQLAlchemy 2.0 (async) + Alembic
+- **Task queue**: RQ + Redis
+- **Auth**: python-jose + passlib (bcrypt)
+- **Encryption**: cryptography (Fernet) for Whop cookie storage
+- **Templates**: Jinja2 via FastAPI
+
+## Whop Session Approach
+
+We do NOT automate Whop login (Cloudflare + possible 2FA makes pure headless login unreliable).
+
+Instead:
+1. User logs in to Whop in their browser
+2. Opens DevTools → Application → Cookies → whop.com
+3. Copies all cookies as JSON or cookie string
+4. Pastes into Settings → "Connect Whop Account"
+5. We validate the cookies by making a test Whop API call
+6. We encrypt and store the cookie blob in `user_secrets` table
+7. All Whop automation uses these stored cookies
+
+## Quick Start
+
+### 1. Generate keys
+
+```bash
+make generate-keys
 ```
-15 clips/day x 5,000 views/clip x 3 platforms = 225,000 views
-225,000 / 1,000 x $3 = $675/day potential
+
+Copy the output values into your `.env` file.
+
+### 2. Set up environment
+
+```bash
+cp .env.example .env
+# Edit .env and fill in the generated keys
 ```
 
-## Troubleshooting
+### 3. Start services and run migrations
 
-**Whop login fails** — Run `--mode login`, complete login manually in the browser window.
+```bash
+docker-compose up -d db redis
+make migrate
+make seed
+```
 
-**Cloudflare block** — `HEADLESS = False` in config.py is required. Do not change it.
+### 4. Run the API
 
-**Rate limits** — Increase `POST_DELAY_MIN/MAX` in config.py.
+```bash
+make dev
+```
 
-**Zero campaigns found** — Check `data/whop_debug_*.html` for a snapshot of what the scraper saw.
+Open http://localhost:8000
 
-## License
+Dev login: `dev@sunoclips.io` / `devpassword123`
 
-For personal use only.
+### 5. Run the worker (separate terminal)
+
+```bash
+make worker
+```
+
+### Docker (full stack)
+
+```bash
+docker-compose up --build
+```
+
+## Verify Commands
+
+```bash
+# Phase 0 — Generate keys
+make generate-keys && cp .env.example .env
+
+# Phase 1 — Database
+docker-compose up -d db redis && make migrate && make seed
+
+# Phase 2 — Auth
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"test1234"}'
+
+# Phase 3 — Settings
+curl -X GET http://localhost:8000/api/settings \
+  -H "Authorization: Bearer <token>"
+
+# Phase 4 — Worker
+make worker  # in second terminal, then submit a test job via API
+
+# Phase 5 — Dashboard
+open http://localhost:8000
+
+# Phase 6 — Tests + Health
+make test && curl http://localhost:8000/health
+
+# Phase 7 — Production
+docker-compose -f docker-compose.prod.yml up --build
+```
+
+## Development
+
+```bash
+make test        # Run test suite
+make migrate     # Apply DB migrations
+make seed        # Create dev fixtures
+make worker      # Start RQ worker
+```
+
+## Environment Variables
+
+See `.env.example` for all variables. Required:
+- `DATABASE_URL` — PostgreSQL connection string
+- `REDIS_URL` — Redis connection string
+- `ENCRYPTION_KEY` — Fernet key (generate with `make generate-keys`)
+- `JWT_SECRET_KEY` — JWT signing key
+- `JWT_REFRESH_SECRET_KEY` — JWT refresh signing key
+- `SESSION_COOKIE_SECRET` — Session cookie signing key
