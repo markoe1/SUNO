@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% set active_page = 'campaigns' %}
+{% block title %}Campaigns — SUNO Clips{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <h1 class="page-title">Campaigns</h1>
+      <p class="page-subtitle">Available Whop clipping campaigns</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" onclick="loadCampaigns()">Refresh</button>
+      <button class="btn btn-primary" onclick="triggerSync()">Sync from Whop</button>
+    </div>
+  </div>
+
+  <div id="sync-alert" style="display:none;"></div>
+
+  <div class="card">
+    <div id="campaigns-table">
+      <div class="empty-state"><div class="spinner"></div><p style="margin-top:12px;">Loading campaigns...</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadCampaigns() {
+  const el = document.getElementById('campaigns-table');
+  el.innerHTML = '<div class="empty-state"><div class="spinner"></div><p style="margin-top:12px;">Loading...</p></div>';
+
+  const res = await apiFetch('/api/campaigns?active_only=false');
+  if (!res || !res.ok) {
+    el.innerHTML = '<div class="empty-state"><p>Failed to load campaigns</p></div>';
+    return;
+  }
+  const camps = await res.json();
+  if (!camps.length) {
+    el.innerHTML = `<div class="empty-state">
+      <h3>No campaigns found</h3>
+      <p>Click "Sync from Whop" to fetch campaigns from your account.</p>
+      <a href="/settings" class="btn btn-secondary">Check Whop Settings</a>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead>
+      <tr>
+        <th>Name</th><th>CPM</th><th>Budget Left</th><th>Platforms</th><th>Type</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${camps.map(c => `
+        <tr>
+          <td>
+            <div style="font-weight:500;">${esc(c.name)}</div>
+            <div style="font-size:12px;color:var(--muted);">ID: ${esc(c.whop_campaign_id)}</div>
+          </td>
+          <td>${c.cpm != null ? '$' + c.cpm.toFixed(2) : '—'}</td>
+          <td>${c.budget_remaining != null ? '$' + c.budget_remaining.toFixed(2) : '—'}</td>
+          <td style="font-size:12px;color:var(--muted);">${esc(c.allowed_platforms || '—')}</td>
+          <td>${c.is_free ? '<span class="badge badge-green">Free</span>' : '<span class="badge badge-orange">Paid</span>'}</td>
+          <td>${statusBadge(c.active ? 'active' : 'inactive')}</td>
+          <td>
+            <a href="/submit?campaign=${encodeURIComponent(c.whop_campaign_id)}" class="btn btn-primary btn-sm">Submit</a>
+          </td>
+        </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function triggerSync() {
+  const alert = document.getElementById('sync-alert');
+  alert.style.display = 'none';
+  const res = await apiFetch('/api/campaigns/sync', { method: 'POST' });
+  if (!res) return;
+  const data = await res.json();
+  alert.style.display = 'block';
+  if (res.ok) {
+    alert.className = 'alert alert-success';
+    alert.textContent = 'Sync job queued (ID: ' + data.job_id.slice(0, 8) + '). Refresh in a moment.';
+  } else {
+    alert.className = 'alert alert-error';
+    alert.textContent = data.detail || 'Sync failed';
+  }
+}
+
+loadCampaigns();
+</script>
+{% endblock %}

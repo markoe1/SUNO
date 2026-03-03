@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% set active_page = 'settings' %}
+{% block title %}Settings — SUNO Clips{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Connect your Whop account and manage job preferences</p>
+  </div>
+
+  <div style="max-width:700px;">
+
+    <!-- Whop Session -->
+    <div class="settings-section">
+      <div class="settings-section-title">Whop Account</div>
+
+      <div class="card">
+        <div id="whop-status" style="margin-bottom:20px;">
+          <div class="spinner"></div>
+        </div>
+
+        <div class="card-title">Connect Whop Account</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
+          We cannot automate Whop login (Cloudflare + 2FA protection).<br>
+          Instead, export your session cookies from your browser:
+        </p>
+
+        <ol style="font-size:13px;color:var(--muted);margin-bottom:20px;margin-left:20px;line-height:2;">
+          <li>Open <strong style="color:var(--white);">whop.com</strong> in Chrome and log in.</li>
+          <li>Open DevTools: press <strong style="color:var(--white);">F12</strong> (or Cmd+Option+I on Mac).</li>
+          <li>Go to <strong style="color:var(--white);">Application</strong> tab &rarr; <strong style="color:var(--white);">Cookies</strong> &rarr; <strong style="color:var(--white);">https://whop.com</strong>.</li>
+          <li>Copy all cookies as JSON (right-click &rarr; copy all, or use a cookie export extension).</li>
+          <li>Paste below and click <strong style="color:var(--white);">Validate &amp; Save</strong>.</li>
+        </ol>
+
+        <div id="session-alert" style="display:none;"></div>
+
+        <form id="whop-form">
+          <div class="form-group">
+            <label for="cookies-input">Cookie JSON or Cookie String</label>
+            <textarea
+              id="cookies-input"
+              placeholder='{"_session": "abc123", "auth_token": "xyz..."}'
+              rows="6"
+            ></textarea>
+            <p class="form-hint">
+              Accepts JSON object <code>{"name": "value"}</code> or cookie string <code>name=value; name2=value2</code>
+            </p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button type="submit" class="btn btn-primary" id="whop-save-btn">Validate &amp; Save</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="clearSession()">Clear Session</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Job Control -->
+    <div class="settings-section">
+      <div class="settings-section-title">Job Control</div>
+
+      <div class="card">
+        <div class="card-title">Kill Switch</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+          Pause all job processing. Use this if you need to stop submissions immediately.
+          Existing running jobs will be cancelled.
+        </p>
+
+        <div id="jobs-status" style="margin-bottom:16px;">
+          <div class="spinner"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;" id="pause-buttons">
+          <button class="btn btn-danger" onclick="pauseJobs()">Pause All Jobs</button>
+          <button class="btn btn-primary" onclick="resumeJobs()">Resume Jobs</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account -->
+    <div class="settings-section">
+      <div class="settings-section-title">Account</div>
+
+      <div class="card">
+        <div class="card-title">Change Password</div>
+        <div id="pw-alert" style="display:none;"></div>
+        <form id="pw-form">
+          <div class="form-group">
+            <label>Current Password</label>
+            <input type="password" id="current-pw" placeholder="••••••••">
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" id="new-pw" placeholder="Min 8 characters" minlength="8">
+          </div>
+          <button type="submit" class="btn btn-secondary">Update Password</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadSettings() {
+  const res = await apiFetch('/api/settings');
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  renderWhopStatus(data.has_whop_session);
+  renderJobsStatus(data.jobs_paused);
+}
+
+function renderWhopStatus(connected) {
+  const el = document.getElementById('whop-status');
+  el.innerHTML = `<div class="connection-status">
+    <span class="status-dot ${connected ? 'status-dot-green' : 'status-dot-red'}"></span>
+    <span style="font-weight:500;">${connected ? 'Whop account connected' : 'Not connected'}</span>
+  </div>`;
+}
+
+function renderJobsStatus(paused) {
+  const el = document.getElementById('jobs-status');
+  el.innerHTML = `<div class="connection-status">
+    <span class="status-dot ${paused ? 'status-dot-orange' : 'status-dot-green'}"></span>
+    <span>Jobs are <strong>${paused ? 'PAUSED' : 'running'}</strong></span>
+  </div>`;
+}
+
+document.getElementById('whop-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('whop-save-btn');
+  const alert = document.getElementById('session-alert');
+  alert.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Validating...';
+
+  const cookiesJson = document.getElementById('cookies-input').value.trim();
+  if (!cookiesJson) {
+    alert.className = 'alert alert-error';
+    alert.textContent = 'Please paste your cookie data.';
+    alert.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Validate & Save';
+    return;
+  }
+
+  const res = await apiFetch('/api/settings/whop-session', {
+    method: 'POST',
+    body: JSON.stringify({ cookies_json: cookiesJson }),
+  });
+
+  if (!res) { btn.disabled=false; btn.textContent='Validate & Save'; return; }
+  const data = await res.json();
+
+  alert.style.display = 'block';
+  if (data.valid) {
+    alert.className = 'alert alert-success';
+    alert.textContent = 'Whop session connected successfully!';
+    document.getElementById('cookies-input').value = '';
+    renderWhopStatus(true);
+  } else {
+    alert.className = 'alert alert-error';
+    alert.textContent = data.error || 'Session validation failed. Re-export your cookies and try again.';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Validate & Save';
+});
+
+async function clearSession() {
+  if (!confirm('Remove your Whop session? You will need to re-export cookies to use automation.')) return;
+  const res = await apiFetch('/api/settings/whop-session', { method: 'DELETE' });
+  if (res && res.ok) {
+    showFlash('Whop session cleared.', 'success');
+    renderWhopStatus(false);
+  } else {
+    showFlash('Failed to clear session.', 'error');
+  }
+}
+
+async function pauseJobs() {
+  const res = await apiFetch('/api/settings/pause-jobs', { method: 'POST' });
+  if (res && res.ok) { showFlash('Jobs paused.', 'success'); renderJobsStatus(true); }
+  else showFlash('Failed to pause jobs.', 'error');
+}
+
+async function resumeJobs() {
+  const res = await apiFetch('/api/settings/resume-jobs', { method: 'POST' });
+  if (res && res.ok) { showFlash('Jobs resumed.', 'success'); renderJobsStatus(false); }
+  else showFlash('Failed to resume jobs.', 'error');
+}
+
+document.getElementById('pw-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const alert = document.getElementById('pw-alert');
+  const currentPw = document.getElementById('current-pw').value;
+  const newPw = document.getElementById('new-pw').value;
+
+  if (!currentPw || !newPw) {
+    alert.className = 'alert alert-error';
+    alert.textContent = 'Both fields are required.';
+    alert.style.display = 'block';
+    return;
+  }
+
+  const res = await apiFetch('/api/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ current_password: currentPw, new_password: newPw }),
+  });
+  if (!res) return;
+  const data = await res.json();
+  alert.style.display = 'block';
+  if (res.ok) {
+    alert.className = 'alert alert-success';
+    alert.textContent = 'Password updated.';
+    document.getElementById('pw-form').reset();
+  } else {
+    alert.className = 'alert alert-error';
+    alert.textContent = data.detail || 'Failed to update password.';
+  }
+});
+
+loadSettings();
+</script>
+{% endblock %}

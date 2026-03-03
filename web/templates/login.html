@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — SUNO Clips</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">SUNO Clips</div>
+    <div class="auth-tagline">Automated Whop clip submission</div>
+
+    <div id="flash-container"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;" id="submit-btn">
+        Sign In
+      </button>
+    </form>
+
+    <p style="text-align:center;margin-top:20px;font-size:14px;color:var(--muted);">
+      No account? <a href="/register">Create one</a>
+    </p>
+  </div>
+</div>
+
+<script>
+function showFlash(msg, type = 'error') {
+  const c = document.getElementById('flash-container');
+  c.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+
+  const form = new FormData(e.target);
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      body: new URLSearchParams({ email: form.get('email'), password: form.get('password') }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (res.ok) {
+      window.location.href = '/dashboard';
+    } else {
+      showFlash(data.detail || 'Login failed');
+      btn.disabled = false;
+      btn.textContent = 'Sign In';
+    }
+  } catch (err) {
+    showFlash('Network error. Try again.');
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+});
+</script>
+</body>
+</html>

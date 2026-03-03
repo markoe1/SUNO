@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% set active_page = 'submissions' %}
+{% block title %}Submissions — SUNO Clips{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <h1 class="page-title">Submissions</h1>
+      <p class="page-subtitle">Track your clip submissions</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <select id="status-filter" onchange="loadSubmissions(1)" style="width:auto;">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="submitted">Submitted</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="failed">Failed</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="loadSubmissions(currentPage)">Refresh</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="submissions-table">
+      <div class="empty-state"><div class="spinner"></div><p style="margin-top:12px;">Loading...</p></div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+function esc(s) { if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function loadSubmissions(page = 1) {
+  currentPage = page;
+  const el = document.getElementById('submissions-table');
+  const statusFilter = document.getElementById('status-filter').value;
+  let url = `/api/submissions?page=${page}&page_size=${PAGE_SIZE}`;
+  if (statusFilter) url += `&status=${statusFilter}`;
+
+  el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+
+  const res = await apiFetch(url);
+  if (!res || !res.ok) {
+    el.innerHTML = '<div class="empty-state"><p>Failed to load submissions</p></div>';
+    return;
+  }
+  const data = await res.json();
+
+  if (!data.items.length) {
+    el.innerHTML = `<div class="empty-state">
+      <h3>No submissions yet</h3>
+      <p>Go to <a href="/submit">Submit</a> to start submitting clips.</p>
+    </div>`;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead>
+      <tr><th>Campaign</th><th>Clip URL</th><th>Status</th><th>Submitted At</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      ${data.items.map(s => `
+        <tr>
+          <td style="font-size:13px;color:var(--muted);">${esc(s.whop_campaign_id)}</td>
+          <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <a href="${esc(s.clip_url)}" target="_blank" style="font-size:13px;">${esc(s.clip_url)}</a>
+          </td>
+          <td>
+            ${statusBadge(s.status)}
+            ${s.error_message ? `<div style="font-size:11px;color:var(--red);margin-top:3px;">${esc(s.error_message.slice(0,60))}</div>` : ''}
+          </td>
+          <td style="color:var(--muted);font-size:12px;">${fmtDate(s.created_at)}</td>
+          <td>
+            ${s.status === 'failed' || s.status === 'rejected'
+              ? `<button class="btn btn-secondary btn-sm" onclick="retrySubmission('${s.id}', this)">Retry</button>`
+              : '—'}
+          </td>
+        </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+
+  renderPagination(data.total, page, PAGE_SIZE);
+}
+
+async function retrySubmission(id, btn) {
+  btn.disabled = true;
+  btn.textContent = '...';
+  const res = await apiFetch(`/api/submissions/${id}/retry`, { method: 'POST' });
+  if (!res) { btn.disabled = false; btn.textContent = 'Retry'; return; }
+  const data = await res.json();
+  if (res.ok) {
+    showFlash('Retry queued: ' + (data.job_id || '').slice(0, 8), 'success');
+    loadSubmissions(currentPage);
+  } else {
+    showFlash(data.detail || 'Retry failed', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Retry';
+  }
+}
+
+function renderPagination(total, page, pageSize) {
+  const pages = Math.ceil(total / pageSize);
+  const el = document.getElementById('pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <button onclick="loadSubmissions(${page - 1})" ${page <= 1 ? 'disabled' : ''}>&larr;</button>
+    <span style="color:var(--muted);font-size:13px;">Page ${page} of ${pages} (${total} total)</span>
+    <button onclick="loadSubmissions(${page + 1})" ${page >= pages ? 'disabled' : ''}>&rarr;</button>
+  `;
+}
+
+loadSubmissions();
+</script>
+{% endblock %}

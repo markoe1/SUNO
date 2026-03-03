@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SUNO Clips{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    {% block extra_styles %}{% endblock %}
+  </style>
+</head>
+<body>
+
+{% block nav %}
+<nav class="nav">
+  <span class="nav-logo">SUNO Clips</span>
+  <ul class="nav-links">
+    <li><a href="/dashboard" {% if active_page == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+    <li><a href="/campaigns" {% if active_page == 'campaigns' %}class="active"{% endif %}>Campaigns</a></li>
+    <li><a href="/submit" {% if active_page == 'submit' %}class="active"{% endif %}>Submit</a></li>
+    <li><a href="/submissions" {% if active_page == 'submissions' %}class="active"{% endif %}>Submissions</a></li>
+    <li><a href="/jobs" {% if active_page == 'jobs' %}class="active"{% endif %}>Jobs</a></li>
+    <li><a href="/settings" {% if active_page == 'settings' %}class="active"{% endif %}>Settings</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+  </div>
+</nav>
+{% endblock %}
+
+<div id="flash-container" style="max-width:1100px;margin:16px auto 0;padding:0 24px;"></div>
+
+{% block content %}{% endblock %}
+
+<footer class="footer">
+  SUNO Clips &mdash; Automated Whop clip submission
+</footer>
+
+<script>
+// ---- Global utilities ----
+
+function getToken() {
+  return document.cookie.split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith('access_token='))
+    ?.split('=').slice(1).join('=') || '';
+}
+
+async function apiFetch(url, opts = {}) {
+  const token = getToken();
+  const headers = { 'Content-Type': 'application/json', ...opts.headers };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(url, { ...opts, headers });
+
+  if (res.status === 401) {
+    // Try refresh
+    const ref = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+    if (!ref.ok) { window.location.href = '/login'; return null; }
+    const res2 = await fetch(url, { ...opts, headers });
+    return res2;
+  }
+  return res;
+}
+
+function showFlash(msg, type = 'info') {
+  const c = document.getElementById('flash-container');
+  const el = document.createElement('div');
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+function statusBadge(s) {
+  const map = {
+    pending: 'badge-muted', running: 'badge-orange',
+    done: 'badge-green', failed: 'badge-red', cancelled: 'badge-muted',
+    submitted: 'badge-orange', confirmed: 'badge-green',
+    rejected: 'badge-red', active: 'badge-green', inactive: 'badge-muted',
+  };
+  return `<span class="badge ${map[s] || 'badge-muted'}">${s}</span>`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString();
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+</script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

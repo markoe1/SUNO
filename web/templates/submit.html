@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% set active_page = 'submit' %}
+{% block title %}Submit Clips — SUNO Clips{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Submit Clips</h1>
+    <p class="page-subtitle">Submit clip URLs to a Whop campaign</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start;">
+    <div class="card">
+      <div id="submit-alert" style="display:none;"></div>
+
+      <form id="submit-form">
+        <div class="form-group">
+          <label for="campaign-select">Campaign</label>
+          <select id="campaign-select" required>
+            <option value="">Loading campaigns...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="clip-urls">Clip URLs</label>
+          <textarea
+            id="clip-urls"
+            placeholder="https://www.tiktok.com/@user/video/123&#10;https://www.instagram.com/reel/abc&#10;https://youtu.be/xyz"
+            required
+          ></textarea>
+          <p class="form-hint">One URL per line. Duplicates are automatically skipped.</p>
+        </div>
+
+        <div class="form-group">
+          <div class="form-check">
+            <input type="checkbox" id="dry-run">
+            <label for="dry-run" style="margin-bottom:0;color:var(--white);">Dry run (test without submitting to Whop)</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submit-btn">Submit Clips</button>
+      </form>
+    </div>
+
+    <div>
+      <div class="card" id="result-card" style="display:none;">
+        <div class="card-title">Submission Result</div>
+        <div id="result-content"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tips</div>
+        <ul style="font-size:13px;color:var(--muted);list-style:none;display:flex;flex-direction:column;gap:10px;">
+          <li>Duplicate URLs are detected and skipped automatically.</li>
+          <li>Each URL creates one job. Jobs run with a delay to avoid rate limits.</li>
+          <li>Use dry run first to verify your setup.</li>
+          <li>You can pause all jobs from <a href="/settings">Settings</a>.</li>
+          <li>Check job status on the <a href="/jobs">Jobs page</a>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadCampaigns() {
+  const sel = document.getElementById('campaign-select');
+  const res = await apiFetch('/api/campaigns?active_only=true');
+  if (!res || !res.ok) {
+    sel.innerHTML = '<option value="">Failed to load campaigns</option>';
+    return;
+  }
+  const camps = await res.json();
+  if (!camps.length) {
+    sel.innerHTML = '<option value="">No campaigns found — sync first</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Select a campaign...</option>' +
+    camps.map(c => `<option value="${c.whop_campaign_id}">${esc(c.name)} — $${(c.cpm||0).toFixed(2)} CPM${c.is_free?' (Free)':''}</option>`).join('');
+
+  // Pre-select from URL param
+  const params = new URLSearchParams(window.location.search);
+  const preset = params.get('campaign');
+  if (preset) sel.value = preset;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('submit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const alert = document.getElementById('submit-alert');
+  const resultCard = document.getElementById('result-card');
+  const resultContent = document.getElementById('result-content');
+
+  alert.style.display = 'none';
+  resultCard.style.display = 'none';
+
+  const campaignId = document.getElementById('campaign-select').value;
+  const urlsRaw = document.getElementById('clip-urls').value;
+  const dryRun = document.getElementById('dry-run').checked;
+
+  if (!campaignId) {
+    alert.className = 'alert alert-error';
+    alert.textContent = 'Please select a campaign.';
+    alert.style.display = 'block';
+    return;
+  }
+
+  const clipUrls = urlsRaw.split('\n').map(u => u.trim()).filter(Boolean);
+  if (!clipUrls.length) {
+    alert.className = 'alert alert-error';
+    alert.textContent = 'Please enter at least one clip URL.';
+    alert.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting...';
+
+  try {
+    const res = await apiFetch('/api/submissions', {
+      method: 'POST',
+      body: JSON.stringify({ campaign_id: campaignId, clip_urls: clipUrls, dry_run: dryRun }),
+    });
+    if (!res) { btn.disabled = false; btn.textContent = 'Submit Clips'; return; }
+    const data = await res.json();
+
+    if (res.ok) {
+      resultCard.style.display = 'block';
+      resultContent.innerHTML = `
+        <div class="alert alert-success" style="margin-bottom:16px;">
+          ${data.enqueued} job${data.enqueued !== 1 ? 's' : ''} enqueued${dryRun ? ' (dry run)' : ''}.
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">Job IDs:</p>
+        <ul style="font-size:12px;color:var(--muted);list-style:none;max-height:200px;overflow:auto;">
+          ${data.job_ids.map(id => `<li style="margin-bottom:4px;font-family:monospace;">${id}</li>`).join('')}
+        </ul>
+        <div style="margin-top:16px;">
+          <a href="/jobs" class="btn btn-secondary btn-sm">View Jobs</a>
+        </div>
+      `;
+      document.getElementById('clip-urls').value = '';
+    } else {
+      alert.className = 'alert alert-error';
+      alert.textContent = data.detail || 'Submission failed';
+      alert.style.display = 'block';
+    }
+  } catch (err) {
+    alert.className = 'alert alert-error';
+    alert.textContent = 'Error: ' + err.message;
+    alert.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Submit Clips';
+});
+
+loadCampaigns();
+</script>
+{% endblock %}
