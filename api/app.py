@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
-from api.routes import auth, campaigns, health, jobs, settings, submissions, users
+from api.routes import auth, campaigns, debug, health, jobs, settings, submissions, users
 from services.logger import configure_logging
 
 APP_ENV = os.getenv("APP_ENV", "development")
@@ -76,6 +76,8 @@ def create_app() -> FastAPI:
     app.include_router(submissions.router)
     app.include_router(settings.router)
     app.include_router(health.router)
+    if APP_ENV != "production":
+        app.include_router(debug.router)
 
     # --- Web page routes ---
 

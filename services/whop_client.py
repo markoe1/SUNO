@@ -23,6 +23,13 @@ REQUEST_DELAY_MAX = float(os.getenv("WHOP_REQUEST_DELAY_MAX", "5"))
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 RETRY_BACKOFF_BASE = int(os.getenv("RETRY_BACKOFF_BASE", "60"))
 
+# Clipping API paths — override via env if Whop changes their internal routes.
+# These are undocumented internal endpoints discovered by inspecting browser traffic.
+# If submissions return 404, capture the real path from DevTools Network tab and set here.
+WHOP_CAMPAIGNS_PATH  = os.getenv("WHOP_CAMPAIGNS_PATH",  "/api/v5/clipping/campaigns")
+WHOP_SUBMIT_PATH     = os.getenv("WHOP_SUBMIT_PATH",     "/api/v5/clipping/campaigns/{campaign_id}/submissions")
+WHOP_CHECK_PATH      = os.getenv("WHOP_CHECK_PATH",      "/api/v5/clipping/submissions/{submission_id}")
+
 _USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -106,33 +113,49 @@ class WhopClient:
             return False
 
     def list_campaigns(self) -> list[dict]:
-        """Fetch available clipping campaigns from Whop."""
+        """Fetch available clipping campaigns from Whop.
+
+        Tries the configured WHOP_CAMPAIGNS_PATH first, then two fallback paths.
+        All paths can be overridden via env vars if Whop changes their internal routes.
+        """
+        paths_to_try = [
+            WHOP_CAMPAIGNS_PATH + "?limit=50",
+            "/clipping/campaigns",
+            "/api/v5/clipping/campaigns?limit=50",
+        ]
+        # Deduplicate while preserving order
+        seen = set()
+        unique_paths = []
+        for p in paths_to_try:
+            if p not in seen:
+                seen.add(p)
+                unique_paths.append(p)
+
         try:
-            resp = self._request_with_retry("GET", "/clipping/campaigns")
-            if resp.status_code != 200:
-                logger.error("list_campaigns: HTTP %d", resp.status_code)
-                return []
+            for path in unique_paths:
+                try:
+                    resp = self._request_with_retry("GET", path)
+                    if resp.status_code == 404:
+                        logger.warning("list_campaigns: 404 at %s — trying next path", path)
+                        continue
+                    if resp.status_code != 200:
+                        logger.error("list_campaigns: HTTP %d at %s", resp.status_code, path)
+                        continue
+                    data = resp.json()
+                    campaigns = data.get("campaigns", data.get("data", data if isinstance(data, list) else []))
+                    if isinstance(campaigns, list) and campaigns:
+                        logger.info("list_campaigns: found %d campaigns via %s", len(campaigns), path)
+                        return [self._normalize_campaign(c) for c in campaigns]
+                except WhopAuthError:
+                    raise
+                except Exception as exc:
+                    logger.warning("list_campaigns: error at %s: %s", path, exc)
+                    continue
 
-            # Try to parse JSON response (Whop API endpoint)
-            try:
-                data = resp.json()
-                campaigns = data.get("campaigns", data.get("data", []))
-                if isinstance(campaigns, list):
-                    return [self._normalize_campaign(c) for c in campaigns]
-            except Exception:
-                pass
-
-            # Fallback: try the discover/clipping page
-            resp2 = self._request_with_retry("GET", "/api/v5/clipping/campaigns?limit=50")
-            try:
-                data2 = resp2.json()
-                campaigns2 = data2.get("campaigns", data2.get("data", []))
-                if isinstance(campaigns2, list):
-                    return [self._normalize_campaign(c) for c in campaigns2]
-            except Exception:
-                pass
-
-            logger.warning("list_campaigns: could not parse response")
+            logger.warning(
+                "list_campaigns: all paths returned empty or failed. "
+                "Set WHOP_CAMPAIGNS_PATH env var to the correct internal endpoint."
+            )
             return []
         except WhopAuthError:
             raise
@@ -142,42 +165,57 @@ class WhopClient:
 
     def submit_clip(self, campaign_id: str, clip_url: str) -> dict:
         """Submit a clip URL to a Whop campaign."""
+        path = WHOP_SUBMIT_PATH.format(campaign_id=campaign_id)
         payload = {
             "campaign_id": campaign_id,
             "clip_url": clip_url,
         }
         try:
-            resp = self._request_with_retry(
-                "POST",
-                f"/api/v5/clipping/campaigns/{campaign_id}/submissions",
-                json=payload,
-            )
+            resp = self._request_with_retry("POST", path, json=payload)
+            body_text = resp.text[:1000]
             if resp.status_code in (200, 201):
-                data = resp.json()
+                try:
+                    data = resp.json()
+                except Exception:
+                    data = {}
                 return {
                     "success": True,
                     "submission_id": data.get("id") or data.get("submission_id"),
                     "error": None,
                 }
+            elif resp.status_code == 404:
+                logger.error(
+                    "submit_clip 404 — endpoint may be wrong. path=%s response=%s\n"
+                    "To fix: capture the real path from DevTools Network tab while "
+                    "submitting a clip manually on whop.com, then set WHOP_SUBMIT_PATH env var.",
+                    path,
+                    body_text,
+                )
+                return {
+                    "success": False,
+                    "submission_id": None,
+                    "error": (
+                        f"404 — endpoint not found ({path}). "
+                        "Check logs for instructions to fix WHOP_SUBMIT_PATH."
+                    ),
+                }
             else:
-                body_text = resp.text[:500]
+                logger.warning("submit_clip HTTP %d path=%s body=%s", resp.status_code, path, body_text)
                 return {
                     "success": False,
                     "submission_id": None,
                     "error": f"HTTP {resp.status_code}: {body_text}",
                 }
-        except WhopAuthError as exc:
+        except WhopAuthError:
             raise
         except Exception as exc:
             return {"success": False, "submission_id": None, "error": str(exc)}
 
     def check_submission(self, submission_id: str) -> dict:
         """Check the status of a previously submitted clip."""
+        path = WHOP_CHECK_PATH.format(submission_id=submission_id)
         try:
-            resp = self._request_with_retry(
-                "GET",
-                f"/api/v5/clipping/submissions/{submission_id}",
-            )
+            resp = self._request_with_retry("GET", path)
             if resp.status_code == 200:
                 data = resp.json()
                 return {
