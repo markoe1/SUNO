@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
-from api.routes import auth, campaigns, client_clips, clients, debug, editors, health, invoices, jobs, settings, submissions, users
+from api.routes import auth, campaigns, client_clips, clients, debug, editors, health, hooks, invoices, jobs, reports, settings, submissions, templates, users
 from services.logger import configure_logging
 
 APP_ENV = os.getenv("APP_ENV", "development")
@@ -80,6 +80,9 @@ def create_app() -> FastAPI:
     app.include_router(editors.router)
     app.include_router(client_clips.router)
     app.include_router(invoices.router)
+    app.include_router(reports.router)
+    app.include_router(templates.router)
+    app.include_router(hooks.router)
     if APP_ENV != "production":
         app.include_router(debug.router)
 
@@ -132,6 +135,18 @@ def create_app() -> FastAPI:
     @app.get("/operator/clients/{client_id}", include_in_schema=False)
     async def operator_client_detail(request: Request, client_id: str):
         return templates.TemplateResponse("client_detail.html", {"request": request, "client_id": client_id})
+
+    @app.get("/operator/hooks", include_in_schema=False)
+    async def hooks_page(request: Request):
+        return templates.TemplateResponse("hooks_library.html", {"request": request})
+
+    @app.get("/operator/reports", include_in_schema=False)
+    async def reports_page(request: Request):
+        return templates.TemplateResponse("reports.html", {"request": request})
+
+    @app.get("/editor", include_in_schema=False)
+    async def editor_portal(request: Request):
+        return templates.TemplateResponse("editor_portal.html", {"request": request})
 
     return app
 

@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% set active_page = 'hooks' %}
+
+{% block title %}Hooks Library — SUNO Clips{% endblock %}
+
+{% block extra_styles %}
+.hooks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.hook-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: border-color 0.15s; }
+.hook-card:hover { border-color: var(--green); }
+.hook-text { font-size: 15px; font-weight: 500; line-height: 1.4; margin-bottom: 12px; }
+.hook-meta { display: flex; gap: 12px; font-size: 12px; color: var(--muted); }
+.generated-hook { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.generated-hook-text { flex: 1; font-size: 14px; line-height: 1.5; }
+.ai-panel { position: sticky; top: 24px; }
+@media(max-width:900px){ .hooks-grid{grid-template-columns:1fr;} .ai-panel{position:static;} }
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1200px;margin:32px auto;padding:0 24px;">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <div>
+      <a href="/operator" style="font-size:12px;color:var(--muted);">← Operator Dashboard</a>
+      <h1 style="font-size:24px;font-weight:700;margin:8px 0 4px;">Hooks Library</h1>
+      <p style="color:var(--muted);margin:0;">AI-generated hooks + your proven templates</p>
+    </div>
+  </div>
+
+  <div class="hooks-grid">
+
+    <!-- Left: AI Generator -->
+    <div class="ai-panel">
+      <div class="card">
+        <h2 style="font-size:16px;font-weight:600;margin:0 0 20px;">Generate Hooks with AI</h2>
+        <div class="form-group">
+          <label class="form-label">Niche *</label>
+          <input class="form-input" id="gen-niche" placeholder="e.g. fitness, finance, mindset">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client (optional — uses their top clips)</label>
+          <select class="form-input" id="gen-client">
+            <option value="">— No specific client —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Context (optional)</label>
+          <textarea class="form-input" id="gen-context" rows="2" placeholder="e.g. Creator posts about losing 50lbs, speaks to working moms..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">How many hooks?</label>
+          <input class="form-input" id="gen-count" type="number" min="1" max="20" value="8">
+        </div>
+        <button class="btn btn-primary" style="width:100%;" onclick="generateHooks()" id="gen-btn">Generate Hooks</button>
+
+        <div id="generated-results" style="margin-top:20px;display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3 style="font-size:14px;font-weight:600;margin:0;" id="gen-count-label"></h3>
+            <button class="btn btn-secondary btn-sm" onclick="saveAllToLibrary()">Save All to Library</button>
+          </div>
+          <div id="hooks-output"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Saved Templates -->
+    <div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="font-size:16px;font-weight:600;margin:0;">Saved Templates</h2>
+          <button class="btn btn-secondary btn-sm" onclick="openAddModal()">+ Add Manually</button>
+        </div>
+
+        <!-- Niche filter -->
+        <div style="margin-bottom:16px;">
+          <input class="form-input" id="niche-filter" placeholder="Filter by niche..." oninput="filterTemplates()" style="width:100%;">
+        </div>
+
+        <div id="templates-list"><p style="color:var(--muted);font-size:13px;">Loading...</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add Template Modal -->
+<div id="add-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:32px;width:460px;max-width:95vw;">
+    <h2 style="font-size:18px;font-weight:600;margin:0 0 20px;">Add Hook Template</h2>
+    <form onsubmit="submitTemplate(event)">
+      <div class="form-group">
+        <label class="form-label">Hook Text *</label>
+        <textarea class="form-input" name="hook_text" rows="3" required id="modal-hook-text"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input class="form-input" name="name" placeholder="Short label for this hook" id="modal-name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Niche</label>
+        <input class="form-input" name="niche" placeholder="fitness, finance, etc." id="modal-niche">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Structure Notes</label>
+        <textarea class="form-input" name="structure_notes" rows="2" placeholder="Notes on how to use this hook..."></textarea>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allTemplates = [];
+let generatedHooks = [];
+let currentNiche = '';
+
+async function loadClients() {
+  const res = await apiFetch('/api/clients/?status=ACTIVE');
+  if (!res) return;
+  const data = await res.json();
+  const sel = document.getElementById('gen-client');
+  (data.clients || []).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadTemplates() {
+  const res = await apiFetch('/api/templates/');
+  if (!res) return;
+  allTemplates = await res.json();
+  renderTemplates(allTemplates);
+}
+
+function renderTemplates(list) {
+  const el = document.getElementById('templates-list');
+  if (!list.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No templates yet. Generate some hooks and save them!</p>';
+    return;
+  }
+  el.innerHTML = list.map(t => `
+    <div class="hook-card" style="margin-bottom:10px;">
+      <div class="hook-text">${t.hook_text}</div>
+      <div class="hook-meta">
+        ${t.niche ? `<span>${t.niche}</span>` : ''}
+        ${t.avg_views ? `<span>${t.avg_views.toLocaleString()} avg views</span>` : ''}
+        ${t.times_used ? `<span>used ${t.times_used}x</span>` : ''}
+        <button onclick="deleteTemplate('${t.id}',this)" style="margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function filterTemplates() {
+  const filter = document.getElementById('niche-filter').value.toLowerCase();
+  if (!filter) { renderTemplates(allTemplates); return; }
+  renderTemplates(allTemplates.filter(t => (t.niche||'').toLowerCase().includes(filter) || t.hook_text.toLowerCase().includes(filter)));
+}
+
+async function generateHooks() {
+  const niche = document.getElementById('gen-niche').value.trim();
+  if (!niche) { showFlash('Enter a niche first', 'warning'); return; }
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+
+  const payload = {
+    niche,
+    client_id: document.getElementById('gen-client').value || null,
+    context: document.getElementById('gen-context').value || null,
+    count: parseInt(document.getElementById('gen-count').value),
+  };
+  currentNiche = niche;
+
+  const res = await apiFetch('/api/hooks/generate', { method:'POST', body: JSON.stringify(payload) });
+  btn.disabled = false; btn.textContent = 'Generate Hooks';
+
+  if (!res || !res.ok) {
+    const err = await res?.json();
+    showFlash(err?.detail || 'Generation failed', 'error');
+    return;
+  }
+
+  const data = await res.json();
+  generatedHooks = data.hooks;
+
+  document.getElementById('gen-count-label').textContent = `${generatedHooks.length} hooks generated`;
+  document.getElementById('hooks-output').innerHTML = generatedHooks.map((h, i) => `
+    <div class="generated-hook">
+      <span class="generated-hook-text">${h}</span>
+      <button class="btn btn-secondary btn-sm" onclick="saveOneHook(${i}, this)">Save</button>
+    </div>`).join('');
+  document.getElementById('generated-results').style.display = 'block';
+}
+
+async function saveOneHook(index, btn) {
+  btn.disabled = true; btn.textContent = '...';
+  const hook = generatedHooks[index];
+  const res = await apiFetch(`/api/hooks/save-hook?hook_text=${encodeURIComponent(hook)}&niche=${encodeURIComponent(currentNiche)}`, { method:'POST' });
+  if (res && res.ok) {
+    btn.textContent = 'Saved';
+    btn.style.color = 'var(--green)';
+    loadTemplates();
+  } else {
+    btn.disabled = false; btn.textContent = 'Save';
+  }
+}
+
+async function saveAllToLibrary() {
+  if (!generatedHooks.length) return;
+  let saved = 0;
+  for (const hook of generatedHooks) {
+    const res = await apiFetch(`/api/hooks/save-hook?hook_text=${encodeURIComponent(hook)}&niche=${encodeURIComponent(currentNiche)}`, { method:'POST' });
+    if (res && res.ok) saved++;
+  }
+  showFlash(`Saved ${saved} hooks to library`, 'success');
+  loadTemplates();
+}
+
+async function deleteTemplate(id, btn) {
+  btn.disabled = true;
+  const res = await apiFetch(`/api/templates/${id}`, { method:'DELETE' });
+  if (res && res.status === 204) {
+    showFlash('Deleted', 'info');
+    loadTemplates();
+  } else {
+    btn.disabled = false;
+  }
+}
+
+function openAddModal() {
+  document.getElementById('add-modal').style.display = 'flex';
+  document.getElementById('modal-niche').value = document.getElementById('gen-niche').value;
+}
+function closeAddModal() { document.getElementById('add-modal').style.display = 'none'; }
+
+async function submitTemplate(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = {
+    name: fd.get('name') || fd.get('hook_text').substring(0,60),
+    niche: fd.get('niche') || null,
+    hook_text: fd.get('hook_text'),
+    structure_notes: fd.get('structure_notes') || null,
+  };
+  const res = await apiFetch('/api/templates/', { method:'POST', body: JSON.stringify(payload) });
+  if (res && res.ok) {
+    showFlash('Template saved', 'success');
+    closeAddModal();
+    loadTemplates();
+    e.target.reset();
+  }
+}
+
+document.getElementById('add-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeAddModal(); });
+
+loadClients();
+loadTemplates();
+</script>
+{% endblock %}

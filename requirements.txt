@@ -15,3 +15,6 @@ aiohttp>=3.9.0
 
 # Async utilities
 asyncio-throttle>=1.0.2
+
+# AI
+anthropic>=0.40.0
