@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
-from api.routes import auth, campaigns, debug, health, jobs, settings, submissions, users
+from api.routes import auth, campaigns, client_clips, clients, debug, editors, health, invoices, jobs, settings, submissions, users
 from services.logger import configure_logging
 
 APP_ENV = os.getenv("APP_ENV", "development")
@@ -76,6 +76,10 @@ def create_app() -> FastAPI:
     app.include_router(submissions.router)
     app.include_router(settings.router)
     app.include_router(health.router)
+    app.include_router(clients.router)
+    app.include_router(editors.router)
+    app.include_router(client_clips.router)
+    app.include_router(invoices.router)
     if APP_ENV != "production":
         app.include_router(debug.router)
 
@@ -116,6 +120,18 @@ def create_app() -> FastAPI:
     @app.get("/settings", include_in_schema=False)
     async def settings_page(request: Request):
         return templates.TemplateResponse("settings.html", {"request": request})
+
+    @app.get("/operator", include_in_schema=False)
+    async def operator_dashboard(request: Request):
+        return templates.TemplateResponse("operator_dashboard.html", {"request": request})
+
+    @app.get("/operator/clients", include_in_schema=False)
+    async def operator_clients(request: Request):
+        return templates.TemplateResponse("client_list.html", {"request": request})
+
+    @app.get("/operator/clients/{client_id}", include_in_schema=False)
+    async def operator_client_detail(request: Request, client_id: str):
+        return templates.TemplateResponse("client_detail.html", {"request": request, "client_id": client_id})
 
     return app
 

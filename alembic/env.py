@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from db.engine import Base
 import db.models  # noqa: F401 — ensure all models are registered
+import db.models_v2  # noqa: F401 — operator platform models
 
 config = context.config
 

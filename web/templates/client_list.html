@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% set active_page = 'operator' %}
+
+{% block title %}Clients — SUNO Clips{% endblock %}
+
+{% block extra_styles %}
+.client-table { width: 100%; border-collapse: collapse; }
+.client-table th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+.client-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.client-table tr:last-child td { border-bottom: none; }
+.client-table tr:hover td { background: rgba(255,255,255,0.02); }
+.modal-overlay { display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:32px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto; }
+.form-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1200px;margin:32px auto;padding:0 24px;">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <div>
+      <a href="/operator" style="font-size:12px;color:var(--muted);">← Operator Dashboard</a>
+      <h1 style="font-size:24px;font-weight:700;margin:8px 0 4px;">Clients</h1>
+    </div>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Client</button>
+  </div>
+
+  <!-- Filter tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;" id="filter-tabs">
+    <button class="btn btn-secondary btn-sm active-filter" data-filter="" onclick="setFilter(this,'')">All</button>
+    <button class="btn btn-secondary btn-sm" data-filter="ACTIVE" onclick="setFilter(this,'ACTIVE')">Active</button>
+    <button class="btn btn-secondary btn-sm" data-filter="LEAD" onclick="setFilter(this,'LEAD')">Leads</button>
+    <button class="btn btn-secondary btn-sm" data-filter="TRIAL" onclick="setFilter(this,'TRIAL')">Trial</button>
+    <button class="btn btn-secondary btn-sm" data-filter="PAUSED" onclick="setFilter(this,'PAUSED')">Paused</button>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table class="client-table">
+      <thead>
+        <tr>
+          <th>Name</th><th>Niche</th><th>Status</th>
+          <th>Rate/mo</th><th>Clips Target</th><th>Total Views</th><th>Revenue</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="clients-tbody">
+        <tr><td colspan="8" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Add Client Modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <h2 style="font-size:18px;font-weight:600;margin:0 0 24px;">New Client</h2>
+    <form id="client-form" onsubmit="submitClient(event)">
+      <div class="form-group">
+        <label class="form-label">Name *</label>
+        <input class="form-input" name="name" required placeholder="e.g. John Smith">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" name="email" type="email" placeholder="john@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Niche</label>
+          <input class="form-input" name="niche" placeholder="e.g. fitness, finance">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Monthly Rate ($)</label>
+          <input class="form-input" name="monthly_rate" type="number" min="0" step="50" value="1500">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Clips/Month</label>
+          <input class="form-input" name="clips_per_month" type="number" min="1" value="60">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">View Guarantee</label>
+        <input class="form-input" name="view_guarantee" type="number" min="0" value="1000000">
+      </div>
+      <div style="margin-top:8px;">
+        <p style="font-size:12px;color:var(--muted);margin:0 0 16px;">Platform accounts (optional)</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">TikTok</label>
+            <input class="form-input" name="tiktok_username" placeholder="@username">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Instagram</label>
+            <input class="form-input" name="instagram_username" placeholder="@username">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Content Notes</label>
+        <textarea class="form-input" name="content_notes" rows="3" placeholder="Key info about their content, tone, audience..."></textarea>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="submit-btn">Create Client</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const STATUS_COLORS = {
+  LEAD:'badge-muted', TRIAL:'badge-orange', ACTIVE:'badge-green', PAUSED:'badge-muted', CHURNED:'badge-red'
+};
+function badge(val) {
+  return `<span class="badge ${STATUS_COLORS[val]||'badge-muted'}">${val}</span>`;
+}
+function fmt$(n) { return '$'+Number(n).toLocaleString(); }
+function fmtViews(n) { return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':String(n); }
+
+let currentFilter = '';
+
+function setFilter(btn, filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.active-filter').forEach(b => b.classList.remove('active-filter'));
+  btn.classList.add('active-filter');
+  loadClients();
+}
+
+async function loadClients() {
+  const url = currentFilter ? `/api/clients/?status=${currentFilter}` : '/api/clients/';
+  const res = await apiFetch(url);
+  if (!res) return;
+  const data = await res.json();
+  const tbody = document.getElementById('clients-tbody');
+  if (!data.clients?.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:24px;">No clients found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.clients.map(c => `
+    <tr>
+      <td><a href="/operator/clients/${c.id}" style="color:var(--green);font-weight:500;">${c.name}</a></td>
+      <td style="color:var(--muted);">${c.niche||'—'}</td>
+      <td>${badge(c.status)}</td>
+      <td>${fmt$(c.monthly_rate)}</td>
+      <td>${c.clips_per_month}/mo</td>
+      <td>${fmtViews(c.total_views||0)}</td>
+      <td style="color:var(--green);">${fmt$(c.total_revenue||0)}</td>
+      <td><a href="/operator/clients/${c.id}" style="font-size:12px;color:var(--muted);">View →</a></td>
+    </tr>`).join('');
+}
+
+function openModal() { document.getElementById('add-modal').classList.add('open'); }
+function closeModal() { document.getElementById('add-modal').classList.remove('open'); document.getElementById('client-form').reset(); }
+
+async function submitClient(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const fd = new FormData(e.target);
+  const payload = {
+    name: fd.get('name'),
+    email: fd.get('email') || null,
+    niche: fd.get('niche') || null,
+    monthly_rate: parseFloat(fd.get('monthly_rate')),
+    clips_per_month: parseInt(fd.get('clips_per_month')),
+    view_guarantee: parseInt(fd.get('view_guarantee')),
+    tiktok_username: fd.get('tiktok_username') || null,
+    instagram_username: fd.get('instagram_username') || null,
+    content_notes: fd.get('content_notes') || null,
+  };
+  const res = await apiFetch('/api/clients/', { method:'POST', body: JSON.stringify(payload) });
+  if (res && res.ok) {
+    showFlash('Client created', 'success');
+    closeModal();
+    loadClients();
+  } else {
+    const err = res ? await res.json() : null;
+    showFlash(err?.detail || 'Failed to create client', 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Create Client';
+}
+
+// Close modal on overlay click
+document.getElementById('add-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+loadClients();
+</script>
+{% endblock %}
