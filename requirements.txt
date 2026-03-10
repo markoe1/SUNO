@@ -16,5 +16,8 @@ aiohttp>=3.9.0
 # Async utilities
 asyncio-throttle>=1.0.2
 
+# Sync Postgres driver (required by alembic migrations)
+psycopg2-binary>=2.9.9
+
 # AI
 anthropic>=0.40.0
