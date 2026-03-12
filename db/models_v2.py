@@ -14,20 +14,20 @@ import enum
 
 
 class ClientStatus(enum.Enum):
-    LEAD = "lead"
-    TRIAL = "trial"
-    ACTIVE = "active"
-    PAUSED = "paused"
-    CHURNED = "churned"
+    LEAD = "LEAD"
+    TRIAL = "TRIAL"
+    ACTIVE = "ACTIVE"
+    PAUSED = "PAUSED"
+    CHURNED = "CHURNED"
 
 
 class ClipStatus(enum.Enum):
-    RAW = "raw"
-    EDITING = "editing"
-    REVIEW = "review"
-    APPROVED = "approved"
-    POSTED = "posted"
-    REJECTED = "rejected"
+    RAW = "RAW"
+    EDITING = "EDITING"
+    REVIEW = "REVIEW"
+    APPROVED = "APPROVED"
+    POSTED = "POSTED"
+    REJECTED = "REJECTED"
 
 
 class Client(Base):

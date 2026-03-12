@@ -5,7 +5,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -51,6 +51,11 @@ class ClipResponse(BaseModel):
     raw_file_path: Optional[str]
     edited_file_path: Optional[str]
     status: str
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def coerce_status(cls, v):
+        return v.value if hasattr(v, "value") else str(v)
     tiktok_url: Optional[str]
     instagram_url: Optional[str]
     youtube_url: Optional[str]
