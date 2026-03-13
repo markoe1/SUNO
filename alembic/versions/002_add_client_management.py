@@ -96,7 +96,7 @@ def upgrade():
         sa.Column('clips_delivered', sa.Integer(), nullable=False),
         sa.Column('total_views', sa.Integer(), nullable=False),
         sa.Column('view_guarantee_met', sa.Boolean(), nullable=False),
-        sa.Column('stripe_invoice_id', sa.String(255), nullable=True),
+        sa.Column('paddle_transaction_id', sa.String(255), nullable=True),
         sa.Column('paid_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.ForeignKeyConstraint(['client_id'], ['clients.id'], ),

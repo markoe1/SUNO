@@ -159,7 +159,7 @@ class Invoice(Base):
     view_guarantee_met: Mapped[bool] = mapped_column(Boolean, default=False)
     
     # Payment
-    stripe_invoice_id: Mapped[str] = mapped_column(String(255), nullable=True)
+    paddle_transaction_id: Mapped[str] = mapped_column(String(255), nullable=True)
     paid_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))

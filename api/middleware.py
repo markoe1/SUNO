@@ -21,7 +21,11 @@ _PROTECTED_WEB_ROUTES = {
     "/submissions",
     "/jobs",
     "/settings",
+    "/editor",
 }
+
+# Route prefixes that are fully protected (all sub-paths require auth)
+_PROTECTED_WEB_PREFIXES = ("/operator",)
 
 # Routes that are public
 _PUBLIC_ROUTES = {"/login", "/register", "/health", "/ready"}
@@ -46,7 +50,10 @@ class AuthWallMiddleware(BaseHTTPMiddleware):
         path = request.url.path
 
         # Only apply to protected web routes (not /api/*)
-        if path in _PROTECTED_WEB_ROUTES:
+        protected = path in _PROTECTED_WEB_ROUTES or any(
+            path.startswith(prefix) for prefix in _PROTECTED_WEB_PREFIXES
+        )
+        if protected:
             token = request.cookies.get("access_token")
             if not token or decode_access_token(token) is None:
                 return RedirectResponse(url="/login", status_code=302)
