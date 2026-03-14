@@ -25,7 +25,7 @@ class InvoiceCreate(BaseModel):
 
 
 class InvoiceMarkPaid(BaseModel):
-    paddle_transaction_id: Optional[str] = None
+    whop_transaction_id: Optional[str] = None
 
 
 class InvoiceResponse(BaseModel):
@@ -38,7 +38,7 @@ class InvoiceResponse(BaseModel):
     clips_delivered: int
     total_views: int
     view_guarantee_met: bool
-    paddle_transaction_id: Optional[str]
+    whop_transaction_id: Optional[str]
     paid_at: Optional[datetime]
     created_at: datetime
     # computed
@@ -171,8 +171,8 @@ async def mark_invoice_paid(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invoice already marked as paid")
 
     invoice.paid_at = datetime.now(timezone.utc)
-    if data.paddle_transaction_id:
-        invoice.paddle_transaction_id = data.paddle_transaction_id
+    if data.whop_transaction_id:
+        invoice.whop_transaction_id = data.whop_transaction_id
 
     await db.commit()
     await db.refresh(invoice)

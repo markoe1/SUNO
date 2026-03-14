@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SUNO Clips — Run your clip agency like a business</title>
     <meta name="description" content="SUNO Clips is the operating system for clip agencies. Manage clients, track editors, generate invoices, and scale to $10K/mo+.">
-    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -492,34 +492,23 @@
 </footer>
 
 <script>
-    // Initialize Paddle — replace with your actual vendor/client token
-    const PADDLE_ENV = 'sandbox'; // change to 'production' for live
-    const PADDLE_CLIENT_TOKEN = 'test_YOUR_CLIENT_TOKEN_HERE'; // from Paddle dashboard
-
-    Paddle.Environment.set(PADDLE_ENV);
-    Paddle.Initialize({ token: PADDLE_CLIENT_TOKEN });
-
-    const PRICE_IDS = {
-        solo: 'pri_YOUR_SOLO_PRICE_ID',
-        agency: 'pri_YOUR_AGENCY_PRICE_ID',
-        scale: null, // contact sales — no self-serve
-    };
+    // Whop checkout — redirects to Whop marketplace for subscription
+    // Set WHOP_PRODUCT_ID in billing_server.py env when ready to activate
+    const WHOP_PRODUCT_ID = '';  // prod_xxx from dashboard.whop.com
 
     function subscribe(plan) {
         if (plan === 'scale') {
             window.location.href = 'mailto:hello@sunoclips.com?subject=Scale Plan Inquiry';
             return;
         }
-        const priceId = PRICE_IDS[plan];
-        if (!priceId || priceId.includes('YOUR_')) {
+        if (!WHOP_PRODUCT_ID) {
             alert('Checkout not configured yet. Log in to get started.');
             window.location.href = '/register';
             return;
         }
-        Paddle.Checkout.open({
-            items: [{ priceId, quantity: 1 }],
-            successUrl: window.location.origin + '/dashboard',
-        });
+        window.location.href = `/billing/checkout?email=` + encodeURIComponent(
+            document.querySelector('input[name=email]')?.value || ''
+        );
     }
 </script>
 
