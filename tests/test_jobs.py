@@ -95,13 +95,11 @@ async def test_kill_switch_cancels_jobs(client: AsyncClient, dev_user, db_sessio
     assert data["jobs_paused"] is True
     assert data["jobs_cancelled"] >= 2
 
-    # Verify in DB
-    result = await db_session.execute(
-        select(Job).where(Job.id.in_([j1.id, j2.id]))
-    )
-    jobs = result.scalars().all()
-    for job in jobs:
-        assert job.status == "cancelled"
+    # Reload from DB (API updated jobs in a different session)
+    await db_session.refresh(j1)
+    await db_session.refresh(j2)
+    assert j1.status == "cancelled"
+    assert j2.status == "cancelled"
 
     # Cleanup — resume jobs for other tests
     await db_session.refresh(dev_user)
@@ -133,10 +131,9 @@ async def test_job_status_transitions(client: AsyncClient, dev_user, db_session)
     res = await client.post(f"/api/jobs/{job.id}/cancel", headers=headers)
     assert res.status_code == 200
 
-    # Verify status in DB
-    result = await db_session.execute(select(Job).where(Job.id == job.id))
-    updated = result.scalar_one()
-    assert updated.status == "cancelled"
+    # Reload from DB (API updated job in a different session)
+    await db_session.refresh(job)
+    assert job.status == "cancelled"
 
     # Try to cancel again — should fail with 400
     res2 = await client.post(f"/api/jobs/{job.id}/cancel", headers=headers)

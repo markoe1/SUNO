@@ -1,5 +1,6 @@
 """FastAPI dependency injection: database session, current user."""
 
+import uuid
 from typing import AsyncGenerator, Optional
 
 from fastapi import Cookie, Depends, HTTPException, Request, status
@@ -49,8 +50,13 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_id: Optional[str] = payload.get("sub")
-    if user_id is None:
+    user_id_str: Optional[str] = payload.get("sub")
+    if user_id_str is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+
+    try:
+        user_id = uuid.UUID(user_id_str)
+    except (ValueError, AttributeError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
 
     result = await db.execute(select(User).where(User.id == user_id))

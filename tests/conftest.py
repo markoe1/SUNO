@@ -23,11 +23,14 @@ from cryptography.fernet import Fernet
 _TEST_KEY = Fernet.generate_key().decode()
 os.environ["ENCRYPTION_KEY"] = _TEST_KEY
 
+from sqlalchemy import event, delete as sql_delete
 from db.engine import Base
-from db.models import User, UserSecret, Campaign, Job, Submission
+from db.models import User, UserSecret, Campaign, Job, Submission  # noqa: F401
+import db.models_v2  # noqa: F401 — register operator tables in Base.metadata
 from services.auth import hash_password
 
-TEST_DB_URL = "sqlite+aiosqlite:///./test_suno_clips.db"
+TEST_DB_PATH = "./test_suno_clips.db"
+TEST_DB_URL = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -38,13 +41,26 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def db_engine():
+    # Always start with a clean DB to avoid stale-data failures
+    if os.path.exists(TEST_DB_PATH):
+        os.remove(TEST_DB_PATH)
     engine = create_async_engine(TEST_DB_URL, echo=False)
+
+    # Enable FK constraints in SQLite so ondelete="CASCADE" works in teardown
+    @event.listens_for(engine.sync_engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
+    if os.path.exists(TEST_DB_PATH):
+        os.remove(TEST_DB_PATH)
 
 
 @pytest_asyncio.fixture
@@ -94,8 +110,11 @@ async def dev_user(db_session):
     await db_session.commit()
     await db_session.refresh(user)
     yield user
-    # Cleanup
-    await db_session.delete(user)
+    # Cleanup — use raw DELETE to avoid ORM cascade issues (SQLite FK may be off)
+    await db_session.execute(sql_delete(Job).where(Job.user_id == user.id))
+    await db_session.execute(sql_delete(Submission).where(Submission.user_id == user.id))
+    await db_session.execute(sql_delete(UserSecret).where(UserSecret.user_id == user.id))
+    await db_session.execute(sql_delete(User).where(User.id == user.id))
     await db_session.commit()
 
 
