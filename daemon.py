@@ -33,8 +33,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class VyroDaemon:
-    """24/7 Vyro clipping daemon."""
+class WhopDaemon:
+    """24/7 Whop clipping daemon."""
     
     def __init__(self):
         self.queue = QueueManager()
@@ -265,7 +265,7 @@ class DaemonRunner:
     @staticmethod
     async def run_continuous():
         """Run daemon continuously."""
-        daemon = VyroDaemon()
+        daemon = WhopDaemon()
         await daemon.start()
 
     @staticmethod

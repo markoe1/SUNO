@@ -28,7 +28,7 @@ from queue_manager import QueueManager, AccountState
 from whop_scraper import WhopScraper
 from platform_poster import PlatformPoster
 from earnings_tracker import EarningsTracker
-from daemon import VyroDaemon
+from daemon import WhopDaemon
 
 logging.basicConfig(
     level=logging.INFO,
@@ -122,7 +122,7 @@ async def cmd_run(args):
 async def cmd_daemon(args):
     """Run 24/7 daemon."""
     print("\nStarting 24/7 daemon...\n")
-    daemon = VyroDaemon()
+    daemon = WhopDaemon()
     await daemon.start()
 
 

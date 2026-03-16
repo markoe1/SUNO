@@ -66,7 +66,7 @@ class EarningsTracker:
         
         # Clear screen and display
         print("\n" + "="*60)
-        print("💰 VYRO EARNINGS DASHBOARD")
+        print("💰 SUNO EARNINGS DASHBOARD")
         print("="*60)
         
         # Today's Stats
