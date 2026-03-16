@@ -34,6 +34,7 @@ class User(Base):
     tier: Mapped[str] = mapped_column(String(50), nullable=False, default="free")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     jobs_paused: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    whop_membership_id: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
