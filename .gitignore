@@ -9,9 +9,13 @@ clips/posted/*
 clips/failed/*
 !clips/*/.gitkeep
 
-# Database
+# Database & session data (may contain real credentials)
 data/*.db
 data/*.db-journal
+data/whop_session.json
+data/*.json
+data/*.png
+data/*.jpg
 
 # Logs
 logs/*.log
@@ -39,3 +43,4 @@ playwright_state/
 # OS
 .DS_Store
 Thumbs.db
+.env.local

@@ -36,7 +36,7 @@ class Client(Base):
     
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )  # The operator managing this client
     
     # Client info
@@ -76,7 +76,7 @@ class Editor(Base):
     
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )  # The operator who manages this editor
     
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -102,12 +102,12 @@ class ClientClip(Base):
     
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     client_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False, index=True
     )
     editor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("editors.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("editors.id"), nullable=True, index=True
     )
-    
+
     # Content
     title: Mapped[str] = mapped_column(String(500), nullable=True)
     raw_file_path: Mapped[str] = mapped_column(Text, nullable=True)
@@ -144,9 +144,9 @@ class Invoice(Base):
     
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     client_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False, index=True
     )
-    
+
     month: Mapped[str] = mapped_column(String(7), nullable=False)  # "2024-03"
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     

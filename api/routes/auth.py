@@ -76,7 +76,7 @@ async def register(
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=os.getenv("APP_ENV") == "production",
         max_age=15 * 60,
         path="/",
     )
