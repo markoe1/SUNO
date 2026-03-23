@@ -1,5 +1,6 @@
 """Authentication routes: register, login, refresh, logout."""
 
+import os
 import uuid
 from typing import Optional
 
@@ -66,7 +67,7 @@ async def register(
         value=refresh_token,
         httponly=True,
         samesite="lax",
-        secure=False,  # set True in prod
+        secure=os.getenv("APP_ENV") == "production",
         max_age=7 * 24 * 3600,
         path="/api/auth",
     )
@@ -112,7 +113,7 @@ async def login(
         value=refresh_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=os.getenv("APP_ENV") == "production",
         max_age=7 * 24 * 3600,
         path="/api/auth",
     )
@@ -121,7 +122,7 @@ async def login(
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=os.getenv("APP_ENV") == "production",
         max_age=15 * 60,
         path="/",
     )
@@ -162,7 +163,7 @@ async def refresh(
         value=new_refresh_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=os.getenv("APP_ENV") == "production",
         max_age=7 * 24 * 3600,
         path="/api/auth",
     )
@@ -171,7 +172,7 @@ async def refresh(
         value=new_access_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=os.getenv("APP_ENV") == "production",
         max_age=15 * 60,
         path="/",
     )
