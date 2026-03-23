@@ -14,7 +14,7 @@ seed:
 	python db/seed.py
 
 test:
-	pytest tests/ -v
+	pytest tests/ -v --asyncio-mode=auto
 
 docker-up:
 	docker-compose up --build

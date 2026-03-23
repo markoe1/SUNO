@@ -204,20 +204,42 @@ class PerformanceReport(Base):
 class ClipTemplate(Base):
     """Reusable templates and hooks that work"""
     __tablename__ = "clip_templates"
-    
+
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
-    
+
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     niche: Mapped[str] = mapped_column(String(100), nullable=True)
-    
+
     hook_text: Mapped[str] = mapped_column(Text, nullable=False)
     structure_notes: Mapped[str] = mapped_column(Text, nullable=True)
-    
+
     # Performance
     times_used: Mapped[int] = mapped_column(Integer, default=0)
     avg_views: Mapped[int] = mapped_column(Integer, default=0)
-    
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))
+
+
+class ClientPortalToken(Base):
+    """Magic-link tokens for client portal access.
+
+    Operator generates a token → sends portal invite link to client.
+    Client clicks the link → gets a client_access_token JWT cookie.
+    Tokens expire after 7 days; each access generates a fresh JWT.
+    """
+    __tablename__ = "client_portal_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    client_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id", ondelete="CASCADE"), nullable=False
+    )
+    # SHA-256 hash of the random URL-safe token (never store plaintext)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))
+
+    client: Mapped["Client"] = relationship()

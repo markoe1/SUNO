@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Dashboard — SUNO Clips</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .portal-nav { background:#111115;border-bottom:1px solid #1e1e24;padding:0 24px;display:flex;align-items:center;gap:24px;height:56px; }
+    .portal-nav .logo { color:#00ff87;font-weight:700;font-size:16px;text-decoration:none; }
+    .portal-nav a.tab { color:#888;text-decoration:none;font-size:14px;padding:4px 0;border-bottom:2px solid transparent;cursor:pointer; }
+    .portal-nav a.tab:hover { color:#e8e8e8; }
+    .portal-nav a.tab.active { color:#e8e8e8;border-bottom-color:#00ff87; }
+    .portal-nav .spacer { flex:1; }
+    .stat-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:24px 0; }
+    .stat-box { background:#16161a;border:1px solid #1e1e24;border-radius:10px;padding:20px; }
+    .stat-val { font-size:32px;font-weight:700;color:#00ff87; }
+    .stat-label { color:#555;font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.05em; }
+    .pipeline-row { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px; }
+    .pipeline-step { flex:1;min-width:100px;background:#16161a;border:1px solid #1e1e24;border-radius:8px;padding:16px;text-align:center; }
+    .pipeline-count { font-size:24px;font-weight:700;color:#00ff87; }
+    .pipeline-name { color:#555;font-size:11px;margin-top:4px;text-transform:uppercase; }
+    .section { display:none; }
+    .section.visible { display:block; }
+    .guarantee-bar-wrap { background:#1e1e24;border-radius:8px;height:8px;margin:8px 0 4px; }
+    .guarantee-bar { background:#00ff87;border-radius:8px;height:8px;transition:width .5s; }
+    .invoice-row td { vertical-align:middle; }
+  </style>
+</head>
+<body>
+
+<nav class="portal-nav">
+  <a href="/portal/dashboard" class="logo">SUNO Clips</a>
+  <a class="tab" data-section="overview" href="/portal/dashboard">Overview</a>
+  <a class="tab" data-section="clips" href="/portal/clips">Clips</a>
+  <a class="tab" data-section="invoices" href="/portal/invoices">Invoices</a>
+  <a class="tab" data-section="reports" href="/portal/reports">Reports</a>
+  <div class="spacer"></div>
+  <span id="client-name" style="color:#555;font-size:13px;"></span>
+  <button class="btn btn-secondary btn-sm" onclick="portalLogout()" style="margin-left:16px;">Logout</button>
+</nav>
+
+<div style="max-width:1100px;margin:0 auto;padding:24px;">
+
+  <div id="flash-container"></div>
+
+  <!-- =================== OVERVIEW =================== -->
+  <div id="section-overview" class="section">
+    <div style="margin-bottom:24px;">
+      <h1 style="margin:0;font-size:22px;" id="welcome-heading">Your Dashboard</h1>
+      <p style="color:#555;margin:4px 0 0;font-size:14px;" id="client-status"></p>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-val" id="stat-clips">—</div><div class="stat-label">Total clips</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-views">—</div><div class="stat-label">Total views</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-invoices">—</div><div class="stat-label">Invoices</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-rate">—</div><div class="stat-label">Monthly rate</div></div>
+    </div>
+
+    <div style="background:#16161a;border:1px solid #1e1e24;border-radius:10px;padding:20px;margin-bottom:24px;" id="guarantee-card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <span style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.05em;">View Guarantee Progress</span>
+        <span style="font-size:13px;color:#555;" id="guarantee-label">— / —</span>
+      </div>
+      <div class="guarantee-bar-wrap"><div class="guarantee-bar" id="guarantee-bar" style="width:0%"></div></div>
+      <p id="guarantee-msg" style="margin:4px 0 0;font-size:12px;color:#555;"></p>
+    </div>
+
+    <h2 style="font-size:14px;color:#555;text-transform:uppercase;letter-spacing:.05em;margin:24px 0 12px;">Clip Pipeline</h2>
+    <div class="pipeline-row">
+      <div class="pipeline-step"><div class="pipeline-count" id="p-raw">—</div><div class="pipeline-name">Incoming</div></div>
+      <div class="pipeline-step"><div class="pipeline-count" id="p-editing">—</div><div class="pipeline-name">Editing</div></div>
+      <div class="pipeline-step"><div class="pipeline-count" id="p-review">—</div><div class="pipeline-name">Review</div></div>
+      <div class="pipeline-step"><div class="pipeline-count" id="p-approved">—</div><div class="pipeline-name">Approved</div></div>
+      <div class="pipeline-step"><div class="pipeline-count" id="p-posted">—</div><div class="pipeline-name">Live</div></div>
+    </div>
+  </div>
+
+  <!-- =================== CLIPS =================== -->
+  <div id="section-clips" class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h1 style="margin:0;font-size:22px;">Your Clips</h1>
+      <select id="clips-filter" onchange="filterClips()" style="background:#16161a;border:1px solid #1e1e24;color:#e8e8e8;padding:6px 12px;border-radius:6px;font-size:13px;">
+        <option value="">All statuses</option>
+        <option value="POSTED">Live</option>
+        <option value="APPROVED">Approved</option>
+        <option value="REVIEW">In Review</option>
+        <option value="EDITING">Editing</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table class="table" id="clips-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Views</th>
+            <th>Likes</th>
+            <th>Link</th>
+            <th>Posted</th>
+          </tr>
+        </thead>
+        <tbody id="clips-body">
+          <tr><td colspan="6" style="color:#555;text-align:center;padding:32px;">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- =================== INVOICES =================== -->
+  <div id="section-invoices" class="section">
+    <h1 style="margin:0 0 20px;font-size:22px;">Invoices</h1>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Amount</th>
+            <th>Clips Delivered</th>
+            <th>Views</th>
+            <th>View Guarantee</th>
+            <th>Status</th>
+            <th>Paid On</th>
+          </tr>
+        </thead>
+        <tbody id="invoices-body">
+          <tr><td colspan="7" style="color:#555;text-align:center;padding:32px;">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- =================== REPORTS =================== -->
+  <div id="section-reports" class="section">
+    <h1 style="margin:0 0 20px;font-size:22px;">Performance Reports</h1>
+    <div id="reports-list">
+      <p style="color:#555;text-align:center;padding:32px;">Loading…</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STATUS_LABELS = { RAW:'Incoming', EDITING:'Editing', REVIEW:'In Review', APPROVED:'Approved', POSTED:'Live', REJECTED:'Rejected' };
+const STATUS_BADGES = { RAW:'badge-muted', EDITING:'badge-orange', REVIEW:'badge-orange', APPROVED:'badge-green', POSTED:'badge-green', REJECTED:'badge-red' };
+
+let _clips = [];
+let _invoices = [];
+let _reports = [];
+
+// ---- Tab routing ----
+const SECTIONS = { '/portal/dashboard':'overview', '/portal/clips':'clips', '/portal/invoices':'invoices', '/portal/reports':'reports' };
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const sec = document.getElementById('section-' + name);
+  if (sec) sec.classList.add('visible');
+  const tab = document.querySelector(`.tab[data-section="${name}"]`);
+  if (tab) tab.classList.add('active');
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', e => {
+    e.preventDefault();
+    const section = tab.dataset.section;
+    window.history.pushState({}, '', tab.href);
+    showSection(section);
+  });
+});
+
+window.addEventListener('popstate', () => {
+  const section = SECTIONS[window.location.pathname] || 'overview';
+  showSection(section);
+});
+
+// ---- Fetch helpers ----
+async function portalFetch(url) {
+  const res = await fetch(url, { credentials: 'include' });
+  if (res.status === 401) { window.location.href = '/portal/login'; return null; }
+  return res.ok ? res.json() : null;
+}
+
+async function portalLogout() {
+  await fetch('/api/portal/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/portal/login';
+}
+
+// ---- Renderers ----
+function renderClips(clips) {
+  if (!clips || !clips.length) {
+    document.getElementById('clips-body').innerHTML =
+      '<tr><td colspan="6" style="color:#555;text-align:center;padding:32px;">No clips yet</td></tr>';
+    return;
+  }
+  document.getElementById('clips-body').innerHTML = clips.map(c => `
+    <tr>
+      <td>${c.title || '<em style="color:#555">Untitled</em>'}</td>
+      <td><span class="badge ${STATUS_BADGES[c.status] || 'badge-muted'}">${STATUS_LABELS[c.status] || c.status}</span></td>
+      <td>${c.total_views.toLocaleString()}</td>
+      <td>${c.total_likes.toLocaleString()}</td>
+      <td>${c.tiktok_url
+        ? `<a href="${c.tiktok_url}" target="_blank" rel="noopener" style="color:#00ff87;">↗ View</a>`
+        : '<span style="color:#333">—</span>'}</td>
+      <td style="color:#555">${c.posted_at ? new Date(c.posted_at).toLocaleDateString() : '—'}</td>
+    </tr>`).join('');
+}
+
+function filterClips() {
+  const filter = document.getElementById('clips-filter').value;
+  renderClips(filter ? _clips.filter(c => c.status === filter) : _clips);
+}
+
+function renderInvoices(invoices) {
+  if (!invoices || !invoices.length) {
+    document.getElementById('invoices-body').innerHTML =
+      '<tr><td colspan="7" style="color:#555;text-align:center;padding:32px;">No invoices yet</td></tr>';
+    return;
+  }
+  document.getElementById('invoices-body').innerHTML = invoices.map(inv => `
+    <tr class="invoice-row">
+      <td style="font-weight:600;">${inv.month}</td>
+      <td style="color:#00ff87;">$${inv.amount.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+      <td>${inv.clips_delivered}</td>
+      <td>${inv.total_views.toLocaleString()}</td>
+      <td>${inv.view_guarantee_met
+        ? '<span class="badge badge-green">Met ✓</span>'
+        : '<span class="badge badge-muted">Not yet</span>'}</td>
+      <td>${inv.is_paid
+        ? '<span class="badge badge-green">Paid</span>'
+        : '<span class="badge badge-orange">Unpaid</span>'}</td>
+      <td style="color:#555">${inv.paid_at ? new Date(inv.paid_at).toLocaleDateString() : '—'}</td>
+    </tr>`).join('');
+}
+
+function renderReports(reports) {
+  const el = document.getElementById('reports-list');
+  if (!reports || !reports.length) {
+    el.innerHTML = '<p style="color:#555;text-align:center;padding:32px;">No performance reports yet</p>';
+    return;
+  }
+  el.innerHTML = reports.map(r => `
+    <div style="background:#16161a;border:1px solid #1e1e24;border-radius:10px;padding:20px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+        <strong style="font-size:15px;">${r.period_label || r.period_start?.slice(0,10) + ' → ' + r.period_end?.slice(0,10)}</strong>
+        <span style="font-size:12px;color:#555;">${new Date(r.created_at).toLocaleDateString()}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+        <div><div style="font-size:24px;font-weight:700;color:#00ff87;">${(r.total_views||0).toLocaleString()}</div><div style="font-size:11px;color:#555;text-transform:uppercase;">Views</div></div>
+        <div><div style="font-size:24px;font-weight:700;color:#00ff87;">${(r.total_likes||0).toLocaleString()}</div><div style="font-size:11px;color:#555;text-transform:uppercase;">Likes</div></div>
+        <div><div style="font-size:24px;font-weight:700;color:#00ff87;">${(r.total_clips||0)}</div><div style="font-size:11px;color:#555;text-transform:uppercase;">Clips</div></div>
+        <div><div style="font-size:24px;font-weight:700;color:#00ff87;">${(r.avg_views_per_clip||0).toLocaleString()}</div><div style="font-size:11px;color:#555;text-transform:uppercase;">Avg views/clip</div></div>
+      </div>
+      ${r.notes ? `<p style="margin:12px 0 0;font-size:13px;color:#888;">${r.notes}</p>` : ''}
+    </div>`).join('');
+}
+
+// ---- Main load ----
+async function load() {
+  const [me, clips, invoices, reports] = await Promise.all([
+    portalFetch('/api/portal/me'),
+    portalFetch('/api/portal/clips'),
+    portalFetch('/api/portal/invoices'),
+    portalFetch('/api/portal/reports'),
+  ]);
+
+  if (!me) return;
+
+  _clips = clips || [];
+  _invoices = invoices || [];
+  _reports = reports || [];
+
+  // Nav name
+  document.getElementById('client-name').textContent = me.name;
+
+  // Overview
+  document.getElementById('welcome-heading').textContent = `Welcome, ${me.name}`;
+  document.getElementById('client-status').textContent =
+    `${me.niche || 'Clip client'} · ${me.clips_per_month} clips/month · ${(me.view_guarantee||0).toLocaleString()} view guarantee`;
+
+  const totalViews = _clips.reduce((s, c) => s + (c.total_views || 0), 0);
+  document.getElementById('stat-clips').textContent = _clips.length;
+  document.getElementById('stat-views').textContent = totalViews.toLocaleString();
+  document.getElementById('stat-invoices').textContent = _invoices.length;
+  document.getElementById('stat-rate').textContent = me.monthly_rate ? `$${me.monthly_rate.toLocaleString()}` : '—';
+
+  // View guarantee progress bar
+  if (me.view_guarantee) {
+    const pct = Math.min(100, Math.round(totalViews / me.view_guarantee * 100));
+    document.getElementById('guarantee-bar').style.width = pct + '%';
+    document.getElementById('guarantee-label').textContent =
+      `${totalViews.toLocaleString()} / ${me.view_guarantee.toLocaleString()} views`;
+    document.getElementById('guarantee-msg').textContent =
+      pct >= 100 ? '✓ View guarantee met!' : `${pct}% toward your ${me.view_guarantee.toLocaleString()} view guarantee`;
+  }
+
+  // Pipeline counts
+  const counts = {};
+  _clips.forEach(c => counts[c.status] = (counts[c.status] || 0) + 1);
+  ['RAW','EDITING','REVIEW','APPROVED','POSTED'].forEach(s => {
+    const el = document.getElementById('p-' + s.toLowerCase());
+    if (el) el.textContent = counts[s] || 0;
+  });
+
+  // Clips section
+  renderClips(_clips);
+
+  // Invoices section
+  renderInvoices(_invoices);
+
+  // Reports section
+  renderReports(_reports);
+}
+
+// ---- Init ----
+const currentSection = SECTIONS[window.location.pathname] || 'overview';
+showSection(currentSection);
+load();
+</script>
+
+</body>
+</html>

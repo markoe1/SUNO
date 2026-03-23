@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
-from api.routes import auth, campaigns, client_clips, clients, debug, editors, health, hooks, invoices, jobs, reports, settings, submissions, templates as clip_templates, users
+from api.routes import auth, campaigns, client_clips, client_portal, clients, debug, editors, health, hooks, invoices, jobs, reports, settings, submissions, templates as clip_templates, users
 from services.logger import configure_logging
 
 APP_ENV = os.getenv("APP_ENV", "development")
@@ -83,6 +83,7 @@ def create_app() -> FastAPI:
     app.include_router(reports.router)
     app.include_router(clip_templates.router)
     app.include_router(hooks.router)
+    app.include_router(client_portal.router)
     if APP_ENV != "production":
         app.include_router(debug.router)
 
@@ -147,6 +148,35 @@ def create_app() -> FastAPI:
     @app.get("/editor", include_in_schema=False)
     async def editor_portal(request: Request):
         return templates.TemplateResponse("editor_portal.html", {"request": request})
+
+    # --- Client portal web pages (separate auth: client_access_token cookie) ---
+
+    @app.get("/portal/login", include_in_schema=False)
+    async def portal_login_page(request: Request):
+        base_url = os.getenv("BASE_URL", "http://localhost:8000")
+        return templates.TemplateResponse("portal_login.html", {"request": request, "base_url": base_url})
+
+    @app.get("/portal/dashboard", include_in_schema=False)
+    async def portal_dashboard_page(request: Request):
+        return templates.TemplateResponse("portal_dashboard.html", {"request": request})
+
+    @app.get("/portal/clips", include_in_schema=False)
+    async def portal_clips_page(request: Request):
+        return templates.TemplateResponse("portal_dashboard.html", {"request": request})
+
+    @app.get("/portal/invoices", include_in_schema=False)
+    async def portal_invoices_page(request: Request):
+        return templates.TemplateResponse("portal_dashboard.html", {"request": request})
+
+    @app.get("/portal/reports", include_in_schema=False)
+    async def portal_reports_page(request: Request):
+        return templates.TemplateResponse("portal_dashboard.html", {"request": request})
+
+    @app.get("/portal/access", include_in_schema=False)
+    async def portal_access_page(request: Request, token: str = ""):
+        """Token exchange is handled by the API route; this is the fallback if JS is disabled."""
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"/api/portal/access?token={token}", status_code=302)
 
     return app
 

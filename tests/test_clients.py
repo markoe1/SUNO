@@ -50,7 +50,10 @@ async def test_list_clients_empty(client: AsyncClient, dev_user):
     res = await client.get("/api/clients", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     data = res.json()
-    assert isinstance(data, list)
+    # Route returns ClientListResponse dict with a "clients" list
+    assert isinstance(data, dict)
+    assert "clients" in data
+    assert isinstance(data["clients"], list)
 
 
 @pytest.mark.asyncio
@@ -130,9 +133,10 @@ async def test_delete_client(client: AsyncClient, dev_user):
     )
     assert delete_res.status_code == 204
 
-    # Should 404 now
+    # Soft-delete: client is CHURNED, still retrievable
     get_res = await client.get(f"/api/clients/{client_id}", headers={"Authorization": f"Bearer {token}"})
-    assert get_res.status_code == 404
+    assert get_res.status_code == 200
+    assert get_res.json()["status"] == "CHURNED"
 
 
 @pytest.mark.asyncio

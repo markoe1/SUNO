@@ -1,4 +1,4 @@
-"""FastAPI dependency injection: database session, current user."""
+"""FastAPI dependency injection: database session, current user, current client."""
 
 import uuid
 from typing import AsyncGenerator, Optional
@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.engine import AsyncSessionLocal
 from db.models import User
-from services.auth import decode_access_token
+from services.auth import decode_access_token, decode_client_access_token
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -76,3 +76,44 @@ async def get_current_user_optional(
         return await get_current_user(request=request, credentials=credentials, db=db)
     except HTTPException:
         return None
+
+
+async def get_current_client(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Validate the client_access_token cookie and return the Client object.
+
+    Used by client portal routes — completely separate from operator auth.
+    """
+    from db.models_v2 import Client
+
+    token = request.cookies.get("client_access_token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Client portal token required",
+        )
+
+    payload = decode_client_access_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired portal token",
+        )
+
+    client_id_str: Optional[str] = payload.get("sub")
+    if not client_id_str:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    try:
+        client_id = uuid.UUID(client_id_str)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client = result.scalar_one_or_none()
+    if client is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Client not found")
+
+    return client

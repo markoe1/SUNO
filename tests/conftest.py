@@ -27,7 +27,7 @@ from sqlalchemy import event, delete as sql_delete, select
 from db.engine import Base
 from db.models import User, UserSecret, Campaign, Job, Submission  # noqa: F401
 import db.models_v2  # noqa: F401 — register operator tables in Base.metadata
-from db.models_v2 import Client, Editor, ClientClip, Invoice, PerformanceReport, ClipTemplate
+from db.models_v2 import Client, Editor, ClientClip, Invoice, PerformanceReport, ClipTemplate, ClientPortalToken
 from services.auth import hash_password
 
 TEST_DB_PATH = "./test_suno_clips.db"
@@ -92,6 +92,10 @@ async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
     # Disable rate limiting during tests
     app.state.limiter = Limiter(key_func=lambda: "test_key", enabled=False)
 
+    # Also disable the per-route limiter in auth.py (it has its own Limiter instance)
+    from api.routes import auth as auth_routes
+    auth_routes.limiter.enabled = False
+
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://testserver",
@@ -127,6 +131,7 @@ async def dev_user(db_session):
         await db_session.execute(sql_delete(ClientClip).where(ClientClip.client_id == client_id))
         await db_session.execute(sql_delete(Invoice).where(Invoice.client_id == client_id))
         await db_session.execute(sql_delete(PerformanceReport).where(PerformanceReport.client_id == client_id))
+        await db_session.execute(sql_delete(ClientPortalToken).where(ClientPortalToken.client_id == client_id))
 
     # Delete user's records
     await db_session.execute(sql_delete(Job).where(Job.user_id == user.id))

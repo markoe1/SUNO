@@ -1,17 +1,20 @@
 """Invoice routes — monthly billing for clip operator clients."""
 
+import os
 from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.deps import get_current_user, get_db
+from api.deps import get_current_user, get_current_user_optional, get_db
 from db.models_v2 import Client, ClientClip, ClipStatus, Invoice
 from services.logger import get_logger
+
+INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "")
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/invoices", tags=["invoices"])
@@ -182,6 +185,41 @@ async def mark_invoice_paid(
         client_name=client.name,
         is_paid=True,
     )
+
+
+@router.post("/run-monthly", response_model=dict)
+async def run_monthly_invoices(
+    month: Optional[str] = None,
+    x_internal_key: Optional[str] = Header(None),
+    current_user=Depends(get_current_user_optional),
+):
+    """Trigger monthly invoice generation.
+
+    Authenticated operators trigger for their own account.
+    External cron services can bypass auth by passing X-Internal-Key header
+    (must match INTERNAL_API_KEY env var) — triggers for all operators.
+
+    Designed to be called on the 1st of each month.
+    """
+    is_internal = INTERNAL_API_KEY and x_internal_key == INTERNAL_API_KEY
+
+    if not is_internal and current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+    from workers.queue import q
+    job = q.enqueue(
+        "workers.tasks.schedule_invoices.run_monthly_invoices",
+        month,
+        job_timeout=300,
+    )
+    triggered_by = "internal_cron" if is_internal else current_user.email
+    logger.info(
+        "run_monthly_invoices enqueued: month=%s job_id=%s triggered_by=%s",
+        month or "auto",
+        job.id,
+        triggered_by,
+    )
+    return {"enqueued": True, "rq_job_id": job.id, "month": month or "auto"}
 
 
 @router.get("/summary", response_model=dict)

@@ -4,24 +4,41 @@ The user exports their Whop cookies from DevTools → Application → Cookies
 and pastes them into our settings UI. We encrypt them and use them here.
 
 We never automate Whop login — Cloudflare + 2FA makes that unreliable.
+
+API Key support (WHOP_API_KEY):
+  Set WHOP_API_KEY to your Whop API key from https://whop.com/settings/developer/
+  When set, it is used for session validation against api.whop.com (the official
+  Whop Developer API). The clipping submission endpoints still require browser
+  session cookies because they are internal to whop.com (not part of the
+  public developer API).
+
+Endpoint discovery:
+  If campaign/submission calls return 404, open whop.com in Chrome, go to
+  DevTools → Network, perform the action manually, find the XHR request,
+  right-click → Copy → Copy as cURL. Set the correct path via env vars:
+    WHOP_CAMPAIGNS_PATH=/api/v5/clipping/campaigns
+    WHOP_SUBMIT_PATH=/api/v5/clipping/campaigns/{campaign_id}/submissions
+    WHOP_CHECK_PATH=/api/v5/clipping/submissions/{submission_id}
 """
 
-import asyncio
 import logging
 import os
 import random
 import time
-from typing import Any, Optional
+from typing import Optional
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
-WHOP_BASE_URL = os.getenv("WHOP_BASE_URL", "https://whop.com")
-REQUEST_DELAY_MIN = float(os.getenv("WHOP_REQUEST_DELAY_MIN", "2"))
-REQUEST_DELAY_MAX = float(os.getenv("WHOP_REQUEST_DELAY_MAX", "5"))
-MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
-RETRY_BACKOFF_BASE = int(os.getenv("RETRY_BACKOFF_BASE", "60"))
+WHOP_BASE_URL    = os.getenv("WHOP_BASE_URL",    "https://whop.com")
+WHOP_API_BASE    = os.getenv("WHOP_API_BASE",    "https://api.whop.com")
+WHOP_API_KEY     = os.getenv("WHOP_API_KEY",     "")
+
+REQUEST_DELAY_MIN   = float(os.getenv("WHOP_REQUEST_DELAY_MIN", "2"))
+REQUEST_DELAY_MAX   = float(os.getenv("WHOP_REQUEST_DELAY_MAX", "5"))
+MAX_RETRIES         = int(os.getenv("MAX_RETRIES", "3"))
+RETRY_BACKOFF_BASE  = int(os.getenv("RETRY_BACKOFF_BASE", "60"))
 
 # Clipping API paths — override via env if Whop changes their internal routes.
 # These are undocumented internal endpoints discovered by inspecting browser traffic.
@@ -102,15 +119,42 @@ class WhopClient:
         raise Exception("Max retries exceeded")
 
     def validate_session(self) -> bool:
-        """Validate that stored cookies are still active."""
+        """Validate that stored cookies are still active.
+
+        If WHOP_API_KEY is configured, also validates via the official
+        Whop Developer API (api.whop.com) as a secondary check.
+        """
+        # Primary: validate browser session cookies via internal API
         try:
             resp = self._request_with_retry("GET", "/api/v5/me")
-            return resp.status_code == 200
+            if resp.status_code == 200:
+                return True
         except WhopAuthError:
-            return False
+            pass
         except Exception as exc:
-            logger.error("validate_session error: %s", exc)
-            return False
+            logger.error("validate_session (cookie) error: %s", exc)
+
+        # Fallback: validate via official Whop API key if configured
+        if WHOP_API_KEY:
+            try:
+                with httpx.Client(timeout=15.0) as api_client:
+                    resp = api_client.get(
+                        f"{WHOP_API_BASE}/api/v2/me",
+                        headers={
+                            "Authorization": f"Bearer {WHOP_API_KEY}",
+                            "Accept": "application/json",
+                        },
+                    )
+                    if resp.status_code == 200:
+                        logger.info("validate_session: API key auth succeeded")
+                        return True
+                    logger.warning(
+                        "validate_session: API key auth returned %d", resp.status_code
+                    )
+            except Exception as exc:
+                logger.error("validate_session (api_key) error: %s", exc)
+
+        return False
 
     def list_campaigns(self) -> list[dict]:
         """Fetch available clipping campaigns from Whop.
@@ -120,8 +164,10 @@ class WhopClient:
         """
         paths_to_try = [
             WHOP_CAMPAIGNS_PATH + "?limit=50",
+            "/api/v5/clipping/campaigns?limit=50&status=active",
+            "/api/v5/clipping/campaigns",
+            "/api/v5/clipping/campaigns?page=1&per_page=50",
             "/clipping/campaigns",
-            "/api/v5/clipping/campaigns?limit=50",
         ]
         # Deduplicate while preserving order
         seen = set()

@@ -1,5 +1,6 @@
 """Client clip pipeline routes — RAW → EDITING → REVIEW → APPROVED → POSTED."""
 
+import os
 from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
@@ -10,8 +11,11 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_user, get_db
+from db.models import User
 from db.models_v2 import Client, ClientClip, ClipStatus, Editor
 from services.logger import get_logger
+
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/client-clips", tags=["client-clips"])
@@ -220,6 +224,7 @@ async def update_clip_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clip not found")
     clip, client = row
 
+    prev_status = clip.status
     clip.status = data.status
     if data.status == ClipStatus.POSTED and not clip.posted_at:
         clip.posted_at = datetime.now(timezone.utc)
@@ -227,6 +232,26 @@ async def update_clip_status(
     await db.commit()
     await db.refresh(clip)
     logger.info(f"Clip {clip_id} status → {data.status.value}")
+
+    # Email operator when clip transitions to APPROVED
+    if data.status == ClipStatus.APPROVED and prev_status != ClipStatus.APPROVED:
+        try:
+            operator_result = await db.execute(
+                select(User).where(User.id == current_user.id)
+            )
+            operator = operator_result.scalar_one_or_none()
+            if operator and operator.email:
+                from services.email import send_clip_approved_email
+                send_clip_approved_email(
+                    operator_email=operator.email,
+                    client_name=client.name,
+                    clip_title=clip.title or "",
+                    clip_id=str(clip.id),
+                    portal_url=f"{BASE_URL}/operator/clients/{client.id}",
+                )
+        except Exception as exc:
+            logger.error("Failed to send clip approved email: %s", exc)
+
     return ClipResponse(**clip.__dict__, client_name=client.name)
 
 

@@ -9,11 +9,11 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from services.auth import decode_access_token
+from services.auth import decode_access_token, decode_client_access_token
 
 logger = structlog.get_logger(__name__)
 
-# Web routes that require authentication (redirect to /login if missing)
+# Operator web routes that require access_token cookie
 _PROTECTED_WEB_ROUTES = {
     "/dashboard",
     "/campaigns",
@@ -24,11 +24,14 @@ _PROTECTED_WEB_ROUTES = {
     "/editor",
 }
 
-# Route prefixes that are fully protected (all sub-paths require auth)
+# Route prefixes that are fully protected (all sub-paths require operator auth)
 _PROTECTED_WEB_PREFIXES = ("/operator",)
 
+# Client portal prefixes — require client_access_token cookie
+_PORTAL_WEB_PREFIXES = ("/portal/dashboard", "/portal/clips", "/portal/invoices", "/portal/reports")
+
 # Routes that are public
-_PUBLIC_ROUTES = {"/login", "/register", "/health", "/ready"}
+_PUBLIC_ROUTES = {"/login", "/register", "/health", "/ready", "/portal/login", "/portal/access"}
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -49,13 +52,20 @@ class AuthWallMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         path = request.url.path
 
-        # Only apply to protected web routes (not /api/*)
-        protected = path in _PROTECTED_WEB_ROUTES or any(
+        # Operator web routes — require access_token cookie
+        operator_protected = path in _PROTECTED_WEB_ROUTES or any(
             path.startswith(prefix) for prefix in _PROTECTED_WEB_PREFIXES
         )
-        if protected:
+        if operator_protected:
             token = request.cookies.get("access_token")
             if not token or decode_access_token(token) is None:
                 return RedirectResponse(url="/login", status_code=302)
+
+        # Client portal web routes — require client_access_token cookie
+        portal_protected = any(path.startswith(prefix) for prefix in _PORTAL_WEB_PREFIXES)
+        if portal_protected:
+            token = request.cookies.get("client_access_token")
+            if not token or decode_client_access_token(token) is None:
+                return RedirectResponse(url="/portal/login", status_code=302)
 
         return await call_next(request)

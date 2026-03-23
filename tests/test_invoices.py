@@ -75,7 +75,7 @@ async def test_duplicate_invoice_rejected(client: AsyncClient, dev_user):
 @pytest.mark.asyncio
 async def test_list_invoices(client: AsyncClient, dev_user):
     token = await _get_token(client, dev_user)
-    res = await client.get("/api/invoices/", headers={"Authorization": f"Bearer {token}"})
+    res = await client.get("/api/invoices", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     assert isinstance(res.json(), list)
 
@@ -148,5 +148,5 @@ async def test_invoice_summary(client: AsyncClient, dev_user):
 
 @pytest.mark.asyncio
 async def test_invoices_require_auth(client: AsyncClient):
-    res = await client.get("/api/invoices/")
+    res = await client.get("/api/invoices")
     assert res.status_code == 401

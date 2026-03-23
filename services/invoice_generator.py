@@ -6,6 +6,7 @@ Call manually via API or schedule as a background job on the 1st of each month.
 """
 
 import logging
+import os
 from datetime import datetime, timezone
 
 from sqlalchemy import select, func
@@ -14,6 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.models_v2 import Client, ClientClip, ClipStatus, Invoice, ClientStatus
 
 logger = logging.getLogger(__name__)
+
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 
 async def generate_invoice_for_client(
@@ -84,6 +87,26 @@ async def generate_invoice_for_client(
         f"${total} | {clips_delivered} clips | {total_views:,} views | "
         f"guarantee {'MET' if view_guarantee_met else 'MISSED'}"
     )
+
+    # Send invoice email to client if they have an email address
+    if client.email:
+        try:
+            from services.email import send_invoice_email
+            portal_url = f"{BASE_URL}/portal/invoices"
+            send_invoice_email(
+                client_email=client.email,
+                client_name=client.name,
+                month=month,
+                amount=total,
+                clips_delivered=clips_delivered,
+                total_views=total_views,
+                view_guarantee_met=view_guarantee_met,
+                performance_bonus=performance_bonus,
+                portal_url=portal_url,
+            )
+        except Exception as exc:
+            logger.error("Failed to send invoice email for %s: %s", client.name, exc)
+
     return invoice
 
 

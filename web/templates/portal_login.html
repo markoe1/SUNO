@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client Portal — SUNO Clips</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body style="background:#0a0a0a;min-height:100vh;display:flex;align-items:center;justify-content:center;">
+
+<div style="max-width:420px;width:100%;padding:24px;">
+  <div style="text-align:center;margin-bottom:40px;">
+    <h1 style="color:#00ff87;font-size:28px;margin:0;">SUNO Clips</h1>
+    <p style="color:#555;margin:8px 0 0;">Client Portal</p>
+  </div>
+
+  <div class="card" style="padding:32px;">
+    <h2 style="margin:0 0 8px;font-size:18px;">Welcome</h2>
+    <p style="color:#888;margin:0 0 24px;font-size:14px;">
+      Access your client portal using the invite link your operator sent you.
+      If you don't have a link, contact your operator.
+    </p>
+
+    <div id="error-msg" style="display:none;" class="alert alert-error"></div>
+
+    <div style="background:#16161a;border:1px solid #2a2a2f;border-radius:8px;padding:20px;margin-top:16px;">
+      <p style="color:#888;font-size:13px;margin:0;">
+        📩 Check your email for an invite link from your operator.<br><br>
+        The link looks like:<br>
+        <code style="color:#00ff87;font-size:12px;">{{ base_url }}/portal/access?token=...</code>
+      </p>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:#333;font-size:12px;margin-top:24px;">
+    SUNO Clips &mdash; The operating system for clip agencies
+  </p>
+</div>
+
+<script>
+  // Check for error params
+  const params = new URLSearchParams(location.search);
+  if (params.get('error')) {
+    const el = document.getElementById('error-msg');
+    el.textContent = decodeURIComponent(params.get('error'));
+    el.style.display = 'block';
+  }
+</script>
+
+</body>
+</html>
