@@ -77,6 +77,7 @@ async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
     from db.engine import AsyncSessionLocal
     from sqlalchemy.ext.asyncio import async_sessionmaker
     from api import deps
+    from slowapi import Limiter
 
     AsyncTestSession = async_sessionmaker(db_engine, expire_on_commit=False)
 
@@ -86,6 +87,9 @@ async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
 
     from api.app import app
     app.dependency_overrides[deps.get_db] = override_get_db
+
+    # Disable rate limiting during tests
+    app.state.limiter = Limiter(key_func=lambda: "test_key", enabled=False)
 
     async with AsyncClient(
         transport=ASGITransport(app=app),
@@ -98,9 +102,11 @@ async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
 
 @pytest_asyncio.fixture
 async def dev_user(db_session):
+    # Create a unique user for this test run
+    unique_email = f"testuser_{uuid.uuid4().hex[:8]}@sunoclips.io"
     user = User(
         id=uuid.uuid4(),
-        email="testuser@sunoclips.io",
+        email=unique_email,
         password_hash=hash_password("testpassword123"),
         tier="free",
         is_active=True,

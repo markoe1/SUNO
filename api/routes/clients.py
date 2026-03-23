@@ -89,7 +89,7 @@ class ClientListResponse(BaseModel):
 
 
 # CRUD Endpoints
-@router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
 async def create_client(
     client_data: ClientCreate,
     current_user = Depends(get_current_user),
@@ -130,7 +130,7 @@ async def create_client(
     )
 
 
-@router.get("/", response_model=ClientListResponse)
+@router.get("", response_model=ClientListResponse)
 async def list_clients(
     status: Optional[ClientStatus] = None,
     current_user = Depends(get_current_user),

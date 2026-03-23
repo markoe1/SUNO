@@ -118,7 +118,7 @@ async def generate_invoice(
     )
 
 
-@router.get("/", response_model=List[InvoiceResponse])
+@router.get("", response_model=List[InvoiceResponse])
 async def list_invoices(
     client_id: Optional[UUID] = None,
     unpaid_only: bool = False,

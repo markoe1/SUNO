@@ -75,7 +75,7 @@ async def generate_reports(
         return summary
 
 
-@router.get("/", response_model=List[ReportResponse])
+@router.get("", response_model=List[ReportResponse])
 async def list_reports(
     client_id: Optional[UUID] = None,
     period_type: Optional[str] = None,

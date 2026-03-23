@@ -84,7 +84,7 @@ async def _verify_client_ownership(client_id: UUID, user_id: UUID, db: AsyncSess
     return client
 
 
-@router.post("/", response_model=ClipResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ClipResponse, status_code=status.HTTP_201_CREATED)
 async def create_clip(
     data: ClipCreate,
     current_user=Depends(get_current_user),
@@ -107,7 +107,7 @@ async def create_clip(
     return ClipResponse(**clip.__dict__, client_name=client.name)
 
 
-@router.get("/", response_model=List[ClipResponse])
+@router.get("", response_model=List[ClipResponse])
 async def list_clips(
     client_id: Optional[UUID] = None,
     clip_status: Optional[ClipStatus] = None,

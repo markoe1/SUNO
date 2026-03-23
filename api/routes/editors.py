@@ -46,7 +46,7 @@ class EditorResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-@router.post("/", response_model=EditorResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EditorResponse, status_code=status.HTTP_201_CREATED)
 async def create_editor(
     data: EditorCreate,
     current_user=Depends(get_current_user),
@@ -65,7 +65,7 @@ async def create_editor(
     return EditorResponse(**editor.__dict__, clips_in_progress=0, clips_pending=0)
 
 
-@router.get("/", response_model=List[EditorResponse])
+@router.get("", response_model=List[EditorResponse])
 async def list_editors(
     active_only: bool = True,
     current_user=Depends(get_current_user),

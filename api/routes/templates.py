@@ -43,7 +43,7 @@ class TemplateResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-@router.post("/", response_model=TemplateResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TemplateResponse, status_code=status.HTTP_201_CREATED)
 async def create_template(
     data: TemplateCreate,
     current_user=Depends(get_current_user),
@@ -63,7 +63,7 @@ async def create_template(
     return template
 
 
-@router.get("/", response_model=List[TemplateResponse])
+@router.get("", response_model=List[TemplateResponse])
 async def list_templates(
     niche: Optional[str] = None,
     current_user=Depends(get_current_user),
