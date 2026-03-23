@@ -80,7 +80,7 @@ class Editor(Base):
     )  # The operator who manages this editor
     
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    email: Mapped[str] = mapped_column(String(320), nullable=True)
+    email: Mapped[str] = mapped_column(String(320), nullable=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=True)
     rate_per_clip: Mapped[float] = mapped_column(Float, nullable=False, default=10.0)
     

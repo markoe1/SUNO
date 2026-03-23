@@ -20,6 +20,26 @@ from services.logger import configure_logging
 APP_ENV = os.getenv("APP_ENV", "development")
 configure_logging(APP_ENV)
 
+# Startup env validation — warn loudly on missing critical vars
+import logging as _logging
+_boot_log = _logging.getLogger("suno.startup")
+if APP_ENV == "production":
+    _missing = [v for v in [
+        "DATABASE_URL", "JWT_SECRET_KEY", "JWT_REFRESH_SECRET_KEY",
+        "ENCRYPTION_KEY", "SESSION_COOKIE_SECRET",
+    ] if not os.getenv(v)]
+    if _missing:
+        raise RuntimeError(f"Missing required env vars for production: {_missing}")
+    if not os.getenv("ALLOWED_ORIGINS"):
+        _boot_log.warning(
+            "ALLOWED_ORIGINS is not set — CORS will block all cross-origin requests. "
+            "Set it to your production domain, e.g.: ALLOWED_ORIGINS=https://yourdomain.com"
+        )
+    if not os.getenv("WHOP_API_KEY"):
+        _boot_log.warning("WHOP_API_KEY not set — Whop session validation will fail")
+    if not os.getenv("RESEND_API_KEY"):
+        _boot_log.warning("RESEND_API_KEY not set — all emails are no-ops")
+
 BASE_DIR = Path(__file__).parent.parent
 TEMPLATES_DIR = BASE_DIR / "web" / "templates"
 STATIC_DIR = BASE_DIR / "web" / "static"

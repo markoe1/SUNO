@@ -29,6 +29,22 @@
     <a href="/operator/clients" class="btn btn-primary">+ New Client</a>
   </div>
 
+  <!-- First-run onboarding banner (hidden once clients exist) -->
+  <div id="onboarding-banner" style="display:none;background:linear-gradient(135deg,#0d2b1a,#16161a);border:1px solid #00ff87;border-radius:12px;padding:32px;margin-bottom:24px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:8px;">🚀</div>
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 8px;">Welcome to SUNO Clips</h2>
+    <p style="color:#888;margin:0 0 24px;max-width:480px;margin-left:auto;margin-right:auto;">
+      You're all set. Add your first client to start managing their clip pipeline, tracking views, and sending invoices.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="/operator/clients" class="btn btn-primary">+ Add Your First Client</a>
+      <a href="/editor/login" class="btn btn-secondary" style="font-size:13px;">Set up an editor</a>
+    </div>
+    <p style="color:#555;font-size:12px;margin-top:20px;">
+      Typical setup: add clients → invite them to their portal → add editors → start posting clips
+    </p>
+  </div>
+
   <!-- KPI Cards -->
   <div class="op-grid" id="kpi-grid">
     <div class="card">
@@ -132,6 +148,10 @@ async function loadDashboard() {
   const clips = await clipsRes.json();
   const invoices = await invoicesRes.json();
   const summary = await summaryRes.json();
+
+  // Show onboarding banner if operator has no clients at all
+  const totalClients = (clientData.clients || []).length;
+  document.getElementById('onboarding-banner').style.display = totalClients === 0 ? 'block' : 'none';
 
   // KPIs
   document.getElementById('kpi-mrr').textContent = fmt$(clientData.monthly_recurring_revenue || 0);

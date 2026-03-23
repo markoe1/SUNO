@@ -23,6 +23,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_index("ix_clients_user_id", "clients", ["user_id"])
     op.create_index("ix_editors_user_id", "editors", ["user_id"])
+    op.create_index("ix_editors_email", "editors", ["email"])
     op.create_index("ix_client_clips_client_id", "client_clips", ["client_id"])
     op.create_index("ix_client_clips_editor_id", "client_clips", ["editor_id"])
     op.create_index("ix_invoices_client_id", "invoices", ["client_id"])
@@ -31,6 +32,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index("ix_clients_user_id", "clients")
     op.drop_index("ix_editors_user_id", "editors")
+    op.drop_index("ix_editors_email", "editors")
     op.drop_index("ix_client_clips_client_id", "client_clips")
     op.drop_index("ix_client_clips_editor_id", "client_clips")
     op.drop_index("ix_invoices_client_id", "invoices")

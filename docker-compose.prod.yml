@@ -53,6 +53,20 @@ services:
     deploy:
       replicas: 2
 
+  billing:
+    build: .
+    command: python billing_server.py
+    ports:
+      - "5001:5001"
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    # Handles Whop webhook events (membership.went_valid / went_invalid)
+    # Webhook URL to set in Whop dashboard: https://yourdomain.com:5001/webhook
+    # Or proxy through nginx/Render with path /billing/webhook
+
 volumes:
   pgdata:
   redisdata:
