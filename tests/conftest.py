@@ -23,10 +23,11 @@ from cryptography.fernet import Fernet
 _TEST_KEY = Fernet.generate_key().decode()
 os.environ["ENCRYPTION_KEY"] = _TEST_KEY
 
-from sqlalchemy import event, delete as sql_delete
+from sqlalchemy import event, delete as sql_delete, select
 from db.engine import Base
 from db.models import User, UserSecret, Campaign, Job, Submission  # noqa: F401
 import db.models_v2  # noqa: F401 — register operator tables in Base.metadata
+from db.models_v2 import Client, Editor, ClientClip, Invoice, PerformanceReport, ClipTemplate
 from services.auth import hash_password
 
 TEST_DB_PATH = "./test_suno_clips.db"
@@ -116,10 +117,24 @@ async def dev_user(db_session):
     await db_session.commit()
     await db_session.refresh(user)
     yield user
-    # Cleanup — use raw DELETE to avoid ORM cascade issues (SQLite FK may be off)
+    # Cleanup — delete in order to respect FK constraints
+    # Get all client IDs for this user
+    clients = await db_session.execute(select(Client.id).where(Client.user_id == user.id))
+    client_ids = [row[0] for row in clients.all()]
+
+    # Delete child records in dependency order
+    for client_id in client_ids:
+        await db_session.execute(sql_delete(ClientClip).where(ClientClip.client_id == client_id))
+        await db_session.execute(sql_delete(Invoice).where(Invoice.client_id == client_id))
+        await db_session.execute(sql_delete(PerformanceReport).where(PerformanceReport.client_id == client_id))
+
+    # Delete user's records
     await db_session.execute(sql_delete(Job).where(Job.user_id == user.id))
     await db_session.execute(sql_delete(Submission).where(Submission.user_id == user.id))
     await db_session.execute(sql_delete(UserSecret).where(UserSecret.user_id == user.id))
+    await db_session.execute(sql_delete(Client).where(Client.user_id == user.id))
+    await db_session.execute(sql_delete(Editor).where(Editor.user_id == user.id))
+    await db_session.execute(sql_delete(ClipTemplate).where(ClipTemplate.user_id == user.id))
     await db_session.execute(sql_delete(User).where(User.id == user.id))
     await db_session.commit()
 
