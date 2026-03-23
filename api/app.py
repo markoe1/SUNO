@@ -91,8 +91,18 @@ def create_app() -> FastAPI:
     # --- Web page routes ---
 
     @app.get("/", include_in_schema=False)
-    async def root():
-        return RedirectResponse(url="/dashboard")
+    async def root(request: Request):
+        # Authenticated users go straight to their dashboard
+        token = request.cookies.get("access_token")
+        from services.auth import decode_access_token
+        if token and decode_access_token(token) is not None:
+            return RedirectResponse(url="/dashboard", status_code=302)
+        # Guests see the landing page
+        whop_product_id = os.getenv("WHOP_PRODUCT_ID", "")
+        return templates.TemplateResponse(
+            "landing.html",
+            {"request": request, "whop_product_id": whop_product_id},
+        )
 
     @app.get("/login", include_in_schema=False)
     async def login_page(request: Request):

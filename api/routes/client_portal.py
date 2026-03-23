@@ -220,8 +220,19 @@ class PortalReportResponse(BaseModel):
     best_hooks_json: Optional[list]
     insights_json: Optional[dict]
     created_at: datetime
+    # computed
+    avg_views_per_clip: int = 0
+    period_label: str = ""
 
     model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_orm_with_computed(cls, report) -> "PortalReportResponse":
+        avg = (report.total_views // report.total_clips) if report.total_clips else 0
+        label = f"{report.period_start.strftime('%b %d')} → {report.period_end.strftime('%b %d, %Y')}"
+        return cls.model_validate(
+            {**{c.key: getattr(report, c.key) for c in report.__table__.columns}, "avg_views_per_clip": avg, "period_label": label}
+        )
 
 
 class PortalClientSummary(BaseModel):
@@ -299,7 +310,7 @@ async def portal_reports(
         .order_by(PerformanceReport.period_start.desc())
     )
     reports = result.scalars().all()
-    return [PortalReportResponse.model_validate(r) for r in reports]
+    return [PortalReportResponse.from_orm_with_computed(r) for r in reports]
 
 
 @router.post("/logout")

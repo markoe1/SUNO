@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_user, get_db
 from db.models_v2 import Editor, ClientClip, ClipStatus
+from services.auth import hash_password
+from services.email import send_editor_welcome_email
 from services.logger import get_logger
 
 logger = get_logger(__name__)
@@ -20,6 +22,11 @@ class EditorCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     email: Optional[str] = None
     rate_per_clip: float = Field(10.0, ge=0)
+    password: Optional[str] = Field(None, min_length=8, description="Portal login password for this editor")
+
+
+class EditorSetPassword(BaseModel):
+    password: str = Field(..., min_length=8)
 
 
 class EditorUpdate(BaseModel):
@@ -57,11 +64,21 @@ async def create_editor(
         name=data.name,
         email=data.email,
         rate_per_clip=data.rate_per_clip,
+        password_hash=hash_password(data.password) if data.password else None,
     )
     db.add(editor)
     await db.commit()
     await db.refresh(editor)
     logger.info(f"Created editor {editor.name}")
+
+    # Send welcome email with portal login instructions if email + password provided
+    if data.email and data.password:
+        send_editor_welcome_email(
+            editor_email=data.email,
+            editor_name=data.name,
+            password=data.password,
+        )
+
     return EditorResponse(**editor.__dict__, clips_in_progress=0, clips_pending=0)
 
 
@@ -174,3 +191,33 @@ async def deactivate_editor(
     editor.is_active = False
     await db.commit()
     logger.info(f"Deactivated editor {editor.name}")
+
+
+@router.post("/{editor_id}/set-password", status_code=status.HTTP_204_NO_CONTENT)
+async def set_editor_password(
+    editor_id: UUID,
+    data: EditorSetPassword,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Operator sets or resets an editor's portal login password."""
+    result = await db.execute(
+        select(Editor)
+        .where(Editor.id == editor_id)
+        .where(Editor.user_id == current_user.id)
+    )
+    editor = result.scalar_one_or_none()
+    if not editor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Editor not found")
+
+    editor.password_hash = hash_password(data.password)
+    await db.commit()
+    logger.info(f"Password updated for editor {editor.name}")
+
+    # Optionally email the new credentials
+    if editor.email:
+        send_editor_welcome_email(
+            editor_email=editor.email,
+            editor_name=editor.name,
+            password=data.password,
+        )

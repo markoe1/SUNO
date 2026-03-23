@@ -164,6 +164,47 @@ def send_portal_invite_email(
 
 
 # ---------------------------------------------------------------------------
+# Editor welcome email (sent when operator creates or resets editor password)
+# ---------------------------------------------------------------------------
+
+def send_editor_welcome_email(
+    editor_email: str,
+    editor_name: str,
+    password: str,
+    portal_url: Optional[str] = None,
+) -> bool:
+    """Send editor portal login credentials."""
+    login_url = portal_url or f"{os.getenv('BASE_URL', 'http://localhost:8000')}/editor/login"
+    subject = "Your SUNO Clips editor portal access"
+    html = f"""
+<!DOCTYPE html>
+<html>
+<body style="background:#0a0a0a;color:#e8e8e8;font-family:sans-serif;padding:32px;">
+  <div style="max-width:560px;margin:0 auto;background:#16161a;border-radius:12px;padding:32px;">
+    <h1 style="color:#00ff87;margin:0 0 24px;">SUNO Clips</h1>
+
+    <p>Hi {editor_name},</p>
+    <p>Your editor portal has been set up. Use the credentials below to log in and view your assigned clips.</p>
+
+    <div style="background:#0a0a0a;border-radius:8px;padding:20px;margin:24px 0;">
+      <p style="margin:0 0 8px;color:#888;">Login URL</p>
+      <p style="margin:0 0 16px;"><a href="{login_url}" style="color:#00ff87;">{login_url}</a></p>
+      <p style="margin:0 0 8px;color:#888;">Email</p>
+      <p style="margin:0 0 16px;font-family:monospace;">{editor_email}</p>
+      <p style="margin:0 0 8px;color:#888;">Password</p>
+      <p style="margin:0;font-family:monospace;font-size:16px;color:#e8e8e8;">{password}</p>
+    </div>
+
+    <p style="color:#555;font-size:13px;">Change your password by contacting your agency manager.</p>
+    <p style="color:#555;font-size:12px;margin-top:32px;">SUNO Clips &mdash; The operating system for clip agencies</p>
+  </div>
+</body>
+</html>
+"""
+    return _send(editor_email, subject, html)
+
+
+# ---------------------------------------------------------------------------
 # Clip approved email
 # ---------------------------------------------------------------------------
 

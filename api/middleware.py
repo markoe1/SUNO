@@ -34,7 +34,7 @@ _EDITOR_WEB_ROUTES = {"/editor"}
 
 # Routes that are public
 _PUBLIC_ROUTES = {
-    "/login", "/register", "/health", "/ready",
+    "/", "/login", "/register", "/health", "/ready",
     "/portal/login", "/portal/access",
     "/editor/login",
     "/billing/checkout",

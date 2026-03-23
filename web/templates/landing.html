@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUNO Clips — Run your clip agency like a business</title>
+    <meta name="description" content="SUNO Clips is the operating system for clip agencies. Manage clients, track editors, generate invoices, and scale to $10K/mo+.">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10,10,10,0.9);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        nav .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #00e676;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: #fff; }
+
+        .nav-cta {
+            background: #00e676;
+            color: #000;
+            padding: 0.6rem 1.4rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .nav-cta:hover { background: #00ff85; }
+
+        /* Hero */
+        .hero {
+            padding: 10rem 2rem 7rem;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(0,230,118,0.1);
+            border: 1px solid rgba(0,230,118,0.3);
+            color: #00e676;
+            padding: 0.35rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin-bottom: 1.2rem;
+            letter-spacing: -2px;
+            line-height: 1.05;
+        }
+
+        .hero h1 span { color: #00e676; }
+
+        .hero-sub {
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.6);
+            max-width: 560px;
+            margin: 0 auto 2.5rem;
+            font-weight: 400;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 3rem auto;
+            max-width: 600px;
+        }
+
+        .stat { text-align: center; }
+        .stat-number { font-size: 2.5rem; font-weight: 900; color: #00e676; display: block; }
+        .stat-label { font-size: 0.85rem; color: rgba(255,255,255,0.5); }
+
+        .cta-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn-main {
+            background: #00e676;
+            color: #000;
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+        }
+
+        .btn-main:hover { background: #00ff85; transform: translateY(-2px); }
+
+        .btn-outline {
+            background: transparent;
+            color: rgba(255,255,255,0.8);
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .btn-outline:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+
+        /* Section shared */
+        section { padding: 6rem 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: #00e676; font-weight: 600; margin-bottom: 0.75rem; }
+        .section-title { font-size: 2.8rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -1px; }
+        .section-sub { font-size: 1.1rem; color: rgba(255,255,255,0.5); max-width: 500px; }
+
+        /* How it works */
+        #how { background: #111; }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-top: 4rem;
+        }
+
+        .step {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .step-num {
+            display: inline-flex;
+            width: 36px;
+            height: 36px;
+            background: rgba(0,230,118,0.12);
+            border: 1px solid rgba(0,230,118,0.3);
+            color: #00e676;
+            border-radius: 8px;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .step h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .step p { font-size: 0.9rem; color: rgba(255,255,255,0.5); line-height: 1.6; }
+
+        /* Features */
+        #features { background: #0a0a0a; }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 4rem;
+        }
+
+        .feature {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: border-color 0.2s;
+        }
+
+        .feature:hover { border-color: rgba(0,230,118,0.3); }
+        .feature-icon { font-size: 2rem; margin-bottom: 1rem; }
+        .feature h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
+        .feature p { font-size: 0.9rem; color: rgba(255,255,255,0.5); line-height: 1.6; }
+
+        /* Pricing */
+        #pricing { background: #111; }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 4rem;
+        }
+
+        .tier {
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 2.5rem;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+
+        .tier:hover { border-color: rgba(255,255,255,0.2); }
+
+        .tier.popular {
+            border-color: #00e676;
+            background: rgba(0,230,118,0.05);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00e676;
+            color: #000;
+            padding: 0.3rem 1.2rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .tier-name { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.5); font-weight: 600; margin-bottom: 1rem; }
+        .tier-price { font-size: 3.5rem; font-weight: 900; color: #fff; margin-bottom: 0.25rem; letter-spacing: -2px; }
+        .tier-price span { font-size: 1.2rem; color: rgba(255,255,255,0.4); font-weight: 400; letter-spacing: 0; }
+        .tier-desc { font-size: 0.85rem; color: rgba(255,255,255,0.4); margin-bottom: 2rem; }
+
+        .tier-features { list-style: none; margin-bottom: 2rem; }
+        .tier-features li { padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.9rem; color: rgba(255,255,255,0.75); }
+        .tier-features li:last-child { border-bottom: none; }
+        .tier-features li::before { content: "→ "; color: #00e676; font-weight: 700; }
+
+        .tier-btn {
+            width: 100%;
+            padding: 0.85rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tier-btn-primary { background: #00e676; color: #000; }
+        .tier-btn-primary:hover { background: #00ff85; }
+        .tier-btn-secondary { background: rgba(255,255,255,0.07); color: #fff; }
+        .tier-btn-secondary:hover { background: rgba(255,255,255,0.12); }
+
+        /* Footer */
+        footer {
+            background: #0a0a0a;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-links a { color: rgba(255,255,255,0.4); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+        .footer-links a:hover { color: rgba(255,255,255,0.8); }
+        footer p { color: rgba(255,255,255,0.25); font-size: 0.85rem; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.8rem; }
+            .steps, .features-grid, .pricing-grid { grid-template-columns: 1fr; }
+            .hero-stats { flex-direction: column; gap: 1.5rem; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="container">
+        <div class="logo">SUNO Clips</div>
+        <ul class="nav-links">
+            <li><a href="#how">How it works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+        </ul>
+        <a href="/login" class="nav-cta">Log In</a>
+    </div>
+</nav>
+
+<div class="hero">
+    <div class="container">
+        <div class="hero-badge">Clip Operator Platform</div>
+        <h1>Run your clip agency<br><span>like a business</span></h1>
+        <p class="hero-sub">Manage clients, assign editors, track performance, and generate invoices — everything in one place.</p>
+
+        <div class="hero-stats">
+            <div class="stat">
+                <span class="stat-number">60+</span>
+                <span class="stat-label">Clips per client/month</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">$1.5K</span>
+                <span class="stat-label">Avg retainer per client</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">3</span>
+                <span class="stat-label">Platforms tracked</span>
+            </div>
+        </div>
+
+        <div class="cta-row">
+            <a href="/register" class="btn-main">Start Free Trial</a>
+            <a href="#how" class="btn-outline">See How It Works</a>
+        </div>
+    </div>
+</div>
+
+<section id="how">
+    <div class="container">
+        <div class="section-label">How It Works</div>
+        <div class="section-title">Four steps to a<br>profitable agency</div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Add Clients</h3>
+                <p>Onboard creators with retainer rates, clip targets, and platform accounts. Track status from lead to active.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>Build Your Team</h3>
+                <p>Add editors with per-clip rates. Assign clips automatically and track turnaround time across your team.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Manage the Pipeline</h3>
+                <p>Move clips through RAW → EDITING → REVIEW → APPROVED → POSTED. Full visibility at every stage.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <h3>Get Paid</h3>
+                <p>Auto-generate monthly invoices with performance data. Track paid vs outstanding with one click.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="features">
+    <div class="container">
+        <div class="section-label">Features</div>
+        <div class="section-title">Everything an operator needs</div>
+        <div class="features-grid">
+            <div class="feature">
+                <div class="feature-icon">👥</div>
+                <h3>Client CRM</h3>
+                <p>Full client profiles with retainer amount, view guarantees, platform accounts, and content notes. Track every client from lead to churned.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎬</div>
+                <h3>Clip Pipeline</h3>
+                <p>Kanban-style clip workflow from raw footage to posted. Assign editors, set status, and log performance in one place.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Hook Generator</h3>
+                <p>Generate viral hooks using Claude AI. Trained on your top-performing clips. Save the best ones to your library.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Performance Reports</h3>
+                <p>Weekly and monthly reports per client. Views, likes, engagement rate, top clips, and AI-generated insights.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">💰</div>
+                <h3>Invoice Tracking</h3>
+                <p>Auto-generate invoices on the 1st of each month. Track paid vs outstanding. Log performance bonuses.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">✂️</div>
+                <h3>Editor Portal</h3>
+                <p>Dedicated view for your editors. They see their assigned clips, update status, and submit for review — nothing else.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="pricing">
+    <div class="container">
+        <div class="section-label">Pricing</div>
+        <div class="section-title">Simple, flat pricing</div>
+        <div class="pricing-grid">
+            <div class="tier">
+                <div class="tier-name">Solo Operator</div>
+                <div class="tier-price">$97<span>/mo</span></div>
+                <div class="tier-desc">For operators managing 1–3 clients</div>
+                <ul class="tier-features">
+                    <li>Up to 3 active clients</li>
+                    <li>Unlimited clips & editors</li>
+                    <li>AI hook generation</li>
+                    <li>Monthly invoice generation</li>
+                    <li>Performance reports</li>
+                </ul>
+                <button class="tier-btn tier-btn-secondary" onclick="subscribe('solo')">Get Started</button>
+            </div>
+
+            <div class="tier popular">
+                <div class="popular-badge">Most Popular</div>
+                <div class="tier-name">Agency</div>
+                <div class="tier-price">$197<span>/mo</span></div>
+                <div class="tier-desc">For agencies managing 5–10 clients</div>
+                <ul class="tier-features">
+                    <li>Up to 10 active clients</li>
+                    <li>Unlimited clips & editors</li>
+                    <li>AI hook generation</li>
+                    <li>Auto invoice runs</li>
+                    <li>Weekly + monthly reports</li>
+                    <li>Priority support</li>
+                </ul>
+                <button class="tier-btn tier-btn-primary" onclick="subscribe('agency')">Start Agency Plan</button>
+            </div>
+
+            <div class="tier">
+                <div class="tier-name">Scale</div>
+                <div class="tier-price">$497<span>/mo</span></div>
+                <div class="tier-desc">For agencies managing 20+ clients</div>
+                <ul class="tier-features">
+                    <li>Unlimited clients</li>
+                    <li>Unlimited everything</li>
+                    <li>API access</li>
+                    <li>White-label options</li>
+                    <li>Dedicated onboarding</li>
+                    <li>Custom integrations</li>
+                </ul>
+                <button class="tier-btn tier-btn-secondary" onclick="subscribe('scale')">Contact Sales</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <div class="footer-links">
+            <a href="/login">Log In</a>
+            <a href="/register">Sign Up</a>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+        </div>
+        <p>&copy; 2026 SUNO Clips. The operating system for clip agencies.</p>
+    </div>
+</footer>
+
+<script>
+    function subscribe(plan) {
+        if (plan === 'scale') {
+            window.location.href = 'mailto:hello@sunoclips.com?subject=Scale Plan Inquiry';
+            return;
+        }
+        // /billing/checkout reads WHOP_PRODUCT_ID from server env — never hardcoded here
+        const email = document.querySelector('input[name=email]')?.value || '';
+        window.location.href = '/billing/checkout?email=' + encodeURIComponent(email);
+    }
+</script>
+
+</body>
+</html>
