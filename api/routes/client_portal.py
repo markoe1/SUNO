@@ -32,6 +32,7 @@ from db.models_v2 import (
     PerformanceReport,
 )
 from services.auth import create_client_access_token
+from services.email import send_portal_invite_email
 from services.logger import get_logger
 
 logger = get_logger(__name__)
@@ -91,6 +92,22 @@ async def create_portal_invite(
 
     invite_url = f"{BASE_URL}/portal/access?token={raw_token}"
     logger.info("Portal invite created for client %s by operator %s", client.name, current_user.email)
+
+    # Auto-send invite email if client has an email on file
+    if client.email:
+        sent = send_portal_invite_email(
+            client_email=client.email,
+            client_name=client.name,
+            invite_url=invite_url,
+            expires_days=TOKEN_EXPIRE_DAYS,
+            operator_name=None,  # Could be expanded to pass operator profile name
+        )
+        if sent:
+            logger.info("Portal invite email sent to %s", client.email)
+        else:
+            logger.warning("Portal invite email failed for client %s (RESEND_API_KEY may not be set)", client.name)
+    else:
+        logger.warning("Client %s has no email — invite URL not emailed: %s", client.name, invite_url)
 
     return InviteResponse(
         invite_url=invite_url,

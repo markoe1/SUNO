@@ -84,3 +84,29 @@ def decode_client_access_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Editor portal JWT — separate token type so editor tokens cannot be used
+# as operator tokens and vice versa.
+# ---------------------------------------------------------------------------
+
+EDITOR_PORTAL_EXPIRE_HOURS = 72
+
+
+def create_editor_access_token(editor_id: str) -> str:
+    """Create a short-lived JWT for an editor's portal session."""
+    expire = datetime.now(timezone.utc) + timedelta(hours=EDITOR_PORTAL_EXPIRE_HOURS)
+    payload = {"sub": editor_id, "type": "editor_access", "exp": expire}
+    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_editor_access_token(token: str) -> Optional[dict]:
+    """Decode an editor portal JWT. Returns None if invalid or wrong type."""
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "editor_access":
+            return None
+        return payload
+    except JWTError:
+        return None

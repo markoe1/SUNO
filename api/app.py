@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
-from api.routes import auth, campaigns, client_clips, client_portal, clients, debug, editors, health, hooks, invoices, jobs, reports, settings, submissions, templates as clip_templates, users
+from api.routes import auth, campaigns, client_clips, client_portal, clients, debug, editor_auth, editors, health, hooks, invoices, jobs, reports, settings, submissions, templates as clip_templates, users
 from services.logger import configure_logging
 
 APP_ENV = os.getenv("APP_ENV", "development")
@@ -84,6 +84,7 @@ def create_app() -> FastAPI:
     app.include_router(clip_templates.router)
     app.include_router(hooks.router)
     app.include_router(client_portal.router)
+    app.include_router(editor_auth.router)
     if APP_ENV != "production":
         app.include_router(debug.router)
 
@@ -145,9 +146,31 @@ def create_app() -> FastAPI:
     async def reports_page(request: Request):
         return templates.TemplateResponse("reports.html", {"request": request})
 
+    @app.get("/editor/login", include_in_schema=False)
+    async def editor_login_page(request: Request):
+        return templates.TemplateResponse("editor_login.html", {"request": request})
+
     @app.get("/editor", include_in_schema=False)
-    async def editor_portal(request: Request):
+    async def editor_portal_page(request: Request):
         return templates.TemplateResponse("editor_portal.html", {"request": request})
+
+    # --- Billing (Whop checkout) ---
+
+    @app.get("/billing/checkout", include_in_schema=False)
+    async def billing_checkout(email: str = ""):
+        """Redirect to Whop checkout page for operator subscription.
+
+        Reads WHOP_PRODUCT_ID from environment — never hardcoded.
+        """
+        whop_product_id = os.getenv("WHOP_PRODUCT_ID", "")
+        if not whop_product_id:
+            # Not yet configured — send to register
+            return RedirectResponse(url="/register", status_code=302)
+        checkout_url = f"https://whop.com/checkout/{whop_product_id}/?d2c=true"
+        if email:
+            from urllib.parse import quote
+            checkout_url += f"&email={quote(email)}"
+        return RedirectResponse(url=checkout_url, status_code=303)
 
     # --- Client portal web pages (separate auth: client_access_token cookie) ---
 

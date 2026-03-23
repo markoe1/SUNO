@@ -117,6 +117,53 @@ def send_invoice_email(
 
 
 # ---------------------------------------------------------------------------
+# Portal invite email (sent to the client, not the operator)
+# ---------------------------------------------------------------------------
+
+def send_portal_invite_email(
+    client_email: str,
+    client_name: str,
+    invite_url: str,
+    expires_days: int = 7,
+    operator_name: Optional[str] = None,
+) -> bool:
+    """Send a magic-link portal invite to a client."""
+    from_line = f"your team at {operator_name}" if operator_name else "your clip agency"
+
+    subject = f"You're invited to your SUNO Clips portal"
+    html = f"""
+<!DOCTYPE html>
+<html>
+<body style="background:#0a0a0a;color:#e8e8e8;font-family:sans-serif;padding:32px;">
+  <div style="max-width:560px;margin:0 auto;background:#16161a;border-radius:12px;padding:32px;">
+    <h1 style="color:#00ff87;margin:0 0 24px;">SUNO Clips</h1>
+
+    <p>Hi {client_name},</p>
+    <p>{from_line.capitalize()} has set up your personal dashboard where you can track your clips,
+       views, and monthly invoices in real time.</p>
+
+    <div style="text-align:center;margin:32px 0;">
+      <a href="{invite_url}"
+         style="background:#00ff87;color:#0a0a0a;font-weight:700;padding:14px 32px;
+                border-radius:8px;text-decoration:none;font-size:16px;display:inline-block;">
+        Access Your Portal →
+      </a>
+    </div>
+
+    <p style="color:#555;font-size:13px;">This link is valid for {expires_days} days and can only be used once.
+       If you didn't expect this, you can ignore this email.</p>
+
+    <p style="color:#555;font-size:12px;margin-top:32px;">
+      SUNO Clips &mdash; The operating system for clip agencies
+    </p>
+  </div>
+</body>
+</html>
+"""
+    return _send(client_email, subject, html)
+
+
+# ---------------------------------------------------------------------------
 # Clip approved email
 # ---------------------------------------------------------------------------
 

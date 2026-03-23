@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.engine import AsyncSessionLocal
 from db.models import User
-from services.auth import decode_access_token, decode_client_access_token
+from services.auth import decode_access_token, decode_client_access_token, decode_editor_access_token
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -117,3 +117,41 @@ async def get_current_client(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Client not found")
 
     return client
+
+
+async def get_current_editor(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Validate the editor_access_token cookie and return the Editor object."""
+    from db.models_v2 import Editor
+
+    token = request.cookies.get("editor_access_token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Editor portal token required",
+        )
+
+    payload = decode_editor_access_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired editor token",
+        )
+
+    editor_id_str: Optional[str] = payload.get("sub")
+    if not editor_id_str:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    try:
+        editor_id = uuid.UUID(editor_id_str)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    result = await db.execute(select(Editor).where(Editor.id == editor_id))
+    editor = result.scalar_one_or_none()
+    if editor is None or not editor.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Editor not found or inactive")
+
+    return editor

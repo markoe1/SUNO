@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor Login — SUNO Clips</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">SUNO Clips</div>
+    <div class="auth-tagline">Editor portal</div>
+
+    <div id="flash-container"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="submit-btn">Log In</button>
+    </form>
+
+    <p style="margin-top:20px;color:#555;font-size:13px;text-align:center;">
+      Your login was set up by your agency. Contact them if you need access.
+    </p>
+  </div>
+</div>
+
+<script>
+function showFlash(msg, type) {
+  const el = document.getElementById('flash-container');
+  el.innerHTML = `<div class="flash flash-${type}">${msg}</div>`;
+  setTimeout(() => el.innerHTML = '', 5000);
+}
+
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Logging in…';
+
+  const res = await fetch('/api/editor/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value,
+    }),
+  });
+
+  if (res.ok) {
+    window.location.href = '/editor';
+  } else {
+    const data = await res.json().catch(() => ({}));
+    showFlash(data.detail || 'Invalid email or password', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Log In';
+  }
+});
+</script>
+</body>
+</html>

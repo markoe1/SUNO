@@ -81,6 +81,7 @@ class Editor(Base):
     
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(320), nullable=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=True)
     rate_per_clip: Mapped[float] = mapped_column(Float, nullable=False, default=10.0)
     
     # Performance metrics

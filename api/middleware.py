@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from services.auth import decode_access_token, decode_client_access_token
+from services.auth import decode_access_token, decode_client_access_token, decode_editor_access_token
 
 logger = structlog.get_logger(__name__)
 
@@ -21,7 +21,6 @@ _PROTECTED_WEB_ROUTES = {
     "/submissions",
     "/jobs",
     "/settings",
-    "/editor",
 }
 
 # Route prefixes that are fully protected (all sub-paths require operator auth)
@@ -30,8 +29,16 @@ _PROTECTED_WEB_PREFIXES = ("/operator",)
 # Client portal prefixes — require client_access_token cookie
 _PORTAL_WEB_PREFIXES = ("/portal/dashboard", "/portal/clips", "/portal/invoices", "/portal/reports")
 
+# Editor portal — require editor_access_token cookie (separate from operator auth)
+_EDITOR_WEB_ROUTES = {"/editor"}
+
 # Routes that are public
-_PUBLIC_ROUTES = {"/login", "/register", "/health", "/ready", "/portal/login", "/portal/access"}
+_PUBLIC_ROUTES = {
+    "/login", "/register", "/health", "/ready",
+    "/portal/login", "/portal/access",
+    "/editor/login",
+    "/billing/checkout",
+}
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -67,5 +74,11 @@ class AuthWallMiddleware(BaseHTTPMiddleware):
             token = request.cookies.get("client_access_token")
             if not token or decode_client_access_token(token) is None:
                 return RedirectResponse(url="/portal/login", status_code=302)
+
+        # Editor portal web routes — require editor_access_token cookie
+        if path in _EDITOR_WEB_ROUTES:
+            token = request.cookies.get("editor_access_token")
+            if not token or decode_editor_access_token(token) is None:
+                return RedirectResponse(url="/editor/login", status_code=302)
 
         return await call_next(request)

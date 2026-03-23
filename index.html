@@ -492,23 +492,14 @@
 </footer>
 
 <script>
-    // Whop checkout — redirects to Whop marketplace for subscription
-    // Set WHOP_PRODUCT_ID in billing_server.py env when ready to activate
-    const WHOP_PRODUCT_ID = '';  // prod_xxx from dashboard.whop.com
-
     function subscribe(plan) {
         if (plan === 'scale') {
             window.location.href = 'mailto:hello@sunoclips.com?subject=Scale Plan Inquiry';
             return;
         }
-        if (!WHOP_PRODUCT_ID) {
-            alert('Checkout not configured yet. Log in to get started.');
-            window.location.href = '/register';
-            return;
-        }
-        window.location.href = `/billing/checkout?email=` + encodeURIComponent(
-            document.querySelector('input[name=email]')?.value || ''
-        );
+        // /billing/checkout reads WHOP_PRODUCT_ID from server env — never hardcoded here
+        const email = document.querySelector('input[name=email]')?.value || '';
+        window.location.href = '/billing/checkout?email=' + encodeURIComponent(email);
     }
 </script>
 

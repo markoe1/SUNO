@@ -1,176 +1,196 @@
-{% extends "base.html" %}
-{% set active_page = 'editor' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor Portal — SUNO Clips</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    .editor-nav { background:#111115;border-bottom:1px solid #1e1e24;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px; }
+    .editor-nav .logo { color:#00ff87;font-weight:700;font-size:16px;text-decoration:none; }
+    .editor-nav .spacer { flex:1; }
+    .clip-card { background:#16161a;border:1px solid #1e1e24;border-radius:10px;padding:20px;margin-bottom:12px; }
+    .clip-card:hover { border-color:#2a2a3a; }
+    .clip-header { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px; }
+    .clip-title { font-size:15px;font-weight:500; }
+    .clip-meta { font-size:12px;color:#555;margin-top:4px; }
+    .stage-tabs { display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap; }
+    .stage-tabs button { background:#16161a;border:1px solid #1e1e24;color:#888;padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer; }
+    .stage-tabs button.active-filter { border-color:#00ff87;color:#00ff87; }
+  </style>
+</head>
+<body>
 
-{% block title %}Editor Portal — SUNO Clips{% endblock %}
-
-{% block extra_styles %}
-.clip-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-.clip-card:hover { border-color: var(--green); }
-.clip-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.clip-title { font-size: 15px; font-weight: 500; }
-.clip-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.stage-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-.editor-header { background: var(--card); border-bottom: 1px solid var(--border); padding: 20px 24px; margin-bottom: 0; }
-{% endblock %}
-
-{% block nav %}
-<nav class="nav">
-  <span class="nav-logo">SUNO Clips — Editor</span>
-  <div class="nav-right">
-    <span id="editor-greeting" style="color:var(--muted);font-size:13px;margin-right:16px;"></span>
-    <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
-  </div>
+<nav class="editor-nav">
+  <span class="logo">SUNO Clips — Editor</span>
+  <div class="spacer"></div>
+  <span id="editor-greeting" style="color:#555;font-size:13px;"></span>
+  <button class="btn btn-secondary btn-sm" onclick="editorLogout()" style="margin-left:16px;">Logout</button>
 </nav>
-{% endblock %}
 
-{% block content %}
-<div class="container" style="max-width:900px;margin:32px auto;padding:0 24px;">
+<div style="max-width:900px;margin:32px auto;padding:0 24px;">
 
-  <!-- Stats bar -->
+  <div id="flash-container"></div>
+
+  <!-- Stats -->
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
-    <div class="card" style="text-align:center;">
-      <div style="font-size:28px;font-weight:700;color:var(--green);" id="stat-pending">—</div>
-      <div style="font-size:12px;color:var(--muted);">Clips Waiting</div>
+    <div class="stat-box" style="text-align:center;">
+      <div style="font-size:28px;font-weight:700;color:#00ff87;" id="stat-pending">—</div>
+      <div style="font-size:12px;color:#555;text-transform:uppercase;margin-top:4px;">Clips Waiting</div>
     </div>
-    <div class="card" style="text-align:center;">
-      <div style="font-size:28px;font-weight:700;color:var(--orange);" id="stat-editing">—</div>
-      <div style="font-size:12px;color:var(--muted);">In Progress</div>
+    <div class="stat-box" style="text-align:center;">
+      <div style="font-size:28px;font-weight:700;color:#f39c12;" id="stat-editing">—</div>
+      <div style="font-size:12px;color:#555;text-transform:uppercase;margin-top:4px;">In Progress</div>
     </div>
-    <div class="card" style="text-align:center;">
+    <div class="stat-box" style="text-align:center;">
       <div style="font-size:28px;font-weight:700;" id="stat-done">—</div>
-      <div style="font-size:12px;color:var(--muted);">Done This Month</div>
+      <div style="font-size:12px;color:#555;text-transform:uppercase;margin-top:4px;">Done This Month</div>
     </div>
   </div>
 
   <div class="stage-tabs">
-    <button class="btn btn-secondary btn-sm active-filter" data-s="RAW" onclick="setStage(this,'RAW')">Waiting (RAW)</button>
-    <button class="btn btn-secondary btn-sm" data-s="EDITING" onclick="setStage(this,'EDITING')">In Progress</button>
-    <button class="btn btn-secondary btn-sm" data-s="REVIEW" onclick="setStage(this,'REVIEW')">In Review</button>
-    <button class="btn btn-secondary btn-sm" data-s="APPROVED" onclick="setStage(this,'APPROVED')">Approved</button>
+    <button class="active-filter" data-s="RAW" onclick="setStage(this,'RAW')">Waiting</button>
+    <button data-s="EDITING" onclick="setStage(this,'EDITING')">In Progress</button>
+    <button data-s="REVIEW" onclick="setStage(this,'REVIEW')">In Review</button>
+    <button data-s="APPROVED" onclick="setStage(this,'APPROVED')">Approved</button>
   </div>
 
-  <div id="clips-container"><p style="color:var(--muted);">Loading your clips...</p></div>
+  <div id="clips-container">
+    <p style="color:#555;">Loading your clips…</p>
+  </div>
 
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-// Editor portal — shows only clips assigned to the logged-in user
-// Note: this uses the same auth system. The operator assigns clips to an editor record.
-// For now, show all clips where editor is current user's editor profile.
-
 let currentStage = 'RAW';
-let myEditorId = null;
+
+async function editorFetch(url, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  const res = await fetch(url, { ...opts, headers, credentials: 'include' });
+  if (res.status === 401) { window.location.href = '/editor/login'; return null; }
+  return res;
+}
+
+async function editorLogout() {
+  await fetch('/api/editor/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/editor/login';
+}
+
+function showFlash(msg, type) {
+  const el = document.getElementById('flash-container');
+  el.innerHTML = `<div class="flash flash-${type}" style="margin-bottom:16px;">${msg}</div>`;
+  setTimeout(() => el.innerHTML = '', 4000);
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString();
+}
 
 function setStage(btn, stage) {
   currentStage = stage;
-  document.querySelectorAll('.active-filter').forEach(b => b.classList.remove('active-filter'));
+  document.querySelectorAll('.stage-tabs button').forEach(b => b.classList.remove('active-filter'));
   btn.classList.add('active-filter');
   loadMyClips();
 }
 
 async function loadStats() {
-  // Load counts for each stage
-  const stages = ['RAW','EDITING','REVIEW','APPROVED'];
-  const counts = {};
-  for (const s of stages) {
-    const res = await apiFetch(`/api/client-clips/?clip_status=${s}`);
-    if (res && res.ok) {
-      const data = await res.json();
-      // Filter to clips assigned to me
-      const mine = myEditorId ? data.filter(c => c.editor_id === myEditorId) : data;
-      counts[s] = mine.length;
-    }
-  }
-  document.getElementById('stat-pending').textContent = counts['RAW'] || 0;
-  document.getElementById('stat-editing').textContent = counts['EDITING'] || 0;
+  const [rawRes, editRes, doneRes] = await Promise.all([
+    editorFetch('/api/editor/clips?clip_status=RAW'),
+    editorFetch('/api/editor/clips?clip_status=EDITING'),
+    editorFetch('/api/editor/clips?clip_status=REVIEW'),
+  ]);
 
-  // Done this month = POSTED clips (approximate)
-  const postedRes = await apiFetch('/api/client-clips/?clip_status=POSTED');
-  if (postedRes && postedRes.ok) {
-    const posted = await postedRes.json();
-    const now = new Date();
-    const thisMonth = posted.filter(c => {
-      if (!c.posted_at) return false;
-      const d = new Date(c.posted_at);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
-    document.getElementById('stat-done').textContent = myEditorId
-      ? thisMonth.filter(c => c.editor_id === myEditorId).length
-      : thisMonth.length;
+  if (rawRes && rawRes.ok) {
+    const data = await rawRes.json();
+    document.getElementById('stat-pending').textContent = data.length;
+  }
+  if (editRes && editRes.ok) {
+    const data = await editRes.json();
+    document.getElementById('stat-editing').textContent = data.length;
+  }
+  if (doneRes && doneRes.ok) {
+    const data = await doneRes.json();
+    document.getElementById('stat-done').textContent = data.length;
   }
 }
 
 async function loadMyClips() {
-  const url = `/api/client-clips/?clip_status=${currentStage}`;
-  const res = await apiFetch(url);
+  const el = document.getElementById('clips-container');
+  el.innerHTML = '<p style="color:#555;">Loading…</p>';
+
+  const res = await editorFetch(`/api/editor/clips?clip_status=${currentStage}`);
   if (!res) return;
   const clips = await res.json();
 
-  // Filter to my clips if we know the editor ID
-  const myClips = myEditorId ? clips.filter(c => c.editor_id === myEditorId) : clips;
-
-  const el = document.getElementById('clips-container');
-  if (!myClips.length) {
-    el.innerHTML = `<p style="color:var(--muted);">No ${currentStage.toLowerCase()} clips assigned to you.</p>`;
+  if (!clips.length) {
+    el.innerHTML = `<p style="color:#555;">No ${currentStage.toLowerCase()} clips assigned to you.</p>`;
     return;
   }
 
-  el.innerHTML = myClips.map(c => `
+  el.innerHTML = clips.map(c => `
     <div class="clip-card">
       <div class="clip-header">
         <div>
           <div class="clip-title">${c.title || c.hook_used || 'Untitled clip'}</div>
           <div class="clip-meta">Client: ${c.client_name || '—'} · Added ${fmtDate(c.created_at)}</div>
-          ${c.hook_used ? `<div class="clip-meta" style="margin-top:4px;font-style:italic;">"${c.hook_used}"</div>` : ''}
+          ${c.hook_used ? `<div class="clip-meta" style="font-style:italic;margin-top:4px;">"${c.hook_used}"</div>` : ''}
         </div>
         <span class="badge ${c.status === 'RAW' ? 'badge-muted' : c.status === 'EDITING' ? 'badge-orange' : 'badge-green'}">${c.status}</span>
       </div>
 
-      ${c.content_notes ? `<p style="font-size:12px;color:var(--muted);margin-bottom:12px;">${c.content_notes}</p>` : ''}
+      ${c.content_notes ? `<p style="font-size:12px;color:#555;margin-bottom:12px;">${c.content_notes}</p>` : ''}
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${c.status === 'RAW' ? `
-          <button class="btn btn-primary btn-sm" onclick="startEditing('${c.id}', this)">Start Editing</button>
+          <button class="btn btn-primary btn-sm" onclick="advanceClip('${c.id}', 'EDITING', this)">Start Editing</button>
         ` : ''}
         ${c.status === 'EDITING' ? `
-          <button class="btn btn-primary btn-sm" onclick="submitForReview('${c.id}', this)">Submit for Review</button>
+          <button class="btn btn-primary btn-sm" onclick="advanceClip('${c.id}', 'REVIEW', this)">Submit for Review</button>
         ` : ''}
         ${c.status === 'REVIEW' ? `
-          <span style="font-size:12px;color:var(--orange);">Waiting for approval...</span>
+          <span style="font-size:12px;color:#f39c12;">Waiting for approval…</span>
         ` : ''}
         ${c.status === 'APPROVED' ? `
-          <span style="font-size:12px;color:var(--green);">Approved — ready to post!</span>
+          <span style="font-size:12px;color:#00ff87;">Approved — ready to post!</span>
         ` : ''}
         ${c.drive_folder || c.raw_file_path ? `
-          <a class="btn btn-secondary btn-sm" href="${c.drive_folder || c.raw_file_path}" target="_blank">Open Raw File</a>
+          <a class="btn btn-secondary btn-sm" href="${c.drive_folder || c.raw_file_path}" target="_blank" rel="noopener">Open Raw File</a>
         ` : ''}
       </div>
     </div>`).join('');
 }
 
-async function startEditing(clipId, btn) {
+async function advanceClip(clipId, newStatus, btn) {
   btn.disabled = true;
-  const res = await apiFetch(`/api/client-clips/${clipId}/status`, {
-    method: 'PATCH', body: JSON.stringify({ status: 'EDITING' })
+  const res = await editorFetch(`/api/editor/clips/${clipId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: newStatus }),
   });
-  if (res && res.ok) { showFlash('Clip moved to Editing', 'success'); loadMyClips(); loadStats(); }
-  else { btn.disabled = false; showFlash('Failed', 'error'); }
+  if (res && res.ok) {
+    showFlash(`Clip moved to ${newStatus}`, 'success');
+    loadMyClips();
+    loadStats();
+  } else {
+    const err = res ? await res.json().catch(() => ({})) : {};
+    showFlash(err.detail || 'Failed to update clip', 'error');
+    btn.disabled = false;
+  }
 }
 
-async function submitForReview(clipId, btn) {
-  btn.disabled = true;
-  const res = await apiFetch(`/api/client-clips/${clipId}/status`, {
-    method: 'PATCH', body: JSON.stringify({ status: 'REVIEW' })
-  });
-  if (res && res.ok) { showFlash('Submitted for review!', 'success'); loadMyClips(); loadStats(); }
-  else { btn.disabled = false; showFlash('Failed', 'error'); }
+async function init() {
+  const meRes = await editorFetch('/api/editor/me');
+  if (!meRes) return;
+  if (meRes.ok) {
+    const me = await meRes.json();
+    document.getElementById('editor-greeting').textContent = `${me.name} · $${me.rate_per_clip}/clip`;
+  }
+  loadStats();
+  loadMyClips();
 }
 
-// Init
-document.getElementById('editor-greeting').textContent = 'Your clip queue';
-loadStats();
-loadMyClips();
+init();
 </script>
-{% endblock %}
+
+</body>
+</html>
