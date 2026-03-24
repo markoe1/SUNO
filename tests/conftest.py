@@ -78,7 +78,7 @@ async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
     from db.engine import AsyncSessionLocal
     from sqlalchemy.ext.asyncio import async_sessionmaker
     from api import deps
-    from slowapi import Limiter
+    from unittest.mock import MagicMock
 
     AsyncTestSession = async_sessionmaker(db_engine, expire_on_commit=False)
 
@@ -86,11 +86,17 @@ async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
         async with AsyncTestSession() as session:
             yield session
 
-    from api.app import app
+    from api.app import app, limiter
     app.dependency_overrides[deps.get_db] = override_get_db
 
-    # Disable rate limiting during tests
-    app.state.limiter = Limiter(key_func=lambda: "test_key", enabled=False)
+    # Replace the limiter with a mock that always allows requests
+    mock_limiter = MagicMock()
+    mock_limiter.limit = lambda *args, **kwargs: lambda f: f  # Pass-through decorator
+    app.state.limiter = mock_limiter
+
+    # Patch the global limiter in all routes
+    import api.routes.auth as auth_routes
+    auth_routes.limiter = mock_limiter
 
     async with AsyncClient(
         transport=ASGITransport(app=app),

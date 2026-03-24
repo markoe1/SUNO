@@ -148,5 +148,5 @@ async def test_invoice_summary(client: AsyncClient, dev_user):
 
 @pytest.mark.asyncio
 async def test_invoices_require_auth(client: AsyncClient):
-    res = await client.get("/api/invoices/")
+    res = await client.get("/api/invoices")
     assert res.status_code == 401
