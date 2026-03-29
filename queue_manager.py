@@ -258,6 +258,19 @@ class QueueManager:
             """).fetchall()
             return [Clip(**dict(r)) for r in rows]
 
+    def get_posted_clips(self, since_hours: int = 24) -> List[Clip]:
+        """Get clips posted/submitted within the last N hours."""
+        cutoff_time = (datetime.now() - timedelta(hours=since_hours)).isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("""
+                SELECT * FROM clips
+                WHERE status IN ('posted', 'submitted')
+                  AND posted_at >= ?
+                ORDER BY posted_at DESC
+            """, (cutoff_time,)).fetchall()
+            return [Clip(**dict(r)) for r in rows]
+
     def update_views(self, clip_id: int, views: int):
         earnings = (views / 1000) * config.CPM_RATE
         with sqlite3.connect(self.db_path) as conn:
