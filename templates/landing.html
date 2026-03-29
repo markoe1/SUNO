@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUNO — Automated Content Clipping for Whop Campaigns</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 60px 0; text-align: center; }
+        h1 { font-size: 3em; margin-bottom: 20px; }
+        .tagline { font-size: 1.3em; opacity: 0.9; margin-bottom: 30px; }
+        .cta { background: #00d4ff; color: #000; padding: 15px 40px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; transition: all 0.3s; }
+        .cta:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,212,255,0.3); }
+        section { padding: 80px 0; }
+        section h2 { font-size: 2.2em; margin-bottom: 40px; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; }
+        .card { background: #f8f9fa; padding: 30px; border-radius: 8px; border-left: 4px solid #00d4ff; }
+        .card h3 { margin-bottom: 15px; color: #1a1a2e; }
+        .pricing { background: #f0f0f0; }
+        .price-card { background: white; padding: 40px; border-radius: 8px; text-align: center; border: 2px solid #ddd; transition: all 0.3s; }
+        .price-card:hover { transform: translateY(-5px); border-color: #00d4ff; box-shadow: 0 15px 40px rgba(0,212,255,0.1); }
+        .price-card.popular { border-color: #00d4ff; box-shadow: 0 15px 40px rgba(0,212,255,0.2); }
+        .price-card h3 { font-size: 1.8em; color: #1a1a2e; margin-bottom: 10px; }
+        .price { font-size: 2.5em; color: #00d4ff; font-weight: bold; margin: 15px 0; }
+        .price-desc { color: #666; margin-bottom: 30px; font-size: 0.9em; }
+        .features { list-style: none; text-align: left; margin: 30px 0; }
+        .features li { padding: 10px 0; border-bottom: 1px solid #eee; }
+        .features li:before { content: "✓ "; color: #00d4ff; font-weight: bold; margin-right: 8px; }
+        footer { background: #1a1a2e; color: white; text-align: center; padding: 40px 0; margin-top: 60px; }
+        .warning { background: #fff3cd; border-left: 4px solid #ff6b6b; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .warning strong { color: #ff6b6b; }
+        nav { background: rgba(26, 26, 46, 0.95); color: white; padding: 20px 0; position: sticky; top: 0; z-index: 100; }
+        nav .container { display: flex; justify-content: space-between; align-items: center; }
+        nav a { color: white; text-decoration: none; margin-left: 30px; transition: color 0.3s; }
+        nav a:hover { color: #00d4ff; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div style="font-size: 1.5em; font-weight: bold;">SUNO</div>
+            <div>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="/#">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header>
+        <div class="container">
+            <h1>Automate Your Content Clipping</h1>
+            <p class="tagline">Discover Whop campaigns, clip videos automatically, post to TikTok, Instagram & YouTube, earn $3 per 1,000 views.</p>
+            <a href="#pricing" class="cta">Get Started → $49/month</a>
+            <p style="margin-top: 20px; opacity: 0.8; font-size: 0.9em;">Platform automation — no manual posting required.</p>
+        </div>
+    </header>
+
+    <!-- Warning -->
+    <section>
+        <div class="container">
+            <div class="warning">
+                <strong>⚠️ Important Notice:</strong> SUNO uses browser automation to post content to social platforms.
+                This tool operates in a legal gray area. By using SUNO, you agree that you own or have rights to all content being posted,
+                and you acknowledge the risk of account suspension. Use at your own risk. Read our <strong>Terms of Service</strong> before starting.
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="features" style="background: #f8f9fa;">
+        <div class="container">
+            <h2>How SUNO Works</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>1. Discover Campaigns</h3>
+                    <p>SUNO scans Whop for active campaigns. Pick which ones you want to clip from — set your preferences and let the daemon run.</p>
+                </div>
+                <div class="card">
+                    <h3>2. Auto-Clip Videos</h3>
+                    <p>Automatically downloads videos from campaign sources (Google Drive, YouTube) and creates short clips optimized for each platform.</p>
+                </div>
+                <div class="card">
+                    <h3>3. Post Everywhere</h3>
+                    <p>Posts clips to TikTok, Instagram Reels, YouTube Shorts 24/7. Manages account warmup and posting limits to avoid bans.</p>
+                </div>
+                <div class="card">
+                    <h3>4. Track Earnings</h3>
+                    <p>Monitors view counts and calculates earnings. Dashboard shows real-time stats: clips posted, views, earnings, account health.</p>
+                </div>
+                <div class="card">
+                    <h3>5. Submit for Payment</h3>
+                    <p>Submits posted clip URLs to Whop. Whop pays out based on views. You earn $3–$5 per 1,000 views depending on campaign.</p>
+                </div>
+                <div class="card">
+                    <h3>6. Reinvest or Withdraw</h3>
+                    <p>Earnings go to your Whop account. Reinvest in more content, or withdraw to your bank. Fully automated pipeline.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section>
+        <div class="container">
+            <h2>Powerful Features</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>24/7 Daemon Mode</h3>
+                    <p>Run SUNO continuously. Auto-discovers campaigns, clips videos, posts to all platforms — all while you sleep.</p>
+                </div>
+                <div class="card">
+                    <h3>Smart Account Warmup</h3>
+                    <p>New accounts are warmed up gradually to avoid bans. Respects posting limits and enforces delays between uploads.</p>
+                </div>
+                <div class="card">
+                    <h3>Multi-Platform Posting</h3>
+                    <p>Posts to TikTok, Instagram Reels, YouTube Shorts in parallel. Different clips, different platforms, same earnings.</p>
+                </div>
+                <div class="card">
+                    <h3>Real-Time Dashboard</h3>
+                    <p>See earnings, views, posted clips, account health, and campaign performance. HTML dashboard runs locally.</p>
+                </div>
+                <div class="card">
+                    <h3>Whop Integration</h3>
+                    <p>Native Whop API integration. Auto-discovers campaigns, submits clip URLs, tracks payouts. No manual work needed.</p>
+                </div>
+                <div class="card">
+                    <h3>Retry & Recovery</h3>
+                    <p>Failed posts are retried automatically. Clips stuck in queue are re-submitted. System is resilient to failures.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2>Simple Pricing</h2>
+            <p style="text-align: center; margin-bottom: 50px; color: #666;">Pay monthly. Cancel anytime. No setup fees.</p>
+            <div class="grid">
+                <div class="price-card">
+                    <h3>Hobby</h3>
+                    <div class="price">$29<span style="font-size: 0.5em; color: #999;">/month</span></div>
+                    <p class="price-desc">For testing & learning</p>
+                    <ul class="features">
+                        <li>Run on 1 computer</li>
+                        <li>Up to 5 campaigns monitored</li>
+                        <li>20 clips/month limit</li>
+                        <li>Basic dashboard</li>
+                    </ul>
+                    <a href="#" class="cta">Start Free Trial</a>
+                </div>
+                <div class="price-card popular">
+                    <h3>Pro ⭐</h3>
+                    <div class="price">$79<span style="font-size: 0.5em; color: #999;">/month</span></div>
+                    <p class="price-desc">Most popular</p>
+                    <ul class="features">
+                        <li>Run on 3 computers</li>
+                        <li>Unlimited campaigns</li>
+                        <li>Unlimited clips/month</li>
+                        <li>Real-time earnings tracking</li>
+                        <li>Email alerts on earnings</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <a href="#" class="cta">Start Free Trial</a>
+                </div>
+                <div class="price-card">
+                    <h3>Agency</h3>
+                    <div class="price">$199<span style="font-size: 0.5em; color: #999;">/month</span></div>
+                    <p class="price-desc">For power users</p>
+                    <ul class="features">
+                        <li>Run on 10 computers</li>
+                        <li>Manage client accounts</li>
+                        <li>White-label dashboard</li>
+                        <li>API access</li>
+                        <li>Dedicated account manager</li>
+                        <li>24/7 support</li>
+                    </ul>
+                    <a href="#" class="cta">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ-ish -->
+    <section style="background: #f8f9fa;">
+        <div class="container">
+            <h2>Key Questions</h2>
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div style="margin: 30px 0; padding: 20px; background: white; border-radius: 6px;">
+                    <h3 style="margin-bottom: 10px; color: #1a1a2e;">Is this legal?</h3>
+                    <p>Posting to platforms using automation violates their Terms of Service. Your accounts may be suspended or banned. SUNO is a tool — how you use it is your responsibility. We recommend starting with test accounts and understanding the risks.</p>
+                </div>
+                <div style="margin: 30px 0; padding: 20px; background: white; border-radius: 6px;">
+                    <h3 style="margin-bottom: 10px; color: #1a1a2e;">How much can I earn?</h3>
+                    <p>Earnings depend on video views and campaign CPM. Expect $3–$5 per 1,000 views. If you post 100 clips/month averaging 10K views each, that's roughly $3,000–$5,000/month. Your results will vary based on content quality and audience.</p>
+                </div>
+                <div style="margin: 30px 0; padding: 20px; background: white; border-radius: 6px;">
+                    <h3 style="margin-bottom: 10px; color: #1a1a2e;">Do I need a Whop account?</h3>
+                    <p>Yes. SUNO automates posting for Whop campaigns you've joined. You need an existing Whop account with campaign access to get started.</p>
+                </div>
+                <div style="margin: 30px 0; padding: 20px; background: white; border-radius: 6px;">
+                    <h3 style="margin-bottom: 10px; color: #1a1a2e;">Will my accounts get banned?</h3>
+                    <p>Possibly. Platform automation is risky. SUNO includes account warmup features and rate limiting to reduce bans, but there's no guarantee. Start with test accounts and scale gradually.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <h2 style="margin-bottom: 10px;">SUNO</h2>
+            <p>Automated content clipping for Whop campaigns.</p>
+            <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;">
+                <a href="#" style="color: #00d4ff; text-decoration: none;">Terms of Service</a> ·
+                <a href="#" style="color: #00d4ff; text-decoration: none;">Privacy Policy</a> ·
+                <a href="#" style="color: #00d4ff; text-decoration: none;">Support</a>
+            </p>
+            <p style="margin-top: 20px; opacity: 0.6; font-size: 0.85em;">© 2026 SUNO. All rights reserved. Not affiliated with Whop, TikTok, Instagram, or YouTube.</p>
+        </div>
+    </footer>
+</body>
+</html>
