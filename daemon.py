@@ -16,7 +16,7 @@ from pathlib import Path
 
 import config
 from queue_manager import QueueManager, ClipStatus, AccountState
-from whop_scraper import WhopScraper
+from services.whop_client import WhopClient
 from platform_poster import PlatformPoster
 from earnings_tracker import EarningsTracker
 
@@ -180,14 +180,14 @@ class WhopDaemon:
         self.tracker.display_dashboard()
 
     async def _refresh_campaigns(self):
-        """Refresh Whop campaign list."""
+        """Refresh Whop campaign list via official API."""
         logger.info("Refreshing Whop campaigns...")
         self.last_fetch = datetime.now()
         try:
-            async with WhopScraper() as scraper:
-                campaigns = await scraper.refresh_campaigns()
-                self.session_stats['clips_fetched'] += len(campaigns)
-                logger.info(f"Campaigns refreshed: {len(campaigns)} active")
+            client = WhopClient()
+            campaigns = client.list_campaigns()
+            self.session_stats['clips_fetched'] += len(campaigns)
+            logger.info(f"Campaigns refreshed: {len(campaigns)} active")
         except Exception as e:
             logger.error(f"Campaign refresh failed: {e}")
             self.session_stats['errors'] += 1
@@ -222,15 +222,20 @@ class WhopDaemon:
             self.session_stats['errors'] += 1
 
     async def _submit_pending(self):
-        """Submit all posted-but-not-submitted clips to Whop (atomic flow)."""
+        """Submit all posted-but-not-submitted clips to Whop via official API."""
         clips = self.queue.get_clips_needing_submission()
         if not clips:
             return
         logger.info(f"Submitting {len(clips)} clips to Whop...")
         try:
-            async with WhopScraper() as scraper:
-                submitted = await scraper.submit_batch(clips)
-                logger.info(f"Submitted {submitted}/{len(clips)} clips")
+            client = WhopClient()
+            submitted = 0
+            for clip in clips:
+                result = client.submit_clip(clip.campaign_id, clip.url)
+                if result.get('success'):
+                    self.queue.update_clip_status(clip.id, ClipStatus.SUBMITTED)
+                    submitted += 1
+            logger.info(f"Submitted {submitted}/{len(clips)} clips")
         except Exception as e:
             logger.error(f"Whop submission failed: {e}")
     
@@ -253,9 +258,13 @@ class DaemonRunner:
         """Single cycle: refresh campaigns + post pending clips."""
         logger.info("Running single cycle...")
         queue = QueueManager()
-        async with WhopScraper() as scraper:
-            campaigns = await scraper.refresh_campaigns()
+        try:
+            client = WhopClient()
+            campaigns = client.list_campaigns()
             logger.info(f"Campaigns refreshed: {len(campaigns)}")
+        except Exception as e:
+            logger.error(f"Campaign refresh failed: {e}")
+
         pending = queue.get_pending_clips(limit=config.CLIPS_PER_SESSION)
         if pending:
             async with PlatformPoster() as poster:
@@ -272,11 +281,14 @@ class DaemonRunner:
     async def run_fetch_only():
         """Only refresh campaigns, don't post."""
         logger.info("Refreshing campaigns only...")
-        async with WhopScraper() as scraper:
-            campaigns = await scraper.refresh_campaigns()
+        try:
+            client = WhopClient()
+            campaigns = client.list_campaigns()
             logger.info(f"Active campaigns: {len(campaigns)}")
             for c in campaigns:
-                print(f"  {c.name} | CPM ${c.cpm:.2f}")
+                print(f"  {c['name']} | CPM ${c.get('cpm', 0):.2f}")
+        except Exception as e:
+            logger.error(f"Campaign refresh failed: {e}")
     
     @staticmethod
     async def run_post_only():

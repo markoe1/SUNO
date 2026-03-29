@@ -1,12 +1,8 @@
-"""Whop HTTP client using browser-exported session cookies.
+"""Whop HTTP client using official Whop API with Bearer token authentication.
 
-The user exports their Whop cookies from DevTools → Application → Cookies
-and pastes them into our settings UI. We encrypt them and use them here.
-
-We never automate Whop login — Cloudflare + 2FA makes that unreliable.
+Uses WHOP_API_KEY from environment for all API calls.
 """
 
-import asyncio
 import logging
 import os
 import random
@@ -17,25 +13,12 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-WHOP_BASE_URL = os.getenv("WHOP_BASE_URL", "https://whop.com")
-REQUEST_DELAY_MIN = float(os.getenv("WHOP_REQUEST_DELAY_MIN", "2"))
-REQUEST_DELAY_MAX = float(os.getenv("WHOP_REQUEST_DELAY_MAX", "5"))
+WHOP_API_BASE_URL = "https://api.whop.com/api/v1"
+WHOP_API_KEY = os.getenv("WHOP_API_KEY", "")
+REQUEST_DELAY_MIN = float(os.getenv("WHOP_REQUEST_DELAY_MIN", "0.5"))
+REQUEST_DELAY_MAX = float(os.getenv("WHOP_REQUEST_DELAY_MAX", "1.5"))
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 RETRY_BACKOFF_BASE = int(os.getenv("RETRY_BACKOFF_BASE", "60"))
-
-# Clipping API paths — override via env if Whop changes their internal routes.
-# These are undocumented internal endpoints discovered by inspecting browser traffic.
-# If submissions return 404, capture the real path from DevTools Network tab and set here.
-WHOP_CAMPAIGNS_PATH  = os.getenv("WHOP_CAMPAIGNS_PATH",  "/api/v5/clipping/campaigns")
-WHOP_SUBMIT_PATH     = os.getenv("WHOP_SUBMIT_PATH",     "/api/v5/clipping/campaigns/{campaign_id}/submissions")
-WHOP_CHECK_PATH      = os.getenv("WHOP_CHECK_PATH",      "/api/v5/clipping/submissions/{submission_id}")
-
-_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/124.0.0.0 Safari/537.36"
-)
-
 
 class WhopAuthError(Exception):
     """Raised when the Whop session is expired or invalid (HTTP 401/403)."""
@@ -51,18 +34,20 @@ def _random_delay():
 
 
 class WhopClient:
-    """HTTP client for Whop using stored browser session cookies."""
+    """HTTP client for Whop using official API with Bearer token."""
 
-    def __init__(self, cookies: dict[str, str]):
-        self._cookies = cookies
+    def __init__(self, cookies: dict[str, str] = None, api_key: str = None):
+        # Support legacy cookies parameter for backward compatibility, but use API key
+        self._api_key = api_key or WHOP_API_KEY
+        if not self._api_key:
+            raise WhopAuthError("WHOP_API_KEY environment variable not set")
+
         self._client = httpx.Client(
-            base_url=WHOP_BASE_URL,
-            cookies=cookies,
+            base_url=WHOP_API_BASE_URL,
             headers={
-                "User-Agent": _USER_AGENT,
-                "Accept": "application/json, text/html, */*",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Referer": WHOP_BASE_URL + "/",
+                "Authorization": f"Bearer {self._api_key}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
             },
             timeout=30.0,
             follow_redirects=True,
@@ -102,9 +87,9 @@ class WhopClient:
         raise Exception("Max retries exceeded")
 
     def validate_session(self) -> bool:
-        """Validate that stored cookies are still active."""
+        """Validate that API key is valid by fetching user info."""
         try:
-            resp = self._request_with_retry("GET", "/api/v5/me")
+            resp = self._request_with_retry("GET", "/users/me")
             return resp.status_code == 200
         except WhopAuthError:
             return False
@@ -113,50 +98,25 @@ class WhopClient:
             return False
 
     def list_campaigns(self) -> list[dict]:
-        """Fetch available clipping campaigns from Whop.
+        """Fetch available clipping campaigns from official Whop API.
 
-        Tries the configured WHOP_CAMPAIGNS_PATH first, then two fallback paths.
-        All paths can be overridden via env vars if Whop changes their internal routes.
+        Calls GET /campaigns to retrieve all campaigns available to the authenticated user.
         """
-        paths_to_try = [
-            WHOP_CAMPAIGNS_PATH + "?limit=50",
-            "/clipping/campaigns",
-            "/api/v5/clipping/campaigns?limit=50",
-        ]
-        # Deduplicate while preserving order
-        seen = set()
-        unique_paths = []
-        for p in paths_to_try:
-            if p not in seen:
-                seen.add(p)
-                unique_paths.append(p)
-
         try:
-            for path in unique_paths:
-                try:
-                    resp = self._request_with_retry("GET", path)
-                    if resp.status_code == 404:
-                        logger.warning("list_campaigns: 404 at %s — trying next path", path)
-                        continue
-                    if resp.status_code != 200:
-                        logger.error("list_campaigns: HTTP %d at %s", resp.status_code, path)
-                        continue
-                    data = resp.json()
-                    campaigns = data.get("campaigns", data.get("data", data if isinstance(data, list) else []))
-                    if isinstance(campaigns, list) and campaigns:
-                        logger.info("list_campaigns: found %d campaigns via %s", len(campaigns), path)
-                        return [self._normalize_campaign(c) for c in campaigns]
-                except WhopAuthError:
-                    raise
-                except Exception as exc:
-                    logger.warning("list_campaigns: error at %s: %s", path, exc)
-                    continue
+            # Official Whop API endpoint for campaigns
+            resp = self._request_with_retry("GET", "/campaigns?limit=100")
+            if resp.status_code != 200:
+                logger.error("list_campaigns: HTTP %d", resp.status_code)
+                return []
 
-            logger.warning(
-                "list_campaigns: all paths returned empty or failed. "
-                "Set WHOP_CAMPAIGNS_PATH env var to the correct internal endpoint."
-            )
-            return []
+            data = resp.json()
+            campaigns = data.get("data", data.get("campaigns", []))
+            if not isinstance(campaigns, list):
+                campaigns = [campaigns] if campaigns else []
+
+            logger.info("list_campaigns: found %d campaigns", len(campaigns))
+            return [self._normalize_campaign(c) for c in campaigns]
+
         except WhopAuthError:
             raise
         except Exception as exc:
@@ -164,15 +124,16 @@ class WhopClient:
             return []
 
     def submit_clip(self, campaign_id: str, clip_url: str) -> dict:
-        """Submit a clip URL to a Whop campaign."""
-        path = WHOP_SUBMIT_PATH.format(campaign_id=campaign_id)
+        """Submit a clip URL to a Whop campaign via official API."""
         payload = {
             "campaign_id": campaign_id,
             "clip_url": clip_url,
         }
         try:
-            resp = self._request_with_retry("POST", path, json=payload)
+            # Official Whop API endpoint for submissions
+            resp = self._request_with_retry("POST", "/submissions", json=payload)
             body_text = resp.text[:1000]
+
             if resp.status_code in (200, 201):
                 try:
                     data = resp.json()
@@ -183,24 +144,8 @@ class WhopClient:
                     "submission_id": data.get("id") or data.get("submission_id"),
                     "error": None,
                 }
-            elif resp.status_code == 404:
-                logger.error(
-                    "submit_clip 404 — endpoint may be wrong. path=%s response=%s\n"
-                    "To fix: capture the real path from DevTools Network tab while "
-                    "submitting a clip manually on whop.com, then set WHOP_SUBMIT_PATH env var.",
-                    path,
-                    body_text,
-                )
-                return {
-                    "success": False,
-                    "submission_id": None,
-                    "error": (
-                        f"404 — endpoint not found ({path}). "
-                        "Check logs for instructions to fix WHOP_SUBMIT_PATH."
-                    ),
-                }
             else:
-                logger.warning("submit_clip HTTP %d path=%s body=%s", resp.status_code, path, body_text)
+                logger.warning("submit_clip HTTP %d body=%s", resp.status_code, body_text)
                 return {
                     "success": False,
                     "submission_id": None,
@@ -212,10 +157,9 @@ class WhopClient:
             return {"success": False, "submission_id": None, "error": str(exc)}
 
     def check_submission(self, submission_id: str) -> dict:
-        """Check the status of a previously submitted clip."""
-        path = WHOP_CHECK_PATH.format(submission_id=submission_id)
+        """Check the status of a previously submitted clip via official API."""
         try:
-            resp = self._request_with_retry("GET", path)
+            resp = self._request_with_retry("GET", f"/submissions/{submission_id}")
             if resp.status_code == 200:
                 data = resp.json()
                 return {
@@ -259,8 +203,9 @@ class WhopClient:
 class DryRunWhopClient:
     """Same interface as WhopClient but returns mock data and logs DRY RUN."""
 
-    def __init__(self, cookies: dict = None):
-        self._cookies = cookies or {}
+    def __init__(self, cookies: dict = None, api_key: str = None):
+        # Backward compatible with both cookies and api_key parameters
+        self._api_key = api_key or ""
 
     def validate_session(self) -> bool:
         logger.info("DRY RUN: validate_session -> True")

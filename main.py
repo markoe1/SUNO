@@ -4,7 +4,6 @@ WhopClipper — Main Entry Point
 CLI for all operations.
 
 Modes:
-  login      — Open browser, log into Whop, save session (run once)
   campaigns  — Discover + refresh Whop campaigns
   fetch      — Alias for campaigns (kept for compat)
   post       — Post pending clips from inbox
@@ -25,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import config
 from queue_manager import QueueManager, AccountState
-from whop_scraper import WhopScraper
+from services.whop_client import WhopClient
 from platform_poster import PlatformPoster
 from earnings_tracker import EarningsTracker
 from daemon import WhopDaemon
@@ -47,31 +46,23 @@ def print_banner():
 
 # ── Mode handlers ─────────────────────────────────────────────────────────────
 
-async def cmd_login(args):
-    """Save Whop session interactively."""
-    print("\nOpening browser for Whop login...\n")
-    async with WhopScraper() as scraper:
-        success = await scraper.login()
-        if success:
-            print("\nLogin successful. Session saved to data/whop_session.json")
-            print("You won't need to do this again unless the session expires.")
-        else:
-            print("\nLogin failed or timed out. Try again.")
-
-
 async def cmd_campaigns(args):
-    """Discover and refresh Whop campaigns."""
+    """Discover and refresh Whop campaigns via official API."""
     print("\nRefreshing Whop campaigns...\n")
-    async with WhopScraper() as scraper:
-        campaigns = await scraper.refresh_campaigns()
+    try:
+        client = WhopClient()
+        campaigns = client.list_campaigns()
         print(f"\nFound {len(campaigns)} campaigns:")
         for c in campaigns:
-            print(f"  {c.name}")
-            print(f"    CPM: ${c.cpm:.2f} | Budget: ${c.budget_remaining:.0f} | Free: {c.is_free}")
-            if c.drive_url:
-                print(f"    Drive: {c.drive_url[:70]}")
-            if c.youtube_url:
-                print(f"    YouTube: {c.youtube_url[:70]}")
+            print(f"  {c['name']}")
+            print(f"    CPM: ${c.get('cpm', 0):.2f} | Free: {c.get('is_free', False)}")
+            if c.get('drive_url'):
+                print(f"    Drive: {c['drive_url'][:70]}")
+            if c.get('youtube_url'):
+                print(f"    YouTube: {c['youtube_url'][:70]}")
+    except Exception as e:
+        print(f"\nError refreshing campaigns: {e}")
+        print("Make sure WHOP_API_KEY is set in .env")
 
 
 async def cmd_post(args):
@@ -101,9 +92,12 @@ async def cmd_run(args):
     print(f"\nFull cycle ({count} clips)...\n")
 
     # Refresh campaigns
-    async with WhopScraper() as scraper:
-        campaigns = await scraper.refresh_campaigns()
+    try:
+        client = WhopClient()
+        campaigns = client.list_campaigns()
         print(f"Campaigns: {len(campaigns)} active")
+    except Exception as e:
+        print(f"Campaign refresh failed: {e}")
 
     # Post pending clips
     queue = QueueManager()
@@ -181,14 +175,10 @@ def cmd_test(args):
     print(f"  Warmup hours:     {config.WARMUP_HOURS}")
 
     print("\nCredentials:")
-    print(f"  Whop:       {'SET' if config.WHOP_EMAIL else 'MISSING'}")
-    print(f"  TikTok:     {'SET' if config.TIKTOK_USERNAME else 'MISSING'}")
-    print(f"  Instagram:  {'SET' if config.INSTAGRAM_USERNAME else 'MISSING'}")
-    print(f"  YouTube:    {'SET' if config.YOUTUBE_EMAIL else 'MISSING'}")
-
-    print("\nSession:")
-    session_ok = config.WHOP_SESSION_FILE.exists()
-    print(f"  Whop session:   {'EXISTS' if session_ok else 'MISSING — run --mode login'}")
+    print(f"  Whop API Key:   {'SET' if config.WHOP_API_KEY else 'MISSING'}")
+    print(f"  TikTok:         {'SET' if config.TIKTOK_USERNAME else 'MISSING'}")
+    print(f"  Instagram:      {'SET' if config.INSTAGRAM_USERNAME else 'MISSING'}")
+    print(f"  YouTube:        {'SET' if config.YOUTUBE_EMAIL else 'MISSING'}")
 
     print("\nDirectories:")
     for label, path in [
@@ -206,7 +196,10 @@ def cmd_test(args):
     print(f"  Connected: {config.DB_PATH}")
 
     print("\n" + "=" * 44)
-    print("Run --mode login first if Whop session is missing.")
+    if not config.WHOP_API_KEY:
+        print("ERROR: WHOP_API_KEY not set in .env file")
+    else:
+        print("All critical configuration looks good!")
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
@@ -219,7 +212,6 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py --mode login              # Save Whop session (run once)
   python main.py --mode campaigns          # Refresh campaign list
   python main.py --mode post --count 5     # Post 5 clips from inbox
   python main.py --mode run  --count 15   # Full cycle (campaigns + post)
@@ -232,7 +224,7 @@ Examples:
 
     parser.add_argument(
         "--mode", "-m",
-        choices=["login", "campaigns", "fetch", "post", "run",
+        choices=["campaigns", "fetch", "post", "run",
                  "daemon", "status", "dashboard", "test"],
         default="status",
     )
@@ -244,7 +236,6 @@ Examples:
         logging.getLogger().setLevel(logging.DEBUG)
 
     dispatch = {
-        "login":     lambda: asyncio.run(cmd_login(args)),
         "campaigns": lambda: asyncio.run(cmd_campaigns(args)),
         "fetch":     lambda: asyncio.run(cmd_campaigns(args)),  # alias
         "post":      lambda: asyncio.run(cmd_post(args)),

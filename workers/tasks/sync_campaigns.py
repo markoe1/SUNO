@@ -35,19 +35,8 @@ async def _sync_campaigns_async(user_id: str, job_id: str):
         await db.commit()
 
         try:
-            # Load user session
-            result = await db.execute(
-                select(UserSecret).where(UserSecret.user_id == user_id)
-            )
-            secret = result.scalar_one_or_none()
-
-            if not secret:
-                raise ValueError("No Whop session found for user")
-
-            blob = decrypt_blob(secret.encrypted_blob)
-            cookies = blob.get("cookies", {})
-
-            client = WhopClient(cookies=cookies)
+            # Use global WHOP_API_KEY from environment (no per-user session needed)
+            client = WhopClient()
             campaigns = client.list_campaigns()
 
             upserted = 0

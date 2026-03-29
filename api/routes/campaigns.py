@@ -59,16 +59,6 @@ async def trigger_sync(
             detail="Jobs are paused. Resume from Settings first.",
         )
 
-    # Check for Whop session
-    result = await db.execute(
-        select(UserSecret).where(UserSecret.user_id == current_user.id)
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No Whop session configured. Go to Settings to add your cookies.",
-        )
-
     from workers.queue import q
     from workers.tasks.sync_campaigns import sync_campaigns
 

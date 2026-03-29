@@ -27,8 +27,8 @@ DB_PATH = DATA_DIR / "whop_clips.db"
 # =============================================================================
 # CREDENTIALS (from .env)
 # =============================================================================
-WHOP_EMAIL    = os.getenv("WHOP_EMAIL", "")
-WHOP_PASSWORD = os.getenv("WHOP_PASSWORD", "")
+# WHOP_API_KEY is loaded from .env and used by services/whop_client.py
+WHOP_API_KEY = os.getenv("WHOP_API_KEY", "")
 
 TIKTOK_USERNAME = os.getenv("TIKTOK_USERNAME", "")
 TIKTOK_PASSWORD = os.getenv("TIKTOK_PASSWORD", "")
@@ -40,15 +40,8 @@ YOUTUBE_EMAIL    = os.getenv("YOUTUBE_EMAIL", "")
 YOUTUBE_PASSWORD = os.getenv("YOUTUBE_PASSWORD", "")
 
 # =============================================================================
-# WHOP SETTINGS
+# CAMPAIGN SETTINGS
 # =============================================================================
-WHOP_BASE_URL      = "https://whop.com"
-WHOP_LOGIN_URL     = "https://whop.com/login"
-WHOP_DISCOVER_URL  = "https://whop.com/discover/clipping"
-
-# Session file for persistent login
-WHOP_SESSION_FILE  = DATA_DIR / "whop_session.json"
-
 # Campaign filters
 MIN_CPM               = 2.50    # Minimum dollars per 1K views
 MIN_BUDGET_REMAINING  = 500.0   # Skip campaigns with less budget left
@@ -126,19 +119,6 @@ WHOP_CHECK_INTERVAL   = 60     # Minutes between campaign refresh
 HEALTH_CHECK_INTERVAL = 5      # Minutes between health checks
 MAX_POST_RETRIES      = 3
 RATE_LIMIT_COOLDOWN   = 15     # Minutes to wait after a rate limit
-
-# =============================================================================
-# BROWSER SETTINGS
-# =============================================================================
-HEADLESS        = False   # Must stay False — Cloudflare blocks headless browsers
-BROWSER_TIMEOUT = 60      # seconds
-DOWNLOAD_TIMEOUT = 120
-
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-]
 
 # =============================================================================
 # LOGGING
