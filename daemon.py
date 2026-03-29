@@ -231,7 +231,13 @@ class WhopDaemon:
             client = WhopClient()
             submitted = 0
             for clip in clips:
-                result = client.submit_clip(clip.campaign_id, clip.url)
+                # Get first available platform URL (prefer TikTok > Instagram > YouTube)
+                clip_url = clip.tiktok_url or clip.instagram_url or clip.youtube_url
+                if not clip_url:
+                    logger.warn(f"Clip {clip.id} has no posted URLs, skipping submission")
+                    continue
+
+                result = client.submit_clip(clip.campaign_id, clip_url)
                 if result.get('success'):
                     self.queue.update_clip_status(clip.id, ClipStatus.SUBMITTED)
                     submitted += 1
