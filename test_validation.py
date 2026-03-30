@@ -77,24 +77,31 @@ class SUNOValidation:
         try:
             if not config.WHOP_API_KEY:
                 print("  [FAIL] WHOP_API_KEY not set in .env")
+                print("       Action: Add WHOP_API_KEY to .env file")
                 self.results['step1_whop'] = False
                 return
 
             client = WhopClient()
-            is_valid = client.validate_session()
 
-            if is_valid:
-                print("  [PASS] Whop API key is valid")
+            # Try to list campaigns as a real API test
+            campaigns = client.list_campaigns()
+
+            if campaigns is not None:
+                print("  [PASS] Whop API connection successful")
+                print(f"       Found {len(campaigns)} campaigns")
                 self.results['step1_whop'] = True
             else:
-                print("  [FAIL] Whop API key validation failed")
+                print("  [FAIL] Whop API returned no data")
+                print("       Check: API key valid? Whop account has campaigns?")
                 self.results['step1_whop'] = False
 
         except WhopAuthError as e:
             print(f"  [FAIL] Whop auth error: {e}")
+            print("       Action: Verify WHOP_API_KEY is correct in .env")
             self.results['step1_whop'] = False
         except Exception as e:
-            print(f"  [FAIL] Unexpected error: {e}")
+            print(f"  [FAIL] Whop API error: {e}")
+            print("       Check: WHOP_API_KEY valid? Network connection?")
             self.results['step1_whop'] = False
 
         print()
@@ -250,7 +257,7 @@ class SUNOValidation:
 
         try:
             tracker = EarningsTracker()
-            today = tracker._get_daily_stats()
+            today = tracker.get_today_stats()
 
             if today:
                 print(f"  [PASS] Earnings tracking active")
