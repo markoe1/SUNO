@@ -130,7 +130,7 @@ class SUNOValidation:
                     filepath=str(test_file),
                     caption="SUNO Validation Test Clip",
                     hashtags="#test #validation #suno",
-                    status=ClipStatus.READY,
+                    status=ClipStatus.PENDING.value,
                 )
 
                 # This would normally be saved to DB
