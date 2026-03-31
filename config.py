@@ -39,6 +39,9 @@ INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")
 YOUTUBE_EMAIL    = os.getenv("YOUTUBE_EMAIL", "")
 YOUTUBE_PASSWORD = os.getenv("YOUTUBE_PASSWORD", "")
 
+FACEBOOK_EMAIL   = os.getenv("FACEBOOK_EMAIL", "")
+FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD", "")
+
 # =============================================================================
 # CAMPAIGN SETTINGS
 # =============================================================================
@@ -50,6 +53,15 @@ FREE_ONLY             = True    # Only join free campaigns
 # =============================================================================
 # POSTING SETTINGS
 # =============================================================================
+HEADLESS = True  # Run browser in headless mode (no GUI)
+BROWSER_TIMEOUT = 30  # Seconds to wait for browser actions
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+]
+
 DAILY_CLIP_TARGET  = 15
 CLIPS_PER_SESSION  = 5
 SESSIONS_PER_DAY   = 3

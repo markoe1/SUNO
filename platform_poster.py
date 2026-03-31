@@ -172,40 +172,59 @@ class PlatformPoster:
         """Login to Instagram."""
         if self._logged_in.get('instagram'):
             return True
-        
+
         page = self.pages['instagram']
-        
+
         try:
             logger.info("Logging into Instagram...")
-            await page.goto('https://www.instagram.com/accounts/login/', timeout=config.BROWSER_TIMEOUT * 1000)
-            
+            await page.goto('https://www.instagram.com/', timeout=config.BROWSER_TIMEOUT * 1000)
+            await page.wait_for_load_state('networkidle')
+            await asyncio.sleep(3)
+
             # Handle cookie consent
             try:
                 await page.click('button:has-text("Allow")', timeout=3000)
             except:
                 pass
-            
-            # Wait for login form
-            await page.wait_for_selector('input[name="username"]', timeout=15000)
-            
-            # Fill credentials
-            await page.fill('input[name="username"]', config.INSTAGRAM_USERNAME)
-            await page.fill('input[name="password"]', config.INSTAGRAM_PASSWORD)
-            
-            # Click login
-            await page.click('button[type="submit"]')
-            
-            # Wait for redirect
-            await asyncio.sleep(5)
-            
-            # Check if logged in
-            if 'login' not in page.url:
-                self._logged_in['instagram'] = True
-                logger.info("Successfully logged into Instagram")
-                return True
-            
+
+            # Look for login link and click if needed
+            try:
+                login_link = await page.query_selector('a[href*="/accounts/login/"]')
+                if login_link:
+                    await login_link.click()
+                    await asyncio.sleep(2)
+            except:
+                pass
+
+            # Wait for any input field to appear (be flexible)
+            for attempt in range(3):
+                username_field = await page.query_selector('input[name="username"]')
+                if username_field:
+                    break
+                await asyncio.sleep(2)
+
+            # Fill credentials with flexible selectors
+            if username_field:
+                await username_field.fill(config.INSTAGRAM_USERNAME)
+
+                password_field = await page.query_selector('input[name="password"]')
+                if password_field:
+                    await password_field.fill(config.INSTAGRAM_PASSWORD)
+
+                    # Click login - try multiple button selectors
+                    login_btn = await page.query_selector('button[type="submit"], button:has-text("Log in"), button:has-text("log in")')
+                    if login_btn:
+                        await login_btn.click()
+                        await asyncio.sleep(5)
+
+                        # Check if logged in
+                        if '/accounts/login/' not in page.url and 'instagram.com' in page.url:
+                            self._logged_in['instagram'] = True
+                            logger.info("Successfully logged into Instagram")
+                            return True
+
             return False
-            
+
         except Exception as e:
             logger.error(f"Instagram login failed: {e}")
             return False
@@ -282,38 +301,58 @@ class PlatformPoster:
         """Login to YouTube/Google."""
         if self._logged_in.get('youtube'):
             return True
-        
+
         page = self.pages['youtube']
-        
+
         try:
             logger.info("Logging into YouTube...")
             await page.goto('https://accounts.google.com/signin', timeout=config.BROWSER_TIMEOUT * 1000)
-            
+            await page.wait_for_load_state('networkidle')
+
             # Enter email
-            await page.wait_for_selector('input[type="email"]', timeout=15000)
-            await page.fill('input[type="email"]', config.YOUTUBE_EMAIL)
-            await page.click('#identifierNext')
-            
-            await asyncio.sleep(3)
-            
-            # Enter password
-            await page.wait_for_selector('input[type="password"]', timeout=15000)
-            await page.fill('input[type="password"]', config.YOUTUBE_PASSWORD)
-            await page.click('#passwordNext')
-            
-            # Wait for redirect
-            await asyncio.sleep(5)
-            
-            # Navigate to YouTube Studio
-            await page.goto('https://studio.youtube.com/', timeout=config.BROWSER_TIMEOUT * 1000)
-            
-            if 'studio.youtube.com' in page.url:
-                self._logged_in['youtube'] = True
-                logger.info("Successfully logged into YouTube")
-                return True
-            
+            email_field = None
+            try:
+                await page.wait_for_selector('input[type="email"]', timeout=10000)
+                email_field = await page.query_selector('input[type="email"]')
+            except:
+                # Try alternative selector
+                email_field = await page.query_selector('input[id="identifierId"]')
+
+            if email_field:
+                await email_field.fill(config.YOUTUBE_EMAIL)
+                next_btn = await page.query_selector('#identifierNext, button:has-text("Next")')
+                if next_btn:
+                    await next_btn.click()
+
+                await asyncio.sleep(3)
+
+                # Enter password
+                password_field = None
+                try:
+                    await page.wait_for_selector('input[type="password"]', timeout=10000)
+                    password_field = await page.query_selector('input[type="password"]')
+                except:
+                    pass
+
+                if password_field:
+                    await password_field.fill(config.YOUTUBE_PASSWORD)
+                    pwd_next_btn = await page.query_selector('#passwordNext, button:has-text("Next")')
+                    if pwd_next_btn:
+                        await pwd_next_btn.click()
+
+                # Wait for redirect
+                await asyncio.sleep(5)
+
+                # Navigate to YouTube Studio
+                await page.goto('https://studio.youtube.com/', timeout=config.BROWSER_TIMEOUT * 1000)
+
+                if 'studio.youtube.com' in page.url:
+                    self._logged_in['youtube'] = True
+                    logger.info("Successfully logged into YouTube")
+                    return True
+
             return False
-            
+
         except Exception as e:
             logger.error(f"YouTube login failed: {e}")
             return False
@@ -504,40 +543,38 @@ class PlatformPoster:
         # Update status to posting
         self.queue.update_clip_status(clip.id, ClipStatus.POSTING)
         
-        # Run all posts in parallel
-        results = await asyncio.gather(
-            self.post_tiktok(clip),
-            self.post_instagram(clip),
-            self.post_youtube(clip),
-            self.post_facebook(clip),
-            return_exceptions=True
-        )
-        
+        # Run all posts in parallel based on enabled platforms
+        post_tasks = []
+        platform_list = []
+
+        if 'tiktok' in config.PLATFORMS:
+            post_tasks.append(self.post_tiktok(clip))
+            platform_list.append('tiktok')
+        if 'instagram' in config.PLATFORMS:
+            post_tasks.append(self.post_instagram(clip))
+            platform_list.append('instagram')
+        if 'youtube' in config.PLATFORMS:
+            post_tasks.append(self.post_youtube(clip))
+            platform_list.append('youtube')
+        if 'facebook' in config.PLATFORMS:
+            post_tasks.append(self.post_facebook(clip))
+            platform_list.append('facebook')
+
+        results = await asyncio.gather(*post_tasks, return_exceptions=True)
+
         # Process results
         post_results = {}
-        tiktok_url = ""
-        instagram_url = ""
-        youtube_url = ""
-        facebook_url = ""
         success_count = 0
-        
+
         for i, result in enumerate(results):
-            platform = config.PLATFORMS[i]
-            
+            platform = platform_list[i]
+
             if isinstance(result, Exception):
                 post_results[platform] = PostResult(platform, False, error=str(result))
             else:
                 post_results[platform] = result
                 if result.success:
                     success_count += 1
-                    if platform == 'tiktok':
-                        tiktok_url = result.url
-                    elif platform == 'instagram':
-                        instagram_url = result.url
-                    elif platform == 'youtube':
-                        youtube_url = result.url
-                    elif platform == 'facebook':
-                        facebook_url = result.url
         
         # Update clip status based on results
         if success_count == len(config.PLATFORMS):
@@ -546,13 +583,14 @@ class PlatformPoster:
             status = ClipStatus.PARTIAL
         else:
             status = ClipStatus.FAILED
-        
-        self.queue.update_clip_status(
-            clip.id, status,
-            tiktok_url=tiktok_url,
-            instagram_url=instagram_url,
-            youtube_url=youtube_url
-        )
+
+        # Build URL dict dynamically
+        url_kwargs = {}
+        for platform, result in post_results.items():
+            if result.success:
+                url_kwargs[f'{platform}_url'] = result.url
+
+        self.queue.update_clip_status(clip.id, status, **url_kwargs)
         
         # Move file to appropriate folder
         src_path = Path(clip.filepath)

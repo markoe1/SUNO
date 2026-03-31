@@ -83,16 +83,52 @@ class SUNOValidation:
 
             client = WhopClient()
 
-            # Try to list campaigns as a real API test
-            campaigns = client.list_campaigns()
+            # Test: Try to reach Whop campaigns endpoint (primary integration point)
+            try:
+                import httpx
 
-            if campaigns is not None:
-                print("  [PASS] Whop API connection successful")
-                print(f"       Found {len(campaigns)} campaigns")
-                self.results['step1_whop'] = True
-            else:
-                print("  [FAIL] Whop API returned no data")
-                print("       Check: API key valid? Whop account has campaigns?")
+                resp = client._request_with_retry("GET", "/campaigns?limit=100")
+
+                if resp.status_code == 200:
+                    data = resp.json()
+                    campaigns = data.get("data", data.get("campaigns", []))
+                    print(f"  [PASS] Whop API reachable and authenticated")
+                    print(f"       Campaigns endpoint: OK (found {len(campaigns)} campaigns)")
+                    self.results['step1_whop'] = True
+
+                elif resp.status_code == 401:
+                    print(f"  [FAIL] HTTP 401: API key is not authorized")
+                    print("       Action: Verify WHOP_API_KEY in .env is correct")
+                    self.results['step1_whop'] = False
+
+                elif resp.status_code == 403:
+                    print(f"  [FAIL] HTTP 403: API key lacks required permissions")
+                    print("       Action: Check that API key has 'campaigns' scope in Whop dashboard")
+                    self.results['step1_whop'] = False
+
+                elif resp.status_code == 404:
+                    print(f"  [FAIL] HTTP 404: Endpoint not found")
+                    print(f"       Attempted: GET /campaigns?limit=100")
+                    print("       This suggests: incorrect API path, outdated Whop API version, or")
+                    print("                       endpoint doesn't exist for this API key's account type")
+                    print("       Action: Verify correct Whop API endpoint in official docs")
+                    try:
+                        error_detail = resp.json()
+                        print(f"       Response: {error_detail}")
+                    except:
+                        pass
+                    self.results['step1_whop'] = False
+
+                else:
+                    print(f"  [FAIL] HTTP {resp.status_code}: Unexpected response from Whop")
+                    try:
+                        print(f"       Response: {resp.json()}")
+                    except:
+                        print(f"       Response: {resp.text[:200]}")
+                    self.results['step1_whop'] = False
+
+            except Exception as e:
+                print(f"  [FAIL] Could not reach Whop API: {e}")
                 self.results['step1_whop'] = False
 
         except WhopAuthError as e:
@@ -100,8 +136,8 @@ class SUNOValidation:
             print("       Action: Verify WHOP_API_KEY is correct in .env")
             self.results['step1_whop'] = False
         except Exception as e:
-            print(f"  [FAIL] Whop API error: {e}")
-            print("       Check: WHOP_API_KEY valid? Network connection?")
+            print(f"  [FAIL] Whop validation error: {e}")
+            print("       Check: Network connection? API endpoint available?")
             self.results['step1_whop'] = False
 
         print()
@@ -189,18 +225,34 @@ class SUNOValidation:
                 results = await poster.post_to_all_platforms(self.test_clip)
 
                 success_count = sum(1 for r in results.values() if r.success)
+                total_platforms = len(config.PLATFORMS)
 
-                if success_count > 0:
-                    print(f"  [PASS] Posted to {success_count}/{len(config.PLATFORMS)} platforms")
+                # Required platforms for launch
+                required_platforms = set(config.PLATFORMS)  # All are required
+                successful_platforms = {p for p, r in results.items() if r.success}
+                failed_platforms = required_platforms - successful_platforms
+
+                if success_count == total_platforms:
+                    print(f"  [PASS] Posted to all {total_platforms} platforms")
                     self.posted_urls = {
                         p: r.url for p, r in results.items() if r.success
                     }
                     self.results['step3_post'] = True
+                elif success_count > 0:
+                    print(f"  [PARTIAL] Posted to {success_count}/{total_platforms} platforms")
+                    print(f"       Success: {', '.join(successful_platforms)}")
+                    print(f"       Failed: {', '.join(failed_platforms)}")
+                    for platform in failed_platforms:
+                        if platform in results:
+                            print(f"         - {platform}: {results[platform].error}")
+                    self.posted_urls = {
+                        p: r.url for p, r in results.items() if r.success
+                    }
+                    self.results['step3_post'] = False  # Strict: partial = fail
                 else:
                     print(f"  [FAIL] Failed to post to any platform")
                     for platform, result in results.items():
-                        if not result.success:
-                            print(f"       {platform}: {result.error}")
+                        print(f"       {platform}: {result.error}")
                     self.results['step3_post'] = False
 
         except Exception as e:
@@ -252,25 +304,36 @@ class SUNOValidation:
         print()
 
     async def _step_5_track_earnings(self):
-        """Step 5: Check earnings tracking."""
-        print("[STEP 5/5] Checking earnings tracking...\n")
+        """Step 5: Check that posted clips are actually tracked."""
+        print("[STEP 5/5] Verifying posted clips are tracked...\n")
 
         try:
+            if not self.posted_urls:
+                print(f"  [SKIP] No posted clips to track (see step 3)")
+                self.results['step5_tracking'] = False
+                return
+
             tracker = EarningsTracker()
             today = tracker.get_today_stats()
+            clips_posted = today.get('clips_posted', 0) if today else 0
 
-            if today:
-                print(f"  [PASS] Earnings tracking active")
-                print(f"       Clips posted today: {today.get('clips_posted', 0)}")
+            # Step 5 should verify the posted clip is actually in the tracker
+            if clips_posted > 0:
+                print(f"  [PASS] Posted clips are being tracked")
+                print(f"       Clips posted today: {clips_posted}")
                 print(f"       Total views: {today.get('total_views', 0):,}")
                 print(f"       Estimated earnings: ${today.get('total_earnings', 0):.2f}")
                 self.results['step5_tracking'] = True
             else:
-                print(f"  [INFO] No earnings data yet (tracking is ready)")
-                self.results['step5_tracking'] = True
+                print(f"  [PARTIAL] Tracker exists but posted clip not yet recorded")
+                print(f"       Action: Check if tracker needs to be updated after posting")
+                print(f"       Expected: clips_posted >= {len(self.posted_urls)}")
+                print(f"       Actual: clips_posted = {clips_posted}")
+                # This is partial - tracker works but didn't capture our posted clip
+                self.results['step5_tracking'] = False
 
         except Exception as e:
-            print(f"  [FAIL] Tracking error: {e}")
+            print(f"  [FAIL] Tracking verification error: {e}")
             self.results['step5_tracking'] = False
 
         print()
@@ -294,17 +357,17 @@ class SUNOValidation:
 
         for step_key, step_label in steps:
             status = "PASS" if self.results.get(step_key, False) else "FAIL"
-            symbol = "✓" if self.results.get(step_key, False) else "✗"
+            symbol = "Y" if self.results.get(step_key, False) else "N"
             print(f"  [{symbol}] {step_label:<30} [{status}]")
 
         print(f"\nResult: {passed}/{total} steps passed\n")
 
         if passed == total:
-            print("🎉 SUNO IS PROVEN — END-TO-END AUTOMATION WORKS")
-            print("   Ready to launch on Whop marketplace!\n")
+            print("*** SUNO IS PROVEN - END-TO-END AUTOMATION WORKS ***")
+            print("    Ready to launch on Whop marketplace!\n")
             return True
         else:
-            print("❌ SUNO IS NOT YET READY")
+            print("!!! SUNO IS NOT YET READY !!!")
             failing = [label for key, label in steps if not self.results.get(key, False)]
             print(f"   Failing steps: {', '.join([l.split('. ')[1] for l in failing])}\n")
             return False
