@@ -284,8 +284,10 @@ class SUNOValidation:
             # Get first active campaign (for testing)
             campaigns = client.list_campaigns()
             if not campaigns:
-                print("  [FAIL] No active campaigns found on Whop")
-                self.results['step4_submit'] = False
+                print("  [INFO] Whop API connected but no active campaigns")
+                print("       This is normal if you haven't created campaigns yet")
+                print("       Action: Create a campaign in Whop dashboard to test submission")
+                self.results['step4_submit'] = False  # Can't test without campaign
                 return
 
             test_campaign = campaigns[0]
