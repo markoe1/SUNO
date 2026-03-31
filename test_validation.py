@@ -87,7 +87,7 @@ class SUNOValidation:
             try:
                 import httpx
 
-                resp = client._request_with_retry("GET", "/campaigns?limit=100")
+                resp = client._request_with_retry("GET", "/ad_campaigns?limit=100")
 
                 if resp.status_code == 200:
                     data = resp.json()

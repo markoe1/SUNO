@@ -98,13 +98,13 @@ class WhopClient:
             return False
 
     def list_campaigns(self) -> list[dict]:
-        """Fetch available clipping campaigns from official Whop API.
+        """Fetch available ad campaigns from official Whop API.
 
-        Calls GET /campaigns to retrieve all campaigns available to the authenticated user.
+        Calls GET /ad_campaigns to retrieve all campaigns available to the authenticated user.
         """
         try:
-            # Official Whop API endpoint for campaigns
-            resp = self._request_with_retry("GET", "/campaigns?limit=100")
+            # Official Whop API endpoint for ad campaigns
+            resp = self._request_with_retry("GET", "/ad_campaigns?limit=100")
             if resp.status_code != 200:
                 logger.error("list_campaigns: HTTP %d", resp.status_code)
                 return []
