@@ -86,8 +86,16 @@ class SUNOValidation:
             # Test: Try to reach Whop campaigns endpoint (primary integration point)
             try:
                 import httpx
+                import os
 
-                resp = client._request_with_retry("GET", "/ad_campaigns?limit=100")
+                company_id = os.getenv("WHOP_COMPANY_ID", "")
+                if not company_id:
+                    print(f"  [FAIL] WHOP_COMPANY_ID not set in .env")
+                    print("       Action: Add your Whop company ID to .env file")
+                    self.results['step1_whop'] = False
+                    return
+
+                resp = client._request_with_retry("GET", f"/ad_campaigns?company_id={company_id}&limit=100")
 
                 if resp.status_code == 200:
                     data = resp.json()

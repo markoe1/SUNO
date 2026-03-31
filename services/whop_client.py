@@ -103,8 +103,13 @@ class WhopClient:
         Calls GET /ad_campaigns to retrieve all campaigns available to the authenticated user.
         """
         try:
-            # Official Whop API endpoint for ad campaigns
-            resp = self._request_with_retry("GET", "/ad_campaigns?limit=100")
+            company_id = os.getenv("WHOP_COMPANY_ID", "")
+            if not company_id:
+                logger.error("list_campaigns: WHOP_COMPANY_ID not set")
+                return []
+
+            # Official Whop API endpoint for ad campaigns (requires company_id)
+            resp = self._request_with_retry("GET", f"/ad_campaigns?company_id={company_id}&limit=100")
             if resp.status_code != 200:
                 logger.error("list_campaigns: HTTP %d", resp.status_code)
                 return []

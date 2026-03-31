@@ -591,7 +591,23 @@ class PlatformPoster:
                 url_kwargs[f'{platform}_url'] = result.url
 
         self.queue.update_clip_status(clip.id, status, **url_kwargs)
-        
+
+        # Record successful posts in earnings tracker
+        if success_count > 0:
+            try:
+                from earnings_tracker import EarningsTracker
+                tracker = EarningsTracker()
+                for platform, result in post_results.items():
+                    if result.success:
+                        tracker.record_post(
+                            clip_name=clip.filename,
+                            platform=platform,
+                            post_url=result.url
+                        )
+                logger.info(f"Recorded {success_count} post(s) in earnings tracker")
+            except Exception as e:
+                logger.warning(f"Could not record posts in tracker: {e}")
+
         # Move file to appropriate folder
         src_path = Path(clip.filepath)
         if status in (ClipStatus.POSTED, ClipStatus.PARTIAL):
