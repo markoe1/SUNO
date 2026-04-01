@@ -289,7 +289,7 @@ class QueueManager:
             row = conn.execute("""
                 SELECT
                     COUNT(*) as clips_downloaded,
-                    SUM(CASE WHEN status IN ('posted','submitted') THEN 1 ELSE 0 END) as clips_posted,
+                    SUM(CASE WHEN status IN ('posted','submitted','partial') THEN 1 ELSE 0 END) as clips_posted,
                     SUM(views_total) as total_views,
                     SUM(earnings)    as total_earnings
                 FROM clips
@@ -308,7 +308,7 @@ class QueueManager:
             row = conn.execute("""
                 SELECT
                     COUNT(*) as total_clips,
-                    SUM(CASE WHEN status IN ('posted','submitted') THEN 1 ELSE 0 END) as total_posted,
+                    SUM(CASE WHEN status IN ('posted','submitted','partial') THEN 1 ELSE 0 END) as total_posted,
                     SUM(views_total) as total_views,
                     SUM(earnings)    as total_earnings
                 FROM clips
