@@ -67,6 +67,9 @@ class Clip:
     retry_count: int     = 0
     last_error: str      = ""
 
+    created_at: str      = ""
+    updated_at: str      = ""
+
 
 @dataclass
 class Campaign:
@@ -236,7 +239,7 @@ class QueueManager:
             if error:
                 updates.append("last_error = ?");    values.append(error)
                 updates.append("retry_count = retry_count + 1")
-            if status == ClipStatus.POSTED:
+            if status == ClipStatus.POSTED or status == ClipStatus.PARTIAL:
                 updates.append("posted_at = ?");     values.append(datetime.now().isoformat())
             if status == ClipStatus.SUBMITTED:
                 updates.append("submitted_at = ?");  values.append(datetime.now().isoformat())
@@ -248,24 +251,24 @@ class QueueManager:
             conn.commit()
 
     def get_clips_needing_submission(self) -> List[Clip]:
-        """Clips posted but not yet submitted to Whop."""
+        """Clips posted but not yet submitted to Whop (includes PARTIAL for MVP)."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute("""
                 SELECT * FROM clips
-                WHERE status = 'posted'
+                WHERE status IN ('posted', 'partial')
                 ORDER BY posted_at ASC
             """).fetchall()
             return [Clip(**dict(r)) for r in rows]
 
     def get_posted_clips(self, since_hours: int = 24) -> List[Clip]:
-        """Get clips posted/submitted within the last N hours."""
+        """Get clips posted/submitted/partial within the last N hours."""
         cutoff_time = (datetime.now() - timedelta(hours=since_hours)).isoformat()
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute("""
                 SELECT * FROM clips
-                WHERE status IN ('posted', 'submitted')
+                WHERE status IN ('posted', 'submitted', 'partial')
                   AND posted_at >= ?
                 ORDER BY posted_at DESC
             """, (cutoff_time,)).fetchall()

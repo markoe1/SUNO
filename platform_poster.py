@@ -103,9 +103,11 @@ class PlatformPoster:
             
             # Click login
             await page.click('button[type="submit"]')
-            
+
             # Wait for redirect (may need CAPTCHA handling)
-            await asyncio.sleep(5)
+            # If CAPTCHA appears, you will see it in the browser window
+            print("    Waiting for TikTok login (60s for CAPTCHA if needed)...")
+            await asyncio.sleep(60)
             
             # Check if logged in
             if 'login' not in page.url:
@@ -215,7 +217,10 @@ class PlatformPoster:
                     login_btn = await page.query_selector('button[type="submit"], button:has-text("Log in"), button:has-text("log in")')
                     if login_btn:
                         await login_btn.click()
-                        await asyncio.sleep(5)
+                        # Wait for redirect (may need CAPTCHA handling)
+                        # If CAPTCHA appears, you will see it in the browser window
+                        print("    Waiting for Instagram login (60s for CAPTCHA if needed)...")
+                        await asyncio.sleep(60)
 
                         # Check if logged in
                         if '/accounts/login/' not in page.url and 'instagram.com' in page.url:

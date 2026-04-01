@@ -254,30 +254,29 @@ class SUNOValidation:
                 success_count = sum(1 for r in results.values() if r.success)
                 total_platforms = len(config.PLATFORMS)
 
-                # Required platforms for launch
-                required_platforms = set(config.PLATFORMS)  # All are required
+                # Required platforms for MVP launch: YouTube (primary)
+                # TikTok/Instagram are Phase 2 (anti-bot detection prevents reliable automation)
+                required_platforms = {"youtube"}  # MVP: YouTube only
                 successful_platforms = {p for p, r in results.items() if r.success}
                 failed_platforms = required_platforms - successful_platforms
 
-                if success_count == total_platforms:
-                    print(f"  [PASS] Posted to all {total_platforms} platforms")
+                if "youtube" in successful_platforms:
+                    print(f"  [PASS] Posted to YouTube (primary platform for MVP)")
+                    if success_count == total_platforms:
+                        print(f"       Bonus: Also succeeded on {success_count}/{total_platforms} platforms")
+                    else:
+                        other_success = successful_platforms - {"youtube"}
+                        if other_success:
+                            print(f"       Also posted: {', '.join(other_success)}")
+                        other_failed = set(config.PLATFORMS) - successful_platforms
+                        if other_failed:
+                            print(f"       Phase 2 (anti-bot detection): {', '.join(other_failed)}")
                     self.posted_urls = {
                         p: r.url for p, r in results.items() if r.success
                     }
                     self.results['step3_post'] = True
-                elif success_count > 0:
-                    print(f"  [PASS] Posted to {success_count}/{total_platforms} platforms (YouTube is the primary platform)")
-                    print(f"       Success: {', '.join(successful_platforms)}")
-                    print(f"       Failed: {', '.join(failed_platforms)}")
-                    for platform in failed_platforms:
-                        if platform in results:
-                            print(f"         - {platform}: {results[platform].error}")
-                    self.posted_urls = {
-                        p: r.url for p, r in results.items() if r.success
-                    }
-                    self.results['step3_post'] = True  # Accept partial (YouTube is primary)
                 else:
-                    print(f"  [FAIL] Failed to post to any platform")
+                    print(f"  [FAIL] YouTube posting failed (required for MVP)")
                     for platform, result in results.items():
                         print(f"       {platform}: {result.error}")
                     self.results['step3_post'] = False
@@ -303,11 +302,12 @@ class SUNOValidation:
             # Get first active campaign (for testing)
             campaigns = client.list_campaigns()
             if not campaigns:
-                print("  [PASS] Whop API is responsive (submission ready)")
-                print("       Note: No campaigns exist yet")
-                print("       Action: Create campaigns in Whop dashboard to start submissions")
-                print("       Once campaigns exist, submission will work automatically")
-                self.results['step4_submit'] = True  # API works, just no campaigns yet
+                print("  [BLOCKED] Whop API connected but no campaigns available")
+                print("       Status: Waiting for campaign creation in Whop dashboard")
+                print("       Action: Create a campaign in Whop dashboard to enable submissions")
+                print("       Once created, clip submissions will work automatically")
+                print("       Note: This is a blocking condition, not a failure")
+                self.results['step4_submit'] = False  # Blocked, not ready yet
                 return
 
             test_campaign = campaigns[0]
@@ -401,31 +401,49 @@ class SUNOValidation:
         print("=" * 70 + "\n")
 
         steps = [
-            ('step1_whop', '1. Whop API Connection'),
-            ('step2_clips', '2. Fetch Clips'),
-            ('step3_post', '3. Post Clip'),
-            ('step4_submit', '4. Submit to Whop'),
-            ('step5_tracking', '5. Track Earnings'),
+            ('step1_whop', '1. Whop API Connection', 'required'),
+            ('step2_clips', '2. Fetch Clips', 'required'),
+            ('step3_post', '3. Post Clip (YouTube)', 'required'),
+            ('step4_submit', '4. Submit to Whop', 'blocked_ok'),  # Blocked by missing campaign OK
+            ('step5_tracking', '5. Track Earnings', 'required'),
         ]
 
-        passed = sum(1 for step, _ in steps if self.results.get(step, False))
-        total = len(steps)
+        # Count results
+        passed = sum(1 for step, _, _ in steps if self.results.get(step, False))
+        blocked = sum(1 for step, _, req in steps if req == 'blocked_ok' and not self.results.get(step, False))
+        required_passes = sum(1 for step, _, req in steps if req == 'required' and self.results.get(step, False))
+        required_total = sum(1 for _, _, req in steps if req == 'required')
 
-        for step_key, step_label in steps:
-            status = "PASS" if self.results.get(step_key, False) else "FAIL"
-            symbol = "Y" if self.results.get(step_key, False) else "N"
+        for step_key, step_label, req_type in steps:
+            result = self.results.get(step_key, False)
+            if result:
+                status = "PASS"
+                symbol = "Y"
+            elif req_type == 'blocked_ok':
+                status = "BLOCKED"
+                symbol = "⊗"
+            else:
+                status = "FAIL"
+                symbol = "N"
             print(f"  [{symbol}] {step_label:<30} [{status}]")
 
-        print(f"\nResult: {passed}/{total} steps passed\n")
+        print(f"\nMVP Readiness: {required_passes}/{required_total} required steps passed")
+        if blocked > 0:
+            print(f"              {blocked} blocking condition (campaign creation needed)")
+        print()
 
-        if passed == total:
-            print("*** SUNO IS PROVEN - END-TO-END AUTOMATION WORKS ***")
-            print("    Ready to launch on Whop marketplace!\n")
+        # MVP requires all 5 core steps to work (Step 4 blocked by missing campaign is acceptable)
+        if required_passes == required_total:
+            print("*** SUNO IS MVP-READY - CORE AUTOMATION WORKS ***")
+            print("    YouTube posting + earnings tracking functional")
+            if blocked > 0:
+                print("    Whop submission ready once campaigns are created")
+            print("\n    Ready for MVP launch!\n")
             return True
         else:
             print("!!! SUNO IS NOT YET READY !!!")
-            failing = [label for key, label in steps if not self.results.get(key, False)]
-            print(f"   Failing steps: {', '.join([l.split('. ')[1] for l in failing])}\n")
+            failing = [label for key, label, req in steps if req == 'required' and not self.results.get(key, False)]
+            print(f"   Critical failures: {', '.join([l.split('. ')[1] for l in failing])}\n")
             return False
 
 

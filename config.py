@@ -53,7 +53,7 @@ FREE_ONLY             = True    # Only join free campaigns
 # =============================================================================
 # POSTING SETTINGS
 # =============================================================================
-HEADLESS = True  # Run browser in headless mode (no GUI)
+HEADLESS = False  # Run browser in headless mode (no GUI) — set to False for debugging/CAPTCHA solving
 BROWSER_TIMEOUT = 30  # Seconds to wait for browser actions
 
 USER_AGENTS = [
