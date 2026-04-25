@@ -1,8 +1,9 @@
 # VyroClipper Dependencies
 # ========================
 
-# Browser automation
-playwright
+# Web framework
+fastapi
+uvicorn[standard]
 flask
 requests>=2.31.0
 
