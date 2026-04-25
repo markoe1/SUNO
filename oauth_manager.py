@@ -56,8 +56,8 @@ class OAuthManager:
 
         Uses client_key + client_secret to get OAuth token.
         Expected env vars:
-        - TIKTOK_CLIENT_KEY
-        - TIKTOK_CLIENT_SECRET
+        - TIKTOK_KEY (or TIKTOK_CLIENT_ID)
+        - TIKTOK_SECRET (or TIKTOK_CLIENT_SECRET)
         """
         # Check if we already have a valid token
         if "tiktok" in self.tokens:
@@ -65,12 +65,15 @@ class OAuthManager:
             if token_info.get("access_token") and not self._is_token_expired(token_info):
                 return token_info["access_token"]
 
-        # Get new token
-        client_key = os.getenv("TIKTOK_CLIENT_KEY")
-        client_secret = os.getenv("TIKTOK_CLIENT_SECRET")
+        # Get new token - try both naming conventions
+        client_key = os.getenv("TIKTOK_KEY") or os.getenv("TIKTOK_CLIENT_ID") or os.getenv("TIKTOK_CLIENT_KEY")
+        client_secret = os.getenv("TIKTOK_SECRET") or os.getenv("TIKTOK_CLIENT_SECRET")
 
         if not client_key or not client_secret:
-            logger.warning("TikTok: Missing TIKTOK_CLIENT_KEY or TIKTOK_CLIENT_SECRET")
+            logger.warning("TikTok: Missing credentials. Expected one of:\n"
+                          "  - TIKTOK_KEY + TIKTOK_SECRET\n"
+                          "  - TIKTOK_CLIENT_ID + TIKTOK_CLIENT_SECRET\n"
+                          "  - TIKTOK_CLIENT_KEY + TIKTOK_CLIENT_SECRET")
             return None
 
         try:

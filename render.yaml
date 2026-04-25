@@ -24,6 +24,10 @@ services:
         scope: build
       - key: TIKTOK_CLIENT_SECRET
         scope: build
+      - key: TIKTOK_KEY
+        scope: build
+      - key: TIKTOK_SECRET
+        scope: build
       - key: INSTAGRAM_ACCESS_TOKEN
         scope: build
       - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
