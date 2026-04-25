@@ -5,6 +5,9 @@
 fastapi
 uvicorn[standard]
 
+# Rate Limiting
+slowapi
+
 # Database
 psycopg2-binary>=2.9.9
 
