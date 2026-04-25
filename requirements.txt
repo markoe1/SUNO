@@ -30,6 +30,7 @@ structlog>=24.0.0
 
 # Templating
 jinja2>=3.0.0
+python-multipart>=0.0.6
 
 # Authentication
 python-jose>=3.3.0
