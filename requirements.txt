@@ -1,29 +1,21 @@
-# VyroClipper Dependencies
-# ========================
+# SUNO Production Dependencies
+# =============================
 
-# Web framework
+# Web Framework
 fastapi
 uvicorn[standard]
-flask
-requests>=2.31.0
 
-# Environment management
+# Database
+psycopg2-binary>=2.9.9
+
+# Cache/Queue
+redis
+
+# Environment
 python-dotenv>=1.0.0
 
-# HTTP requests (backup)
+# HTTP
 requests>=2.31.0
-aiohttp>=3.9.0
-
-# Async utilities
-asyncio-throttle>=1.0.2
-
-# Sync Postgres driver (required by alembic migrations)
-psycopg2-binary>=2.9.9
 
 # AI
 anthropic>=0.40.0
-
-# YouTube API (proper OAuth upload)
-google-auth-oauthlib>=1.1.0
-google-auth-httplib2>=0.2.0
-google-api-python-client>=2.100.0
