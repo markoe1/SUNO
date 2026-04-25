@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% set active_page = 'operator' %}
+
+{% block title %}Performance Reports — SUNO Clips{% endblock %}
+
+{% block extra_styles %}
+.insight-success { color: var(--green); }
+.insight-warning { color: var(--orange); }
+.insight-info { color: #7eb8ff; }
+.insight-item { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.insight-item:last-child { border-bottom: none; }
+.report-card { margin-bottom: 16px; }
+.top-clip { display: grid; grid-template-columns: 1fr 80px; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.top-clip:last-child { border-bottom: none; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat-mini { text-align: center; background: var(--bg); border-radius: 6px; padding: 12px; }
+.stat-mini .val { font-size: 22px; font-weight: 700; color: var(--green); }
+.stat-mini .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1100px;margin:32px auto;padding:0 24px;">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <div>
+      <a href="/operator" style="font-size:12px;color:var(--muted);">← Operator Dashboard</a>
+      <h1 style="font-size:24px;font-weight:700;margin:8px 0 4px;">Performance Reports</h1>
+    </div>
+    <button class="btn btn-primary" onclick="openGenModal()">+ Generate Reports</button>
+  </div>
+
+  <!-- Filters -->
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <select class="form-input" id="filter-client" style="width:200px;" onchange="loadReports()">
+      <option value="">All Clients</option>
+    </select>
+    <select class="form-input" id="filter-type" style="width:160px;" onchange="loadReports()">
+      <option value="">All Periods</option>
+      <option value="monthly">Monthly</option>
+      <option value="weekly">Weekly</option>
+    </select>
+  </div>
+
+  <div id="reports-container"><p style="color:var(--muted);">Loading...</p></div>
+
+</div>
+
+<!-- Generate Modal -->
+<div id="gen-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:32px;width:440px;max-width:95vw;">
+    <h2 style="font-size:18px;font-weight:600;margin:0 0 20px;">Generate Reports</h2>
+    <form onsubmit="submitGenerate(event)">
+      <div class="form-group">
+        <label class="form-label">Client (leave blank for all active)</label>
+        <select class="form-input" name="client_id" id="gen-client-sel">
+          <option value="">All Active Clients</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Period Type</label>
+        <select class="form-input" name="period_type">
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input class="form-input" type="datetime-local" name="period_start" required id="gen-start">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date</label>
+          <input class="form-input" type="datetime-local" name="period_end" required id="gen-end">
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeGenModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="gen-submit-btn">Generate</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fmtViews(n){ return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':String(n||0); }
+function fmtDate(iso){ if(!iso)return'—'; return new Date(iso).toLocaleDateString(); }
+
+const INSIGHT_CLASS = { success:'insight-success', warning:'insight-warning', info:'insight-info' };
+
+async function loadClients() {
+  const res = await apiFetch('/api/clients/');
+  if (!res) return;
+  const data = await res.json();
+  const selFilter = document.getElementById('filter-client');
+  const selGen = document.getElementById('gen-client-sel');
+  (data.clients||[]).forEach(c => {
+    [selFilter, selGen].forEach(sel => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+async function loadReports() {
+  const clientId = document.getElementById('filter-client').value;
+  const type = document.getElementById('filter-type').value;
+  let url = '/api/reports/';
+  const params = [];
+  if (clientId) params.push(`client_id=${clientId}`);
+  if (type) params.push(`period_type=${type}`);
+  if (params.length) url += '?' + params.join('&');
+
+  const res = await apiFetch(url);
+  if (!res) return;
+  const reports = await res.json();
+  const el = document.getElementById('reports-container');
+
+  if (!reports.length) {
+    el.innerHTML = '<p style="color:var(--muted);">No reports yet. Generate one above.</p>';
+    return;
+  }
+
+  el.innerHTML = reports.map(r => {
+    const insights = r.insights_json?.items || [];
+    const topClips = r.top_clips_json || [];
+    const bestHooks = r.best_hooks_json || [];
+
+    return `
+    <div class="card report-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+        <div>
+          <h3 style="font-size:16px;font-weight:600;margin:0;">${r.client_name || '—'}</h3>
+          <p style="color:var(--muted);font-size:12px;margin:4px 0 0;">
+            ${r.period_type} · ${fmtDate(r.period_start)} → ${fmtDate(r.period_end)}
+          </p>
+        </div>
+        <span class="badge badge-muted">${r.period_type}</span>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-mini"><div class="val">${r.total_clips}</div><div class="lbl">Clips Posted</div></div>
+        <div class="stat-mini"><div class="val">${fmtViews(r.total_views)}</div><div class="lbl">Total Views</div></div>
+        <div class="stat-mini"><div class="val">${fmtViews(r.total_likes)}</div><div class="lbl">Likes</div></div>
+        <div class="stat-mini"><div class="val">${r.insights_json?.avg_views_per_clip ? fmtViews(r.insights_json.avg_views_per_clip) : '—'}</div><div class="lbl">Avg Views/Clip</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <p style="font-size:12px;font-weight:600;color:var(--muted);margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">Insights</p>
+          ${insights.map(i => `
+            <div class="insight-item">
+              <span class="${INSIGHT_CLASS[i.type]||''}">●</span>
+              <span>${i.text}</span>
+            </div>`).join('') || '<p style="color:var(--muted);font-size:12px;">—</p>'}
+        </div>
+        <div>
+          <p style="font-size:12px;font-weight:600;color:var(--muted);margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">Top Clips</p>
+          ${topClips.map(c => `
+            <div class="top-clip">
+              <span style="font-size:12px;">${c.title||'Untitled'}</span>
+              <span style="color:var(--green);font-size:12px;font-weight:600;">${fmtViews(c.views)}</span>
+            </div>`).join('') || '<p style="color:var(--muted);font-size:12px;">—</p>'}
+        </div>
+        <div>
+          <p style="font-size:12px;font-weight:600;color:var(--muted);margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">Best Hooks</p>
+          ${bestHooks.map(h => `
+            <div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+              <div style="margin-bottom:2px;">"${h.hook}"</div>
+              <div style="color:var(--muted);">${fmtViews(h.avg_views)} avg views</div>
+            </div>`).join('') || '<p style="color:var(--muted);font-size:12px;">—</p>'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openGenModal() {
+  // Default to current month
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const toLocal = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('gen-start').value = toLocal(start);
+  document.getElementById('gen-end').value = toLocal(end);
+  document.getElementById('gen-modal').style.display = 'flex';
+}
+function closeGenModal() { document.getElementById('gen-modal').style.display = 'none'; }
+
+async function submitGenerate(e) {
+  e.preventDefault();
+  const btn = document.getElementById('gen-submit-btn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+  const fd = new FormData(e.target);
+  const payload = {
+    client_id: fd.get('client_id') || null,
+    period_type: fd.get('period_type'),
+    period_start: new Date(fd.get('period_start')).toISOString(),
+    period_end: new Date(fd.get('period_end')).toISOString(),
+  };
+  const res = await apiFetch('/api/reports/generate', { method:'POST', body: JSON.stringify(payload) });
+  if (res && res.ok) {
+    const data = await res.json();
+    showFlash(`Generated ${data.generated?.length || 0} reports`, 'success');
+    closeGenModal();
+    loadReports();
+  } else {
+    const err = await res?.json();
+    showFlash(err?.detail || 'Failed', 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Generate';
+}
+
+document.getElementById('gen-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeGenModal(); });
+
+loadClients();
+loadReports();
+</script>
+{% endblock %}

@@ -1,0 +1,366 @@
+2026-04-15 08:18:55 | INFO | __main__ | ==================================================
+2026-04-15 08:18:55 | INFO | __main__ |   WhopClipper — Whop Edition
+2026-04-15 08:18:55 | INFO | __main__ |   $3/1K Views | 24/7 Automation
+2026-04-15 08:18:55 | INFO | __main__ | ==================================================
+2026-04-15 08:18:55 | INFO | __main__ | 
+Full cycle (1 clips)...
+
+2026-04-15 08:19:01 | INFO | httpx | HTTP Request: GET https://api.whop.com/api/v1/ad_campaigns?company_id=biz_AWUoYgaLuQrvFc&limit=100 "HTTP/1.1 200 OK"
+2026-04-15 08:19:01 | INFO | services.whop_client | list_campaigns: found 0 campaigns
+2026-04-15 08:19:01 | INFO | __main__ | Campaigns: 0 active
+2026-04-15 08:19:25 | INFO | platform_poster | Started browsers for 3 platforms
+2026-04-15 08:19:25 | INFO | platform_poster | Processing clip 1/1: test_clip_01.mp4
+2026-04-15 08:19:26 | INFO | platform_poster |   Quality score: 66.5/100 | Approved: False
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\logging\__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 52-53: character maps to <undefined>
+Call stack:
+  File "C:\Users\ellio\SUNO-repo\main.py", line 253, in <module>
+    main()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 249, in main
+    dispatch[args.mode]()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 242, in <lambda>
+    "run":       lambda: asyncio.run(cmd_run(args)),
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 678, in run_until_complete
+    self.run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_events.py", line 322, in run_forever
+    super().run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 645, in run_forever
+    self._run_once()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 1999, in _run_once
+    handle._run()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\ellio\SUNO-repo\main.py", line 107, in cmd_run
+    results = await poster.post_batch(pending)
+  File "C:\Users\ellio\SUNO-repo\platform_poster.py", line 588, in post_batch
+    logger.warning(f"  \u26a0\ufe0f  QUALITY WARNING: {', '.join(quality_score.warnings)}")
+Message: '  \u26a0\ufe0f  QUALITY WARNING: '
+Arguments: ()
+2026-04-15 08:19:26 | WARNING | platform_poster |   \u26a0\ufe0f  QUALITY WARNING: 
+2026-04-15 08:19:26 | INFO | platform_poster |   Proceeding with caution (score 66.5 >= threshold 70)
+2026-04-15 08:19:26 | INFO | platform_poster | Posting clip to all platforms: test_clip_01.mp4
+2026-04-15 08:19:26 | INFO | platform_poster | Logging into TikTok...
+2026-04-15 08:19:26 | INFO | platform_poster | Logging into Instagram...
+2026-04-15 08:19:33 | INFO | platform_poster | Uploading to YouTube: test_clip_01.mp4
+2026-04-15 08:19:33 | INFO | platform_poster |   Title: This is an amazing moment you need to see! #viral #trending
+2026-04-15 08:19:33 | INFO | platform_poster |   File size: 3.5MB
+2026-04-15 08:19:33 | ERROR | platform_poster | YouTube upload returned no video_id
+2026-04-15 08:19:36 | INFO | platform_poster |     Waiting for TikTok login (60s for CAPTCHA if needed)...
+2026-04-15 08:20:36 | WARNING | platform_poster | TikTok login may require manual verification
+2026-04-15 08:20:36 | INFO | platform_poster | Posting complete: 0/3 platforms successful
+2026-04-15 08:20:36 | INFO | __main__ | Posted: 0/1 clips
+2026-04-15 08:20:38 | INFO | platform_poster | All browsers closed
+2026-04-15 08:20:38 | INFO | earnings_tracker | 
+============================================================
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\logging\__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4b0' in position 48: character maps to <undefined>
+Call stack:
+  File "C:\Users\ellio\SUNO-repo\main.py", line 253, in <module>
+    main()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 249, in main
+    dispatch[args.mode]()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 242, in <lambda>
+    "run":       lambda: asyncio.run(cmd_run(args)),
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 678, in run_until_complete
+    self.run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_events.py", line 322, in run_forever
+    super().run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 645, in run_forever
+    self._run_once()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 1999, in _run_once
+    handle._run()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\ellio\SUNO-repo\main.py", line 113, in cmd_run
+    EarningsTracker().display_dashboard()
+  File "C:\Users\ellio\SUNO-repo\earnings_tracker.py", line 80, in display_dashboard
+    logger.info("\U0001f4b0 SUNO EARNINGS DASHBOARD")
+Message: '\U0001f4b0 SUNO EARNINGS DASHBOARD'
+Arguments: ()
+2026-04-15 08:20:38 | INFO | earnings_tracker | \U0001f4b0 SUNO EARNINGS DASHBOARD
+2026-04-15 08:20:38 | INFO | earnings_tracker | ============================================================
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\logging\__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4ca' in position 50: character maps to <undefined>
+Call stack:
+  File "C:\Users\ellio\SUNO-repo\main.py", line 253, in <module>
+    main()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 249, in main
+    dispatch[args.mode]()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 242, in <lambda>
+    "run":       lambda: asyncio.run(cmd_run(args)),
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 678, in run_until_complete
+    self.run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_events.py", line 322, in run_forever
+    super().run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 645, in run_forever
+    self._run_once()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 1999, in _run_once
+    handle._run()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\ellio\SUNO-repo\main.py", line 113, in cmd_run
+    EarningsTracker().display_dashboard()
+  File "C:\Users\ellio\SUNO-repo\earnings_tracker.py", line 84, in display_dashboard
+    logger.info("\n\U0001f4ca TODAY'S STATS")
+Message: "\n\U0001f4ca TODAY'S STATS"
+Arguments: ()
+2026-04-15 08:20:38 | INFO | earnings_tracker | 
+\U0001f4ca TODAY'S STATS
+2026-04-15 08:20:38 | INFO | earnings_tracker | ----------------------------------------
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Clips Downloaded:  1
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Clips Posted:      0
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Total Views:       0
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Earnings:          $0.00
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\logging\__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4c8' in position 50: character maps to <undefined>
+Call stack:
+  File "C:\Users\ellio\SUNO-repo\main.py", line 253, in <module>
+    main()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 249, in main
+    dispatch[args.mode]()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 242, in <lambda>
+    "run":       lambda: asyncio.run(cmd_run(args)),
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 678, in run_until_complete
+    self.run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_events.py", line 322, in run_forever
+    super().run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 645, in run_forever
+    self._run_once()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 1999, in _run_once
+    handle._run()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\ellio\SUNO-repo\main.py", line 113, in cmd_run
+    EarningsTracker().display_dashboard()
+  File "C:\Users\ellio\SUNO-repo\earnings_tracker.py", line 92, in display_dashboard
+    logger.info("\n\U0001f4c8 ALL TIME STATS")
+Message: '\n\U0001f4c8 ALL TIME STATS'
+Arguments: ()
+2026-04-15 08:20:38 | INFO | earnings_tracker | 
+\U0001f4c8 ALL TIME STATS
+2026-04-15 08:20:38 | INFO | earnings_tracker | ----------------------------------------
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Total Clips:       1
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Total Posted:      0
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Total Views:       0
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Total Earnings:    $0.00
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\logging\__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f3af' in position 50: character maps to <undefined>
+Call stack:
+  File "C:\Users\ellio\SUNO-repo\main.py", line 253, in <module>
+    main()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 249, in main
+    dispatch[args.mode]()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 242, in <lambda>
+    "run":       lambda: asyncio.run(cmd_run(args)),
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 678, in run_until_complete
+    self.run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_events.py", line 322, in run_forever
+    super().run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 645, in run_forever
+    self._run_once()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 1999, in _run_once
+    handle._run()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\ellio\SUNO-repo\main.py", line 113, in cmd_run
+    EarningsTracker().display_dashboard()
+  File "C:\Users\ellio\SUNO-repo\earnings_tracker.py", line 100, in display_dashboard
+    logger.info("\n\U0001f3af GOAL PROGRESS")
+Message: '\n\U0001f3af GOAL PROGRESS'
+Arguments: ()
+2026-04-15 08:20:38 | INFO | earnings_tracker | 
+\U0001f3af GOAL PROGRESS
+2026-04-15 08:20:38 | INFO | earnings_tracker | ----------------------------------------
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\logging\__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 67-86: character maps to <undefined>
+Call stack:
+  File "C:\Users\ellio\SUNO-repo\main.py", line 253, in <module>
+    main()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 249, in main
+    dispatch[args.mode]()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 242, in <lambda>
+    "run":       lambda: asyncio.run(cmd_run(args)),
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 678, in run_until_complete
+    self.run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_events.py", line 322, in run_forever
+    super().run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 645, in run_forever
+    self._run_once()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 1999, in _run_once
+    handle._run()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\ellio\SUNO-repo\main.py", line 113, in cmd_run
+    EarningsTracker().display_dashboard()
+  File "C:\Users\ellio\SUNO-repo\earnings_tracker.py", line 105, in display_dashboard
+    logger.info(f"  Daily (${daily['goal']:.0f}):   {daily_bar} {daily['percent']:.1f}%")
+Message: '  Daily ($100):   [\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591] 0.0%'
+Arguments: ()
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Daily ($100):   [\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591] 0.0%
+2026-04-15 08:20:38 | INFO | earnings_tracker |                     $0.00 / $100.00
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\logging\__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 68-87: character maps to <undefined>
+Call stack:
+  File "C:\Users\ellio\SUNO-repo\main.py", line 253, in <module>
+    main()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 249, in main
+    dispatch[args.mode]()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 242, in <lambda>
+    "run":       lambda: asyncio.run(cmd_run(args)),
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 678, in run_until_complete
+    self.run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_events.py", line 322, in run_forever
+    super().run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 645, in run_forever
+    self._run_once()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 1999, in _run_once
+    handle._run()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\ellio\SUNO-repo\main.py", line 113, in cmd_run
+    EarningsTracker().display_dashboard()
+  File "C:\Users\ellio\SUNO-repo\earnings_tracker.py", line 110, in display_dashboard
+    logger.info(f"  Monthly (${monthly['goal']:.0f}): {monthly_bar} {monthly['percent']:.1f}%")
+Message: '  Monthly ($3000): [\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591] 0.0%'
+Arguments: ()
+2026-04-15 08:20:38 | INFO | earnings_tracker |   Monthly ($3000): [\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591] 0.0%
+2026-04-15 08:20:38 | INFO | earnings_tracker |                     $0.00 / $3000.00
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\logging\__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4ca' in position 50: character maps to <undefined>
+Call stack:
+  File "C:\Users\ellio\SUNO-repo\main.py", line 253, in <module>
+    main()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 249, in main
+    dispatch[args.mode]()
+  File "C:\Users\ellio\SUNO-repo\main.py", line 242, in <lambda>
+    "run":       lambda: asyncio.run(cmd_run(args)),
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 678, in run_until_complete
+    self.run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_events.py", line 322, in run_forever
+    super().run_forever()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 645, in run_forever
+    self._run_once()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 1999, in _run_once
+    handle._run()
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\ellio\SUNO-repo\main.py", line 113, in cmd_run
+    EarningsTracker().display_dashboard()
+  File "C:\Users\ellio\SUNO-repo\earnings_tracker.py", line 123, in display_dashboard
+    logger.info("\n\U0001f4ca PROJECTIONS")
+Message: '\n\U0001f4ca PROJECTIONS'
+Arguments: ()
+2026-04-15 08:20:38 | INFO | earnings_tracker | 
+\U0001f4ca PROJECTIONS
+2026-04-15 08:20:38 | INFO | earnings_tracker | ----------------------------------------
+2026-04-15 08:20:38 | INFO | earnings_tracker | 
+============================================================
+2026-04-15 08:20:38 | INFO | earnings_tracker | Last updated: 2026-04-15 08:20:38
+2026-04-15 08:20:38 | INFO | earnings_tracker | ============================================================
+
+[ERROR] Not authenticated. Call authenticate() first.
+Exception ignored in: <function _ProactorBasePipeTransport.__del__ at 0x000001D5066F8860>
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 116, in __del__
+    _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                               ^^^^^^^^
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 80, in __repr__
+    info.append(f'fd={self._sock.fileno()}')
+                      ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_utils.py", line 102, in fileno
+    raise ValueError("I/O operation on closed pipe")
+ValueError: I/O operation on closed pipe
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x000001D5066D6FC0>
+Traceback (most recent call last):
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_subprocess.py", line 125, in __del__
+    _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+                               ^^^^^^^^
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_subprocess.py", line 70, in __repr__
+    info.append(f'stdin={stdin.pipe}')
+                        ^^^^^^^^^^^^
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\proactor_events.py", line 80, in __repr__
+    info.append(f'fd={self._sock.fileno()}')
+                      ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ellio\AppData\Local\Programs\Python\Python312\Lib\asyncio\windows_utils.py", line 102, in fileno
+    raise ValueError("I/O operation on closed pipe")
+ValueError: I/O operation on closed pipe

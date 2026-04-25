@@ -1,0 +1,42 @@
+# Credentials - NEVER commit
+.env
+*.env
+
+# Clips (large files)
+clips/inbox/*
+clips/ready/*
+clips/posted/*
+clips/failed/*
+!clips/*/.gitkeep
+
+# Database
+data/*.db
+data/*.db-journal
+
+# Logs
+logs/*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# Browser state
+browser_data/
+playwright_state/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+.env.local

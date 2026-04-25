@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% set active_page = 'operator' %}
+
+{% block title %}Client Detail — SUNO Clips{% endblock %}
+
+{% block extra_styles %}
+.detail-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+.stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.stat-row:last-child { border-bottom: none; }
+.stat-row .label { color: var(--muted); }
+.clip-row { display: grid; grid-template-columns: 1fr 100px 120px 80px 80px; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.clip-row:last-child { border-bottom: none; }
+.clip-header { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.inv-row { display: grid; grid-template-columns: 80px 1fr 100px 120px 100px; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.inv-row:last-child { border-bottom: none; }
+.section-title { font-size: 15px; font-weight: 600; margin: 0 0 16px; }
+@media(max-width:900px){ .detail-grid{ grid-template-columns:1fr; } }
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1200px;margin:32px auto;padding:0 24px;">
+
+  <div style="margin-bottom:20px;">
+    <a href="/operator/clients" style="font-size:12px;color:var(--muted);">← All Clients</a>
+  </div>
+
+  <!-- Client header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:24px;font-weight:700;margin:0;" id="client-name">Loading...</h1>
+      <p style="color:var(--muted);margin:4px 0 0;" id="client-niche"></p>
+    </div>
+    <div style="display:flex;gap:8px;" id="action-buttons"></div>
+  </div>
+
+  <div class="detail-grid">
+
+    <!-- Left: Client info -->
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <p class="section-title">Client Info</p>
+        <div id="client-info"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <p class="section-title">Performance</p>
+        <div id="client-perf"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <p class="section-title" style="margin:0;">Invoices</p>
+          <button class="btn btn-secondary btn-sm" onclick="openInvoiceModal()">+ Generate</button>
+        </div>
+        <div id="invoices-list"><p style="color:var(--muted);font-size:13px;">Loading...</p></div>
+      </div>
+    </div>
+
+    <!-- Right: Clips pipeline -->
+    <div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <p class="section-title" style="margin:0;">Clip Pipeline</p>
+          <button class="btn btn-primary btn-sm" onclick="openClipModal()">+ Add Clip</button>
+        </div>
+
+        <!-- Stage filter -->
+        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;" id="stage-filters">
+          <button class="btn btn-secondary btn-sm active-filter" data-s="" onclick="setStage(this,'')">All</button>
+          <button class="btn btn-secondary btn-sm" data-s="RAW" onclick="setStage(this,'RAW')">Raw</button>
+          <button class="btn btn-secondary btn-sm" data-s="EDITING" onclick="setStage(this,'EDITING')">Editing</button>
+          <button class="btn btn-secondary btn-sm" data-s="REVIEW" onclick="setStage(this,'REVIEW')">Review</button>
+          <button class="btn btn-secondary btn-sm" data-s="APPROVED" onclick="setStage(this,'APPROVED')">Approved</button>
+          <button class="btn btn-secondary btn-sm" data-s="POSTED" onclick="setStage(this,'POSTED')">Posted</button>
+        </div>
+
+        <div>
+          <div class="clip-row clip-header">
+            <span>Title / Hook</span><span>Editor</span><span>Status</span><span>Views</span><span></span>
+          </div>
+          <div id="clips-list"><p style="color:var(--muted);font-size:13px;">Loading...</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add Clip Modal -->
+<div class="modal-overlay" id="clip-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:32px;width:460px;max-width:95vw;">
+    <h2 style="font-size:18px;font-weight:600;margin:0 0 20px;">Add Clip</h2>
+    <form onsubmit="submitClip(event)">
+      <div class="form-group">
+        <label class="form-label">Title / Hook</label>
+        <input class="form-input" name="title" placeholder="Hook text or clip title">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Assign Editor</label>
+        <select class="form-input" name="editor_id" id="editor-select">
+          <option value="">— Unassigned —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hashtags</label>
+        <input class="form-input" name="hashtags" placeholder="#fitness #motivation">
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeClipModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Clip</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div class="modal-overlay" id="invoice-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:32px;width:400px;max-width:95vw;">
+    <h2 style="font-size:18px;font-weight:600;margin:0 0 20px;">Generate Invoice</h2>
+    <form onsubmit="submitInvoice(event)">
+      <div class="form-group">
+        <label class="form-label">Month (YYYY-MM)</label>
+        <input class="form-input" name="month" id="invoice-month" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Base Amount ($)</label>
+        <input class="form-input" name="base_amount" type="number" min="0" step="50" id="invoice-base">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Performance Bonus ($)</label>
+        <input class="form-input" name="bonus" type="number" min="0" step="50" value="0">
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeInvoiceModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Generate</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const clientId = '{{ client_id }}';
+let clientData = null;
+let currentStage = '';
+
+const STATUS_COLORS = {
+  LEAD:'badge-muted',TRIAL:'badge-orange',ACTIVE:'badge-green',PAUSED:'badge-muted',CHURNED:'badge-red',
+  RAW:'badge-muted',EDITING:'badge-orange',REVIEW:'badge-orange',APPROVED:'badge-green',POSTED:'badge-green',REJECTED:'badge-red'
+};
+function badge(v){ return `<span class="badge ${STATUS_COLORS[v?.toUpperCase()]||'badge-muted'}">${v}</span>`; }
+function fmt$(n){ return '$'+Number(n).toLocaleString(); }
+function fmtViews(n){ return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':String(n||0); }
+
+function setStage(btn, stage) {
+  currentStage = stage;
+  document.querySelectorAll('.active-filter').forEach(b=>b.classList.remove('active-filter'));
+  btn.classList.add('active-filter');
+  loadClips();
+}
+
+async function loadClient() {
+  const res = await apiFetch(`/api/clients/${clientId}`);
+  if (!res || !res.ok) { document.getElementById('client-name').textContent = 'Client not found'; return; }
+  clientData = await res.json();
+
+  document.getElementById('client-name').textContent = clientData.name;
+  document.getElementById('client-niche').textContent = clientData.niche || '';
+
+  // Action buttons
+  const actions = document.getElementById('action-buttons');
+  if (clientData.status === 'LEAD' || clientData.status === 'TRIAL') {
+    actions.innerHTML = `<button class="btn btn-primary" onclick="activateClient()">Activate Client</button>`;
+  }
+
+  // Info block
+  document.getElementById('client-info').innerHTML = [
+    ['Email', clientData.email || '—'],
+    ['Status', badge(clientData.status)],
+    ['Rate/month', fmt$(clientData.monthly_rate)],
+    ['Clips/month', clientData.clips_per_month],
+    ['View Guarantee', fmtViews(clientData.view_guarantee)],
+    ['TikTok', clientData.tiktok_username ? '@'+clientData.tiktok_username : '—'],
+    ['Instagram', clientData.instagram_username ? '@'+clientData.instagram_username : '—'],
+  ].map(([l,v])=>`<div class="stat-row"><span class="label">${l}</span><span>${v}</span></div>`).join('');
+
+  document.getElementById('client-perf').innerHTML = [
+    ['Total Clips', clientData.total_clips || 0],
+    ['Total Views', fmtViews(clientData.total_views || 0)],
+    ['Total Revenue', fmt$(clientData.total_revenue || 0)],
+  ].map(([l,v])=>`<div class="stat-row"><span class="label">${l}</span><span style="font-weight:600;">${v}</span></div>`).join('');
+
+  // Set invoice defaults
+  const now = new Date();
+  document.getElementById('invoice-month').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('invoice-base').value = clientData.monthly_rate;
+}
+
+async function loadClips() {
+  let url = `/api/client-clips/?client_id=${clientId}`;
+  if (currentStage) url += `&clip_status=${currentStage}`;
+  const res = await apiFetch(url);
+  if (!res) return;
+  const clips = await res.json();
+  const el = document.getElementById('clips-list');
+  if (!clips.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0;">No clips in this stage.</p>';
+    return;
+  }
+  el.innerHTML = clips.map(c => `
+    <div class="clip-row">
+      <span>${c.title || c.hook_used || '—'}</span>
+      <span style="color:var(--muted);">${c.editor_name || 'Unassigned'}</span>
+      <select style="background:var(--bg);border:1px solid var(--border);color:inherit;padding:4px 6px;border-radius:4px;font-size:12px;"
+        onchange="updateStatus('${c.id}', this.value)">
+        ${['RAW','EDITING','REVIEW','APPROVED','POSTED','REJECTED'].map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <span style="color:var(--muted);">${fmtViews(c.total_views)}</span>
+      <span></span>
+    </div>`).join('');
+}
+
+async function loadInvoices() {
+  const res = await apiFetch(`/api/invoices/?client_id=${clientId}`);
+  if (!res) return;
+  const invoices = await res.json();
+  const el = document.getElementById('invoices-list');
+  if (!invoices.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No invoices yet.</p>';
+    return;
+  }
+  el.innerHTML = invoices.map(inv => `
+    <div class="inv-row">
+      <span style="color:var(--muted);">${inv.month}</span>
+      <span style="font-size:12px;color:var(--muted);">${inv.clips_delivered} clips · ${fmtViews(inv.total_views)} views</span>
+      <span style="font-weight:600;">${fmt$(inv.amount)}</span>
+      <span>${inv.is_paid ? badge('PAID') : badge('UNPAID')}</span>
+      ${!inv.is_paid ? `<button class="btn btn-secondary btn-sm" onclick="markPaid('${inv.id}',this)">Mark Paid</button>` : '<span></span>'}
+    </div>`).join('');
+}
+
+async function loadEditors() {
+  const res = await apiFetch('/api/editors/');
+  if (!res) return;
+  const editors = await res.json();
+  const sel = document.getElementById('editor-select');
+  editors.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.id; opt.textContent = e.name;
+    sel.appendChild(opt);
+  });
+}
+
+async function updateStatus(clipId, newStatus) {
+  const res = await apiFetch(`/api/client-clips/${clipId}/status`, {
+    method:'PATCH', body: JSON.stringify({ status: newStatus })
+  });
+  if (!res || !res.ok) showFlash('Failed to update status', 'error');
+}
+
+async function activateClient() {
+  const res = await apiFetch(`/api/clients/${clientId}/activate`, { method:'POST', body:'{}' });
+  if (res && res.ok) { showFlash('Client activated!','success'); loadClient(); }
+  else showFlash('Failed to activate','error');
+}
+
+async function markPaid(invId, btn) {
+  btn.disabled=true; btn.textContent='...';
+  const res = await apiFetch(`/api/invoices/${invId}/mark-paid`,{method:'POST',body:'{}'});
+  if (res && res.ok) { showFlash('Marked as paid','success'); loadInvoices(); loadClient(); }
+  else { showFlash('Failed','error'); btn.disabled=false; btn.textContent='Mark Paid'; }
+}
+
+function openClipModal() { document.getElementById('clip-modal').style.display='flex'; }
+function closeClipModal() { document.getElementById('clip-modal').style.display='none'; }
+function openInvoiceModal() { document.getElementById('invoice-modal').style.display='flex'; }
+function closeInvoiceModal() { document.getElementById('invoice-modal').style.display='none'; }
+
+async function submitClip(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = { client_id: clientId, title: fd.get('title')||null, hashtags: fd.get('hashtags')||null };
+  const editorId = fd.get('editor_id');
+  const res = await apiFetch('/api/client-clips/', { method:'POST', body: JSON.stringify(payload) });
+  if (!res || !res.ok) { showFlash('Failed to add clip','error'); return; }
+  const clip = await res.json();
+  if (editorId) {
+    await apiFetch(`/api/client-clips/${clip.id}/assign`, { method:'POST', body: JSON.stringify({ editor_id: editorId }) });
+  }
+  showFlash('Clip added','success');
+  closeClipModal();
+  loadClips();
+}
+
+async function submitInvoice(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = {
+    client_id: clientId,
+    month: fd.get('month'),
+    base_amount: parseFloat(fd.get('base_amount')),
+    performance_bonus: parseFloat(fd.get('bonus')||0),
+  };
+  const res = await apiFetch('/api/invoices/generate', { method:'POST', body: JSON.stringify(payload) });
+  if (res && res.ok) { showFlash('Invoice generated','success'); closeInvoiceModal(); loadInvoices(); }
+  else { const err = await res?.json(); showFlash(err?.detail||'Failed','error'); }
+}
+
+// Close modals on overlay click
+['clip-modal','invoice-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => { if (e.target===e.currentTarget) { e.currentTarget.style.display='none'; } });
+});
+
+// Init
+loadClient();
+loadClips();
+loadInvoices();
+loadEditors();
+</script>
+{% endblock %}

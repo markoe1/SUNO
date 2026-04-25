@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+{% block title %}Dashboard — SUNO Clips{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Overview of your SUNO Clips activity</p>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Submissions</div>
+      <div class="stat-value" id="stat-submissions">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Confirmed</div>
+      <div class="stat-value" id="stat-confirmed">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Jobs</div>
+      <div class="stat-value" id="stat-jobs">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Campaigns Available</div>
+      <div class="stat-value" id="stat-campaigns">—</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="card">
+      <div class="card-title">Recent Jobs</div>
+      <div id="recent-jobs-list">
+        <div class="empty-state" style="padding:24px;">
+          <div class="spinner"></div>
+          <p style="margin-top:12px;">Loading...</p>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <a href="/jobs" class="btn btn-secondary btn-sm">View all jobs</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <a href="/submit" class="btn btn-primary">Submit Clips</a>
+        <a href="/campaigns" class="btn btn-secondary">Browse Campaigns</a>
+        <button class="btn btn-secondary" onclick="triggerSync()">Sync Campaigns</button>
+        <div id="sync-result" style="font-size:13px;color:var(--muted);"></div>
+      </div>
+
+      <div style="margin-top:24px;" id="session-status-section">
+        <div class="card-title" style="font-size:14px;">Account Status</div>
+        <div id="session-status">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDashboard() {
+  try {
+    const [subsRes, jobsRes, campsRes, settingsRes] = await Promise.all([
+      apiFetch('/api/submissions?page_size=5'),
+      apiFetch('/api/jobs?page_size=5'),
+      apiFetch('/api/campaigns'),
+      apiFetch('/api/settings'),
+    ]);
+
+    if (subsRes && subsRes.ok) {
+      const subs = await subsRes.json();
+      document.getElementById('stat-submissions').textContent = subs.total;
+      const confirmed = subs.items.filter(s => s.status === 'confirmed').length;
+      // We'd need a dedicated count endpoint for accuracy; this is approximate from first page
+    }
+
+    if (jobsRes && jobsRes.ok) {
+      const jobs = await jobsRes.json();
+      document.getElementById('stat-jobs').textContent = jobs.total;
+      renderRecentJobs(jobs.items);
+    }
+
+    if (campsRes && campsRes.ok) {
+      const camps = await campsRes.json();
+      document.getElementById('stat-campaigns').textContent = camps.length;
+    }
+
+    if (settingsRes && settingsRes.ok) {
+      const settings = await settingsRes.json();
+      renderSessionStatus(settings);
+    }
+
+    // Load confirmed count separately
+    const confirmedRes = await apiFetch('/api/submissions?status=confirmed&page_size=1');
+    if (confirmedRes && confirmedRes.ok) {
+      const data = await confirmedRes.json();
+      document.getElementById('stat-confirmed').textContent = data.total;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderRecentJobs(jobs) {
+  const el = document.getElementById('recent-jobs-list');
+  if (!jobs.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px;"><p>No jobs yet</p></div>';
+    return;
+  }
+  el.innerHTML = `<table>
+    <thead><tr><th>Type</th><th>Status</th><th>Created</th></tr></thead>
+    <tbody>${jobs.map(j => `
+      <tr>
+        <td style="font-size:13px;">${j.type}</td>
+        <td>${statusBadge(j.status)}</td>
+        <td style="color:var(--muted);font-size:12px;">${fmtDate(j.created_at)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderSessionStatus(settings) {
+  const el = document.getElementById('session-status');
+  const connected = settings.has_whop_session;
+  const paused = settings.jobs_paused;
+  el.innerHTML = `
+    <div class="connection-status" style="margin-bottom:10px;">
+      <span class="status-dot ${connected ? 'status-dot-green' : 'status-dot-red'}"></span>
+      <span>Whop Session: ${connected ? 'Connected' : 'Not connected'}</span>
+    </div>
+    <div class="connection-status">
+      <span class="status-dot ${paused ? 'status-dot-orange' : 'status-dot-green'}"></span>
+      <span>Jobs: ${paused ? 'Paused' : 'Running'}</span>
+    </div>
+    ${!connected ? '<p style="font-size:13px;color:var(--muted);margin-top:8px;"><a href="/settings">Go to Settings</a> to connect your Whop account.</p>' : ''}
+  `;
+}
+
+async function triggerSync() {
+  const el = document.getElementById('sync-result');
+  el.textContent = 'Syncing...';
+  try {
+    const res = await apiFetch('/api/campaigns/sync', { method: 'POST' });
+    if (!res) return;
+    const data = await res.json();
+    if (res.ok) {
+      el.textContent = 'Sync queued! Job: ' + data.job_id.slice(0, 8) + '...';
+      el.style.color = 'var(--green)';
+    } else {
+      el.textContent = data.detail || 'Sync failed';
+      el.style.color = 'var(--red)';
+    }
+  } catch (err) {
+    el.textContent = 'Error: ' + err.message;
+    el.style.color = 'var(--red)';
+  }
+}
+
+loadDashboard();
+</script>
+{% endblock %}

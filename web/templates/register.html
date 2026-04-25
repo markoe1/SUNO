@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — SUNO Clips</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">SUNO Clips</div>
+    <div class="auth-tagline">Create your account</div>
+
+    <div id="flash-container"></div>
+
+    <form id="register-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Min 8 characters" required minlength="8">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;" id="submit-btn">
+        Create Account
+      </button>
+    </form>
+
+    <p style="text-align:center;margin-top:20px;font-size:14px;color:var(--muted);">
+      Already have an account? <a href="/login">Sign in</a>
+    </p>
+  </div>
+</div>
+
+<script>
+function showFlash(msg, type = 'error') {
+  const c = document.getElementById('flash-container');
+  c.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating account...';
+
+  const form = new FormData(e.target);
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (res.ok) {
+      window.location.href = '/dashboard';
+    } else {
+      showFlash(data.detail || 'Registration failed');
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+    }
+  } catch (err) {
+    showFlash('Network error. Try again.');
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+});
+</script>
+</body>
+</html>

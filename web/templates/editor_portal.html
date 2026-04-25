@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% set active_page = 'editor' %}
+
+{% block title %}Editor Portal — SUNO Clips{% endblock %}
+
+{% block extra_styles %}
+.clip-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.clip-card:hover { border-color: var(--green); }
+.clip-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.clip-title { font-size: 15px; font-weight: 500; }
+.clip-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.stage-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.editor-header { background: var(--card); border-bottom: 1px solid var(--border); padding: 20px 24px; margin-bottom: 0; }
+{% endblock %}
+
+{% block nav %}
+<nav class="nav">
+  <span class="nav-logo">SUNO Clips — Editor</span>
+  <div class="nav-right">
+    <span id="editor-greeting" style="color:var(--muted);font-size:13px;margin-right:16px;"></span>
+    <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:900px;margin:32px auto;padding:0 24px;">
+
+  <!-- Stats bar -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:28px;font-weight:700;color:var(--green);" id="stat-pending">—</div>
+      <div style="font-size:12px;color:var(--muted);">Clips Waiting</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:28px;font-weight:700;color:var(--orange);" id="stat-editing">—</div>
+      <div style="font-size:12px;color:var(--muted);">In Progress</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:28px;font-weight:700;" id="stat-done">—</div>
+      <div style="font-size:12px;color:var(--muted);">Done This Month</div>
+    </div>
+  </div>
+
+  <div class="stage-tabs">
+    <button class="btn btn-secondary btn-sm active-filter" data-s="RAW" onclick="setStage(this,'RAW')">Waiting (RAW)</button>
+    <button class="btn btn-secondary btn-sm" data-s="EDITING" onclick="setStage(this,'EDITING')">In Progress</button>
+    <button class="btn btn-secondary btn-sm" data-s="REVIEW" onclick="setStage(this,'REVIEW')">In Review</button>
+    <button class="btn btn-secondary btn-sm" data-s="APPROVED" onclick="setStage(this,'APPROVED')">Approved</button>
+  </div>
+
+  <div id="clips-container"><p style="color:var(--muted);">Loading your clips...</p></div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Editor portal — shows only clips assigned to the logged-in user
+// Note: this uses the same auth system. The operator assigns clips to an editor record.
+// For now, show all clips where editor is current user's editor profile.
+
+let currentStage = 'RAW';
+let myEditorId = null;
+
+function setStage(btn, stage) {
+  currentStage = stage;
+  document.querySelectorAll('.active-filter').forEach(b => b.classList.remove('active-filter'));
+  btn.classList.add('active-filter');
+  loadMyClips();
+}
+
+async function loadStats() {
+  // Load counts for each stage
+  const stages = ['RAW','EDITING','REVIEW','APPROVED'];
+  const counts = {};
+  for (const s of stages) {
+    const res = await apiFetch(`/api/client-clips/?clip_status=${s}`);
+    if (res && res.ok) {
+      const data = await res.json();
+      // Filter to clips assigned to me
+      const mine = myEditorId ? data.filter(c => c.editor_id === myEditorId) : data;
+      counts[s] = mine.length;
+    }
+  }
+  document.getElementById('stat-pending').textContent = counts['RAW'] || 0;
+  document.getElementById('stat-editing').textContent = counts['EDITING'] || 0;
+
+  // Done this month = POSTED clips (approximate)
+  const postedRes = await apiFetch('/api/client-clips/?clip_status=POSTED');
+  if (postedRes && postedRes.ok) {
+    const posted = await postedRes.json();
+    const now = new Date();
+    const thisMonth = posted.filter(c => {
+      if (!c.posted_at) return false;
+      const d = new Date(c.posted_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    document.getElementById('stat-done').textContent = myEditorId
+      ? thisMonth.filter(c => c.editor_id === myEditorId).length
+      : thisMonth.length;
+  }
+}
+
+async function loadMyClips() {
+  const url = `/api/client-clips/?clip_status=${currentStage}`;
+  const res = await apiFetch(url);
+  if (!res) return;
+  const clips = await res.json();
+
+  // Filter to my clips if we know the editor ID
+  const myClips = myEditorId ? clips.filter(c => c.editor_id === myEditorId) : clips;
+
+  const el = document.getElementById('clips-container');
+  if (!myClips.length) {
+    el.innerHTML = `<p style="color:var(--muted);">No ${currentStage.toLowerCase()} clips assigned to you.</p>`;
+    return;
+  }
+
+  el.innerHTML = myClips.map(c => `
+    <div class="clip-card">
+      <div class="clip-header">
+        <div>
+          <div class="clip-title">${c.title || c.hook_used || 'Untitled clip'}</div>
+          <div class="clip-meta">Client: ${c.client_name || '—'} · Added ${fmtDate(c.created_at)}</div>
+          ${c.hook_used ? `<div class="clip-meta" style="margin-top:4px;font-style:italic;">"${c.hook_used}"</div>` : ''}
+        </div>
+        <span class="badge ${c.status === 'RAW' ? 'badge-muted' : c.status === 'EDITING' ? 'badge-orange' : 'badge-green'}">${c.status}</span>
+      </div>
+
+      ${c.content_notes ? `<p style="font-size:12px;color:var(--muted);margin-bottom:12px;">${c.content_notes}</p>` : ''}
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${c.status === 'RAW' ? `
+          <button class="btn btn-primary btn-sm" onclick="startEditing('${c.id}', this)">Start Editing</button>
+        ` : ''}
+        ${c.status === 'EDITING' ? `
+          <button class="btn btn-primary btn-sm" onclick="submitForReview('${c.id}', this)">Submit for Review</button>
+        ` : ''}
+        ${c.status === 'REVIEW' ? `
+          <span style="font-size:12px;color:var(--orange);">Waiting for approval...</span>
+        ` : ''}
+        ${c.status === 'APPROVED' ? `
+          <span style="font-size:12px;color:var(--green);">Approved — ready to post!</span>
+        ` : ''}
+        ${c.drive_folder || c.raw_file_path ? `
+          <a class="btn btn-secondary btn-sm" href="${c.drive_folder || c.raw_file_path}" target="_blank">Open Raw File</a>
+        ` : ''}
+      </div>
+    </div>`).join('');
+}
+
+async function startEditing(clipId, btn) {
+  btn.disabled = true;
+  const res = await apiFetch(`/api/client-clips/${clipId}/status`, {
+    method: 'PATCH', body: JSON.stringify({ status: 'EDITING' })
+  });
+  if (res && res.ok) { showFlash('Clip moved to Editing', 'success'); loadMyClips(); loadStats(); }
+  else { btn.disabled = false; showFlash('Failed', 'error'); }
+}
+
+async function submitForReview(clipId, btn) {
+  btn.disabled = true;
+  const res = await apiFetch(`/api/client-clips/${clipId}/status`, {
+    method: 'PATCH', body: JSON.stringify({ status: 'REVIEW' })
+  });
+  if (res && res.ok) { showFlash('Submitted for review!', 'success'); loadMyClips(); loadStats(); }
+  else { btn.disabled = false; showFlash('Failed', 'error'); }
+}
+
+// Init
+document.getElementById('editor-greeting').textContent = 'Your clip queue';
+loadStats();
+loadMyClips();
+</script>
+{% endblock %}

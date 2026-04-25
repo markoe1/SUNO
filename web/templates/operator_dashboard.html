@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% set active_page = 'operator' %}
+
+{% block title %}Operator Dashboard — SUNO Clips{% endblock %}
+
+{% block extra_styles %}
+.op-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.op-grid .card { text-align: center; }
+.stat-value { font-size: 32px; font-weight: 700; color: var(--green); }
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.pipeline-row { display: grid; grid-template-columns: 1fr 120px 120px 120px 80px; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.pipeline-row:last-child { border-bottom: none; }
+.pipeline-header { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.client-row { display: grid; grid-template-columns: 1fr 100px 140px 100px 80px; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.client-row:last-child { border-bottom: none; }
+.mrr-total { font-size: 20px; font-weight: 700; color: var(--green); }
+@media (max-width: 768px) { .op-grid { grid-template-columns: repeat(2, 1fr); } }
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1200px;margin:32px auto;padding:0 24px;">
+
+  <div class="section-header">
+    <div>
+      <h1 style="font-size:24px;font-weight:700;margin:0;">Operator Dashboard</h1>
+      <p style="color:var(--muted);margin:4px 0 0;">Your clip agency at a glance</p>
+    </div>
+    <a href="/operator/clients" class="btn btn-primary">+ New Client</a>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="op-grid" id="kpi-grid">
+    <div class="card">
+      <div class="stat-value" id="kpi-mrr">—</div>
+      <div class="stat-label">Monthly Recurring Revenue</div>
+    </div>
+    <div class="card">
+      <div class="stat-value" id="kpi-clients">—</div>
+      <div class="stat-label">Active Clients</div>
+    </div>
+    <div class="card">
+      <div class="stat-value" id="kpi-pipeline">—</div>
+      <div class="stat-label">Clips In Pipeline</div>
+    </div>
+    <div class="card">
+      <div class="stat-value" id="kpi-unpaid">—</div>
+      <div class="stat-label">Outstanding Invoices</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+    <!-- Active Clients -->
+    <div class="card">
+      <div class="section-header">
+        <h2 style="font-size:16px;font-weight:600;margin:0;">Active Clients</h2>
+        <a href="/operator/clients" style="font-size:12px;color:var(--green);">View all</a>
+      </div>
+      <div>
+        <div class="client-row pipeline-header">
+          <span>Client</span><span>Niche</span><span>Rate/mo</span><span>Views</span><span>Status</span>
+        </div>
+        <div id="clients-list"><p style="color:var(--muted);font-size:13px;">Loading...</p></div>
+      </div>
+    </div>
+
+    <!-- Clip Pipeline -->
+    <div class="card">
+      <div class="section-header">
+        <h2 style="font-size:16px;font-weight:600;margin:0;">Clip Pipeline</h2>
+        <span id="pipeline-total" style="font-size:12px;color:var(--muted);"></span>
+      </div>
+      <div id="pipeline-stages"></div>
+    </div>
+
+  </div>
+
+  <!-- Recent Clips -->
+  <div class="card" style="margin-top:24px;">
+    <div class="section-header">
+      <h2 style="font-size:16px;font-weight:600;margin:0;">Recent Clips</h2>
+    </div>
+    <div>
+      <div class="pipeline-row pipeline-header">
+        <span>Title / Hook</span><span>Client</span><span>Editor</span><span>Status</span><span>Views</span>
+      </div>
+      <div id="clips-list"><p style="color:var(--muted);font-size:13px;">Loading...</p></div>
+    </div>
+  </div>
+
+  <!-- Unpaid Invoices -->
+  <div class="card" style="margin-top:24px;">
+    <div class="section-header">
+      <h2 style="font-size:16px;font-weight:600;margin:0;">Unpaid Invoices</h2>
+      <span id="outstanding-amount" class="mrr-total"></span>
+    </div>
+    <div id="invoices-list"><p style="color:var(--muted);font-size:13px;">Loading...</p></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const STATUS_COLORS = {
+  LEAD: 'badge-muted', TRIAL: 'badge-orange', ACTIVE: 'badge-green',
+  PAUSED: 'badge-muted', CHURNED: 'badge-red',
+  RAW: 'badge-muted', EDITING: 'badge-orange', REVIEW: 'badge-orange',
+  APPROVED: 'badge-green', POSTED: 'badge-green', REJECTED: 'badge-red',
+};
+
+function badge(val) {
+  const cls = STATUS_COLORS[val?.toUpperCase()] || 'badge-muted';
+  return `<span class="badge ${cls}">${val}</span>`;
+}
+
+function fmt$(n) { return '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function fmtViews(n) { return n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(0)+'K' : String(n); }
+
+async function loadDashboard() {
+  const [clientsRes, clipsRes, invoicesRes, summaryRes] = await Promise.all([
+    apiFetch('/api/clients/'),
+    apiFetch('/api/client-clips/?clip_status=RAW&clip_status=EDITING&clip_status=REVIEW&clip_status=APPROVED'),
+    apiFetch('/api/invoices/?unpaid_only=true'),
+    apiFetch('/api/invoices/summary'),
+  ]);
+
+  if (!clientsRes || !clipsRes || !invoicesRes || !summaryRes) return;
+
+  const clientData = await clientsRes.json();
+  const clips = await clipsRes.json();
+  const invoices = await invoicesRes.json();
+  const summary = await summaryRes.json();
+
+  // KPIs
+  document.getElementById('kpi-mrr').textContent = fmt$(clientData.monthly_recurring_revenue || 0);
+  document.getElementById('kpi-clients').textContent = clientData.active_count || 0;
+  document.getElementById('kpi-pipeline').textContent = clips.length || 0;
+  document.getElementById('kpi-unpaid').textContent = summary.unpaid_count || 0;
+  document.getElementById('outstanding-amount').textContent = fmt$(summary.outstanding || 0);
+
+  // Active clients table
+  const activeClients = (clientData.clients || []).filter(c => c.status === 'ACTIVE');
+  const clientsEl = document.getElementById('clients-list');
+  if (!activeClients.length) {
+    clientsEl.innerHTML = '<p style="color:var(--muted);font-size:13px;">No active clients yet. <a href="/operator/clients" style="color:var(--green);">Add one</a></p>';
+  } else {
+    clientsEl.innerHTML = activeClients.map(c => `
+      <div class="client-row">
+        <a href="/operator/clients/${c.id}" style="color:var(--green);font-weight:500;">${c.name}</a>
+        <span style="color:var(--muted);font-size:12px;">${c.niche || '—'}</span>
+        <span>${fmt$(c.monthly_rate)}</span>
+        <span>${fmtViews(c.total_views || 0)}</span>
+        ${badge(c.status)}
+      </div>`).join('');
+  }
+
+  // Pipeline stages
+  const stages = ['RAW','EDITING','REVIEW','APPROVED','POSTED'];
+  const stageCounts = {};
+  stages.forEach(s => stageCounts[s] = 0);
+  clips.forEach(c => { if (stageCounts[c.status] !== undefined) stageCounts[c.status]++; });
+  document.getElementById('pipeline-total').textContent = clips.length + ' clips active';
+  document.getElementById('pipeline-stages').innerHTML = stages.map(s => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="display:flex;align-items:center;gap:8px;">
+        ${badge(s)}
+      </span>
+      <span style="font-weight:600;font-size:18px;">${stageCounts[s]}</span>
+    </div>`).join('');
+
+  // Recent clips
+  const clipsEl = document.getElementById('clips-list');
+  if (!clips.length) {
+    clipsEl.innerHTML = '<p style="color:var(--muted);font-size:13px;">No clips in pipeline.</p>';
+  } else {
+    clipsEl.innerHTML = clips.slice(0,10).map(c => `
+      <div class="pipeline-row">
+        <span style="font-size:13px;">${c.title || c.hook_used || '—'}</span>
+        <span style="color:var(--muted);font-size:12px;">${c.client_name || '—'}</span>
+        <span style="color:var(--muted);font-size:12px;">${c.editor_name || 'Unassigned'}</span>
+        ${badge(c.status)}
+        <span style="color:var(--muted);font-size:12px;">${fmtViews(c.total_views || 0)}</span>
+      </div>`).join('');
+  }
+
+  // Unpaid invoices
+  const invEl = document.getElementById('invoices-list');
+  if (!invoices.length) {
+    invEl.innerHTML = '<p style="color:var(--muted);font-size:13px;">No outstanding invoices.</p>';
+  } else {
+    invEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 80px 100px 120px;gap:12px;padding:8px 0;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">
+        <span>Client</span><span>Month</span><span>Amount</span><span>Action</span>
+      </div>` +
+      invoices.map(inv => `
+      <div style="display:grid;grid-template-columns:1fr 80px 100px 120px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border);">
+        <span>${inv.client_name || '—'}</span>
+        <span style="color:var(--muted);">${inv.month}</span>
+        <span style="font-weight:600;color:var(--green);">${fmt$(inv.amount)}</span>
+        <button class="btn btn-secondary btn-sm" onclick="markPaid('${inv.id}', this)">Mark Paid</button>
+      </div>`).join('');
+  }
+}
+
+async function markPaid(invoiceId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  const res = await apiFetch(`/api/invoices/${invoiceId}/mark-paid`, { method: 'POST', body: JSON.stringify({}) });
+  if (res && res.ok) {
+    showFlash('Invoice marked as paid', 'success');
+    loadDashboard();
+  } else {
+    showFlash('Failed to mark as paid', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Mark Paid';
+  }
+}
+
+loadDashboard();
+</script>
+{% endblock %}

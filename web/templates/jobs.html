@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% set active_page = 'jobs' %}
+{% block title %}Jobs — SUNO Clips{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <h1 class="page-title">Jobs</h1>
+      <p class="page-subtitle">Background task queue</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <select id="status-filter" onchange="loadJobs(1)" style="width:auto;">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="running">Running</option>
+        <option value="done">Done</option>
+        <option value="failed">Failed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="loadJobs(currentPage)">Refresh</button>
+      <button class="btn btn-danger btn-sm" onclick="killSwitch()">Kill Switch</button>
+    </div>
+  </div>
+
+  <div id="kill-alert" style="display:none;"></div>
+
+  <div class="card">
+    <div id="jobs-table">
+      <div class="empty-state"><div class="spinner"></div><p style="margin-top:12px;">Loading...</p></div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+function esc(s) { if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function loadJobs(page = 1) {
+  currentPage = page;
+  const el = document.getElementById('jobs-table');
+  const statusFilter = document.getElementById('status-filter').value;
+  let url = `/api/jobs?page=${page}&page_size=${PAGE_SIZE}`;
+  if (statusFilter) url += `&status=${statusFilter}`;
+
+  el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+
+  const res = await apiFetch(url);
+  if (!res || !res.ok) {
+    el.innerHTML = '<div class="empty-state"><p>Failed to load jobs</p></div>';
+    return;
+  }
+  const data = await res.json();
+
+  if (!data.items.length) {
+    el.innerHTML = `<div class="empty-state">
+      <h3>No jobs</h3>
+      <p>Jobs appear here when you submit clips or sync campaigns.</p>
+    </div>`;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead>
+      <tr><th>Type</th><th>Status</th><th>Error</th><th>Retries</th><th>Created</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      ${data.items.map(j => `
+        <tr>
+          <td style="font-size:13px;">${esc(j.type)}</td>
+          <td>${statusBadge(j.status)}</td>
+          <td style="max-width:200px;font-size:12px;color:var(--red);">${esc((j.error_message||'').slice(0,80))}</td>
+          <td style="color:var(--muted);font-size:13px;">${j.retries}</td>
+          <td style="color:var(--muted);font-size:12px;">${fmtDate(j.created_at)}</td>
+          <td>
+            ${j.status === 'pending' || j.status === 'running'
+              ? `<button class="btn btn-secondary btn-sm" onclick="cancelJob('${j.id}', this)">Cancel</button>`
+              : '—'}
+          </td>
+        </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+
+  renderPagination(data.total, page, PAGE_SIZE);
+}
+
+async function cancelJob(id, btn) {
+  btn.disabled = true;
+  btn.textContent = '...';
+  const res = await apiFetch(`/api/jobs/${id}/cancel`, { method: 'POST' });
+  if (!res) { btn.disabled=false; btn.textContent='Cancel'; return; }
+  const data = await res.json();
+  if (res.ok) {
+    showFlash('Job cancelled', 'success');
+    loadJobs(currentPage);
+  } else {
+    showFlash(data.detail || 'Cancel failed', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Cancel';
+  }
+}
+
+async function killSwitch() {
+  if (!confirm('This will pause ALL your jobs and cancel any running/pending jobs. Continue?')) return;
+  const alert = document.getElementById('kill-alert');
+  const res = await apiFetch('/api/jobs/kill-switch', { method: 'POST' });
+  if (!res) return;
+  const data = await res.json();
+  alert.style.display = 'block';
+  if (res.ok) {
+    alert.className = 'alert alert-warning';
+    alert.textContent = `Kill switch activated. ${data.jobs_cancelled} job(s) cancelled. Resume from Settings.`;
+    loadJobs(1);
+  } else {
+    alert.className = 'alert alert-error';
+    alert.textContent = data.detail || 'Kill switch failed';
+  }
+}
+
+function renderPagination(total, page, pageSize) {
+  const pages = Math.ceil(total / pageSize);
+  const el = document.getElementById('pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <button onclick="loadJobs(${page - 1})" ${page <= 1 ? 'disabled' : ''}>&larr;</button>
+    <span style="color:var(--muted);font-size:13px;">Page ${page} of ${pages} (${total} total)</span>
+    <button onclick="loadJobs(${page + 1})" ${page >= pages ? 'disabled' : ''}>&rarr;</button>
+  `;
+}
+
+loadJobs();
+// Auto-refresh every 10 seconds
+setInterval(() => loadJobs(currentPage), 10000);
+</script>
+{% endblock %}

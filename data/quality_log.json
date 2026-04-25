@@ -1,0 +1,144 @@
+[
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "test_clip_01.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "test_clip_01.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "test_clip_01.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "test_clip_01.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "test_clip_01.mp4",
+    "overall_score": 50.0,
+    "components": {
+      "file_integrity": 0.0,
+      "video_specs": 50.0,
+      "caption_quality": 100.0,
+      "metadata": 50.0
+    },
+    "approved": false,
+    "issues": [
+      "File corrupted or unreadable"
+    ],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "test_clip_01.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "test_clip_01.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "real_clip_01.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "real_clip_02.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  },
+  {
+    "timestamp": "1776162007.0997133",
+    "filename": "real_clip_03.mp4",
+    "overall_score": 66.5,
+    "components": {
+      "file_integrity": 50.0,
+      "video_specs": 40.0,
+      "caption_quality": 100.0,
+      "metadata": 100.0
+    },
+    "approved": false,
+    "issues": [],
+    "warnings": []
+  }
+]
