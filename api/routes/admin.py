@@ -49,6 +49,14 @@ async def verify_production(token=Depends(verify_admin_token)):
     - Worker availability
 
     Protected by ADMIN_VERIFY_TOKEN
+
+    Returns:
+    - status: SUCCESS, ERROR, TIMEOUT
+    - verification: parsed JSON results (if successful)
+    - stdout: raw script output
+    - stderr: raw script errors
+    - exit_code: process exit code
+    - parse_error: if JSON parsing failed
     """
     try:
         # Run the verification script
@@ -56,45 +64,65 @@ async def verify_production(token=Depends(verify_admin_token)):
             ["python", "scripts/verify_production.py"],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
+            cwd="/opt/render/project/src"  # Run from repo root where scripts/ exists
         )
 
-        output = result.stdout
-        errors = result.stderr
+        stdout = result.stdout
+        stderr = result.stderr
+        exit_code = result.returncode
 
-        # Parse the JSON results (last line of output)
-        lines = output.strip().split('\n')
+        # Try to parse JSON from output
+        # Look for marked JSON section (JSON_RESULTS_START/END)
         results = None
+        parse_error = None
 
-        for line in reversed(lines):
-            if line.strip().startswith('{'):
+        if stdout:
+            # First, try to find the clearly marked JSON section
+            if "JSON_RESULTS_START" in stdout and "JSON_RESULTS_END" in stdout:
                 try:
-                    results = json.loads(line)
-                    break
-                except json.JSONDecodeError:
-                    continue
+                    start_idx = stdout.find("JSON_RESULTS_START") + len("JSON_RESULTS_START")
+                    end_idx = stdout.find("JSON_RESULTS_END")
+                    json_str = stdout[start_idx:end_idx].strip()
+                    if json_str:
+                        results = json.loads(json_str)
+                except json.JSONDecodeError as e:
+                    parse_error = f"Invalid JSON in marked section: {str(e)}"
+            else:
+                # Fallback: try to parse each line as JSON
+                lines = stdout.strip().split('\n')
 
-        if not results:
-            return {
-                "status": "ERROR",
-                "message": "Could not parse verification results",
-                "output": output,
-                "errors": errors
-            }
+                for line in reversed(lines):
+                    line_stripped = line.strip()
+                    if line_stripped and (line_stripped.startswith('{') or line_stripped.startswith('[')):
+                        try:
+                            results = json.loads(line_stripped)
+                            break
+                        except json.JSONDecodeError:
+                            continue
+
+                # If still no results, note it
+                if not results:
+                    parse_error = "Could not find valid JSON in script output"
 
         return {
-            "status": "SUCCESS",
+            "status": "SUCCESS" if results else "ERROR",
             "verification": results,
-            "output": output
+            "stdout": stdout,
+            "stderr": stderr,
+            "exit_code": exit_code,
+            "parse_error": parse_error
         }
 
     except subprocess.TimeoutExpired:
         return {
             "status": "TIMEOUT",
-            "message": "Verification script timed out"
+            "message": "Verification script timed out",
+            "exit_code": None
         }
     except Exception as e:
         return {
             "status": "ERROR",
-            "message": str(e)
+            "message": str(e),
+            "exit_code": None
         }

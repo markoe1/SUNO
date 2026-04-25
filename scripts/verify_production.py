@@ -199,8 +199,11 @@ def main():
         print("OVERALL: FAIL - Issues detected")
         print("="*60 + "\n")
 
-    # Print results as JSON
-    print(json.dumps(results, indent=2))
+    # Print results as compact JSON on single line for easier parsing
+    # This is the official results - everything above is for human reading
+    print("JSON_RESULTS_START")
+    print(json.dumps(results))
+    print("JSON_RESULTS_END")
 
     return results
 
