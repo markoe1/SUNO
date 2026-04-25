@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: suno-production
+    plan: starter
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.app:app --host 0.0.0.0 --port $PORT
+    repo: https://github.com/markoe1/SUNO.git
+    branch: main
+    env:
+      - key: WHOP_API_KEY
+        scope: build
+      - key: WHOP_COMPANY_ID
+        scope: build
+      - key: WHOP_WEBHOOK_SECRET
+        scope: build
+      - key: DATABASE_URL
+        scope: build
+      - key: REDIS_URL
+        scope: build
+      - key: ANTHROPIC_API_KEY
+        scope: build
+      - key: TIKTOK_CLIENT_ID
+        scope: build
+      - key: TIKTOK_CLIENT_SECRET
+        scope: build
+      - key: INSTAGRAM_ACCESS_TOKEN
+        scope: build
+      - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
+        scope: build
+      - key: ADMIN_VERIFY_TOKEN
+        value: Uhcq3o7_PDB1WOTlkDXkrz0dtLDozEThkDN2v7uaRAw
+        scope: build
