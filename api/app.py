@@ -96,59 +96,115 @@ def create_app() -> FastAPI:
 
     @app.get("/login", include_in_schema=False)
     async def login_page(request: Request):
-        return templates.TemplateResponse("login.html", {"request": request})
+        return templates.TemplateResponse(
+            name="login.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/register", include_in_schema=False)
     async def register_page(request: Request):
-        return templates.TemplateResponse("register.html", {"request": request})
+        return templates.TemplateResponse(
+            name="register.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/dashboard", include_in_schema=False)
     async def dashboard_page(request: Request):
-        return templates.TemplateResponse("dashboard.html", {"request": request})
+        return templates.TemplateResponse(
+            name="dashboard.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/campaigns", include_in_schema=False)
     async def campaigns_page(request: Request):
-        return templates.TemplateResponse("campaigns.html", {"request": request})
+        return templates.TemplateResponse(
+            name="campaigns.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/submit", include_in_schema=False)
     async def submit_page(request: Request):
-        return templates.TemplateResponse("submit.html", {"request": request})
+        return templates.TemplateResponse(
+            name="submit.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/submissions", include_in_schema=False)
     async def submissions_page(request: Request):
-        return templates.TemplateResponse("submissions.html", {"request": request})
+        return templates.TemplateResponse(
+            name="submissions.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/jobs", include_in_schema=False)
     async def jobs_page(request: Request):
-        return templates.TemplateResponse("jobs.html", {"request": request})
+        return templates.TemplateResponse(
+            name="jobs.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/settings", include_in_schema=False)
     async def settings_page(request: Request):
-        return templates.TemplateResponse("settings.html", {"request": request})
+        return templates.TemplateResponse(
+            name="settings.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/operator", include_in_schema=False)
     async def operator_dashboard(request: Request):
-        return templates.TemplateResponse("operator_dashboard.html", {"request": request})
+        return templates.TemplateResponse(
+            name="operator_dashboard.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/operator/clients", include_in_schema=False)
     async def operator_clients(request: Request):
-        return templates.TemplateResponse("client_list.html", {"request": request})
+        return templates.TemplateResponse(
+            name="client_list.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/operator/clients/{client_id}", include_in_schema=False)
     async def operator_client_detail(request: Request, client_id: str):
-        return templates.TemplateResponse("client_detail.html", {"request": request, "client_id": client_id})
+        return templates.TemplateResponse(
+            name="client_detail.html",
+            request=request,
+            context={"client_id": client_id}
+        )
 
     @app.get("/operator/hooks", include_in_schema=False)
     async def hooks_page(request: Request):
-        return templates.TemplateResponse("hooks_library.html", {"request": request})
+        return templates.TemplateResponse(
+            name="hooks_library.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/operator/reports", include_in_schema=False)
     async def reports_page(request: Request):
-        return templates.TemplateResponse("reports.html", {"request": request})
+        return templates.TemplateResponse(
+            name="reports.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/editor", include_in_schema=False)
     async def editor_portal(request: Request):
-        return templates.TemplateResponse("editor_portal.html", {"request": request})
+        return templates.TemplateResponse(
+            name="editor_portal.html",
+            request=request,
+            context={}
+        )
 
     return app
 
