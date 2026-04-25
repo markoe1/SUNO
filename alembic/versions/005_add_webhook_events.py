@@ -9,8 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-revision = "005_add_webhook_events"
-down_revision = "004_add_whop_membership_id"
+revision = "005"
+down_revision = "004"
 branch_labels = None
 depends_on = None
 
