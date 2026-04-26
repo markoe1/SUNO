@@ -124,7 +124,7 @@ async def handle_whop_webhook(request: Request):
                     event_manager.mark_enqueued(event_record.id, job_id)
                     logger.info(f"Enqueued webhook {whop_event_id} as job {job_id}")
                 except Exception as e:
-                    logger.error(f"Failed to enqueue webhook: {e}")
+                    logger.error(f"Failed to enqueue webhook: {e}", exc_info=True)
                     event_manager.mark_failed(event_record.id, str(e))
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
