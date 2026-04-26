@@ -18,12 +18,6 @@ WEBHOOK_SECRET = os.getenv("WHOP_WEBHOOK_SECRET", "")
 
 def verify_whop_signature(body: bytes, signature: str) -> bool:
     """Verify Whop webhook HMAC signature."""
-    # Allow test signatures in non-production (for e2e testing)
-    app_env = os.getenv("APP_ENV", "development").lower()
-    if app_env != "production" and signature == "test-e2e-webhook":
-        logger.warning("Test webhook signature accepted (non-production only)")
-        return True
-
     if not signature or not WEBHOOK_SECRET:
         logger.warning("Missing signature or secret")
         return False
