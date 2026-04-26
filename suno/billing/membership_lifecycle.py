@@ -322,17 +322,20 @@ class MembershipLifecycleHandler:
 
             self.db.commit()
 
-        # Map to tier based on count of unique plans seen
-        plan_count = self.db.query(Membership).filter(
-            Membership.whop_plan_id != None
-        ).distinct(Membership.whop_plan_id).count()
+        # Map plan_id to tier
+        plan_to_tier = {
+            "plan_starter": starter,
+            "plan_pro": pro,
+        }
 
-        if plan_count == 0:
-            logger.info(f"First plan_id {plan_id} → STARTER tier")
-            return starter
-        else:
-            logger.info(f"Plan_id {plan_id} → PRO tier")
-            return pro
+        tier = plan_to_tier.get(plan_id)
+        if tier:
+            logger.info(f"Plan_id {plan_id} → {tier.name.value} tier")
+            return tier
+
+        # Default to PRO if plan not recognized
+        logger.warning(f"Unknown plan_id {plan_id}, defaulting to PRO")
+        return pro
 
 
 # Background job functions (called by RQ workers)
