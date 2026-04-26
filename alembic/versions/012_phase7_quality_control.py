@@ -108,7 +108,7 @@ def upgrade():
             sa.Column('hashtags', sa.JSON, nullable=False, server_default='[]'),
             sa.Column('audio_source', sa.String(255), nullable=True),
             sa.Column('content_hash', sa.String(64), nullable=False, unique=True, index=True),
-            sa.Column('status', sa.Enum('discovered', 'eligible', 'queued', 'generated', 'needs_review', 'approved', 'captioned', 'scheduled', 'posted', 'submitted', 'tracked', 'rejected', 'failed', 'expired', name='cliplifecycle'), nullable=False),
+            sa.Column('status', sa.Enum('discovered', 'eligible', 'queued', 'generated', 'needs_review', 'approved', 'captioned', 'scheduled', 'posted', 'submitted', 'tracked', 'rejected', 'failed', 'expired', name='cliplifecycle', create_type=False), nullable=False),
             sa.Column('platform_eligible', sa.Boolean, nullable=False, server_default=sa.true()),
             sa.Column('available', sa.Boolean, nullable=False, server_default=sa.true()),
             sa.Column('clip_metadata', sa.JSON, nullable=False, server_default='{}'),
