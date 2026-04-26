@@ -39,12 +39,16 @@ def process_webhook_event(event_id: int, event_type: str, event_data: Dict[str, 
         # Route to handler
         result = None
         if event_type == "membership.went_valid":
+            logger.info(f"[WEBHOOK_HANDLER_SELECTED] handler='MembershipLifecycleHandler.handle_purchase' for event_type='membership.went_valid'")
             result = lifecycle_handler.handle_purchase(event_data.get("data", {}))
         elif event_type == "membership.went_invalid":
+            logger.info(f"[WEBHOOK_HANDLER_SELECTED] handler='MembershipLifecycleHandler.handle_cancellation' for event_type='membership.went_invalid'")
             result = lifecycle_handler.handle_cancellation(event_data.get("data", {}))
         elif event_type == "membership.is_active":
+            logger.info(f"[WEBHOOK_HANDLER_SELECTED] handler='MembershipLifecycleHandler.handle_activation' for event_type='membership.is_active'")
             result = lifecycle_handler.handle_activation(event_data.get("data", {}))
         elif event_type == "membership.updated":
+            logger.info(f"[WEBHOOK_HANDLER_SELECTED] handler='MembershipLifecycleHandler.handle_upgrade' for event_type='membership.updated'")
             result = lifecycle_handler.handle_upgrade(event_data.get("data", {}))
         else:
             logger.warning(f"Unknown event type: {event_type}")
