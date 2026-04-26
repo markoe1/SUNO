@@ -93,7 +93,7 @@ class AccountProvisioner:
                 result = self._call_suno_api(
                     "provision_account",
                     {
-                        "user_id": user_id,
+                        "user_id": str(user_id),
                         "email": email,
                         "tier": tier_name,
                         "workspace_id": workspace_id,
