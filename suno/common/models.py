@@ -98,9 +98,34 @@ class Account(Base):
 
     membership = relationship("Membership", back_populates="account")
     clips = relationship("Clip", back_populates="account")
+    creator_profile = relationship("CreatorProfile", uselist=False, back_populates="account")
 
     __table_args__ = (
         Index("idx_account_workspace", "workspace_id"),
+    )
+
+
+class CreatorProfile(Base):
+    """Creator profile with style, tone, and niche preferences."""
+    __tablename__ = "creator_profiles"
+
+    id = Column(Integer, primary_key=True)
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False, unique=True, index=True)
+    niche = Column(String(255), nullable=True)  # e.g. "fitness", "finance"
+    tone = Column(String(100), nullable=True)  # e.g. "aggressive", "educational"
+    content_style = Column(String(100), nullable=True)  # e.g. "talking head", "b-roll"
+    hook_style = Column(String(100), nullable=True)  # e.g. "shock", "question", "story"
+    avg_clip_length = Column(Integer, nullable=True)  # seconds
+    do_not_use = Column(JSON, nullable=False, default=list)  # List[str]
+    platform_focus = Column(JSON, nullable=False, default=list)  # List[str]
+    winning_clip_ids = Column(JSON, nullable=False, default=list)  # List[int]
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    account = relationship("Account", back_populates="creator_profile")
+
+    __table_args__ = (
+        Index("idx_creator_profile_account", "account_id"),
     )
 
 
@@ -152,6 +177,13 @@ class Campaign(Base):
     last_seen_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    min_duration_seconds = Column(Integer, nullable=True)
+    max_duration_seconds = Column(Integer, nullable=True)
+    ideal_duration_seconds = Column(Integer, nullable=True)
+    audience = Column(String(255), nullable=True)
+    cta = Column(Text, nullable=True)
+    forbidden_topics = Column(JSON, nullable=False, default=list)  # List[str]
+    approval_required = Column(Boolean, default=False)
 
     clips = relationship("Clip", back_populates="campaign")
 
@@ -186,6 +218,18 @@ class Clip(Base):
     last_seen_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    hook_score = Column(Float, nullable=True)
+    relevance_score = Column(Float, nullable=True)
+    platform_fit_score = Column(Float, nullable=True)
+    duration_score = Column(Float, nullable=True)
+    brand_alignment_score = Column(Float, nullable=True)
+    viral_score = Column(Float, nullable=True)
+    social_proof_score = Column(Float, nullable=True)
+    overall_score = Column(Float, nullable=True)
+    monetization_score = Column(Float, nullable=True)
+    emotional_trigger_type = Column(String(50), nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+    hook_start_ms = Column(Integer, nullable=True)
 
     campaign = relationship("Campaign", back_populates="clips")
     account = relationship("Account", back_populates="clips")
@@ -196,6 +240,7 @@ class Clip(Base):
         Index("idx_clip_campaign", "campaign_id"),
         Index("idx_clip_status", "status"),
         Index("idx_clip_content_hash", "content_hash"),
+        Index("idx_clip_account_status", "account_id", "status"),
     )
 
 
