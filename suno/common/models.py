@@ -9,8 +9,10 @@ from sqlalchemy import (
     Text, JSON, Float, Enum as SQLEnum, UniqueConstraint,
     Index, Table, Numeric
 )
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+import uuid
 from suno.common.enums import MembershipLifecycle, ClipLifecycle, JobLifecycle, TierName, AccountStatus
 
 Base = declarative_base()
@@ -20,7 +22,7 @@ class User(Base):
     """User account in system."""
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
     whop_user_id = Column(String(255), unique=True, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -58,7 +60,7 @@ class Membership(Base):
     __tablename__ = "memberships"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     tier_id = Column(Integer, ForeignKey("tiers.id"), nullable=False)
     whop_membership_id = Column(String(255), unique=True, nullable=False, index=True)
     whop_plan_id = Column(String(255), nullable=True, index=True)  # Track plan ID for tier discovery
@@ -300,7 +302,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     action = Column(String(100), nullable=False)
     entity_type = Column(String(50), nullable=False)
     entity_id = Column(Integer, nullable=True)
