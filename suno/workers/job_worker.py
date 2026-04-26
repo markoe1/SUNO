@@ -54,6 +54,13 @@ class SUNOWorker:
             job_monitoring_interval: Monitor job progress every N seconds
         """
         try:
+            # Clean up stale workers with same name
+            from rq.worker import Worker as RQWorker
+            for worker in RQWorker.all(connection=self.redis):
+                if worker.name == self.worker_name and not worker.get_current_job():
+                    logger.info(f"Cleaning up stale worker: {self.worker_name}")
+                    worker.clean_registry()
+
             # Create worker with priority queue order
             self.worker = Worker(
                 queues=[
@@ -144,7 +151,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--worker-name",
-        default=f"suno-worker-{os.getenv('WORKER_ID', '1')}",
+        default=os.getenv("WORKER_NAME") or f"suno-worker-{os.getenv('WORKER_ID', '1')}",
         help="Worker name",
     )
     parser.add_argument(
