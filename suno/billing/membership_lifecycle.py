@@ -285,14 +285,6 @@ class MembershipLifecycleHandler:
         from suno.common.models import Tier, Membership
         from suno.common.enums import TierName
 
-        # Check if we've seen this plan before
-        existing = self.db.query(Membership).filter(
-            Membership.whop_plan_id == plan_id
-        ).first()
-
-        if existing:
-            return existing.tier
-
         # Ensure tiers exist (created at startup)
         starter = self.db.query(Tier).filter(Tier.name == TierName.STARTER).first()
         pro = self.db.query(Tier).filter(Tier.name == TierName.PRO).first()
