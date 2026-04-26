@@ -15,11 +15,23 @@ depends_on = None
 
 
 def upgrade():
-    # Add new ClipLifecycle enum values (safe, irreversible)
-    op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'generated'")
-    op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'needs_review'")
-    op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'approved'")
-    op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'rejected'")
+    # Add new ClipLifecycle enum values
+    # Safe: Check if type exists before attempting ALTER
+    try:
+        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'generated'")
+        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'needs_review'")
+        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'approved'")
+        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'rejected'")
+    except Exception:
+        # If enum doesn't exist, create it with all values
+        # This handles fresh databases where the enum was never created
+        op.execute("""
+            CREATE TYPE cliplifecycle AS ENUM (
+                'discovered', 'eligible', 'queued', 'generated', 'needs_review',
+                'approved', 'captioned', 'scheduled', 'posted', 'submitted',
+                'tracked', 'rejected', 'failed', 'expired'
+            )
+        """)
 
     # Create creator_profiles table
     op.create_table(
@@ -69,6 +81,10 @@ def upgrade():
 def downgrade():
     # Drop index
     op.drop_index('idx_clip_account_status', 'clips')
+
+    # Note: Do NOT drop cliplifecycle enum in downgrade
+    # It may be in use by other tables or have been created elsewhere
+    # The enum will be cleaned up by comprehensive cleanup if needed
 
     # Drop quality score columns from clips
     op.drop_column('clips', 'hook_score')
