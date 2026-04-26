@@ -24,6 +24,8 @@ def process_webhook_event(event_id: int, event_type: str, event_data: Dict[str, 
     from suno.billing.membership_lifecycle import MembershipLifecycleHandler
     from suno.common.job_queue import create_job_queue_manager
 
+    logger.info(f"[JOB_START] Processing webhook event {event_id} (type={event_type})")
+
     db = SessionLocal()
     try:
         event_manager = WebhookEventManager(db)
@@ -32,6 +34,7 @@ def process_webhook_event(event_id: int, event_type: str, event_data: Dict[str, 
 
         # Mark as processing
         event_manager.mark_processing(event_id)
+        logger.info(f"[JOB_PROCESSING] Event {event_id} marked as processing")
 
         # Route to handler
         result = None
@@ -51,17 +54,18 @@ def process_webhook_event(event_id: int, event_type: str, event_data: Dict[str, 
         # Mark as completed
         if result and result.get("success"):
             event_manager.mark_completed(event_id, result)
-            logger.info(f"Event {event_id} processed successfully")
+            logger.info(f"[JOB_SUCCESS] Event {event_id} processed successfully")
         else:
             error_msg = result.get("error", "Unknown error") if result else "No result"
             event_manager.mark_failed(event_id, error_msg)
-            logger.error(f"Event {event_id} processing failed: {error_msg}")
+            logger.error(f"[JOB_FAILED] Event {event_id} processing failed: {error_msg}")
 
     except Exception as e:
-        logger.error(f"Unexpected error processing event {event_id}: {e}")
+        logger.error(f"[JOB_ERROR] Unexpected error processing event {event_id}: {e}", exc_info=True)
         try:
             event_manager.mark_failed(event_id, str(e))
         except:
             pass
     finally:
         db.close()
+        logger.info(f"[JOB_END] Event {event_id} job complete")

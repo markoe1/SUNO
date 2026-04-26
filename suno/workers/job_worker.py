@@ -54,13 +54,6 @@ class SUNOWorker:
             job_monitoring_interval: Monitor job progress every N seconds
         """
         try:
-            # Clean up stale workers with same name
-            from rq.worker import Worker as RQWorker
-            for worker in RQWorker.all(connection=self.redis):
-                if worker.name == self.worker_name and not worker.get_current_job():
-                    logger.info(f"Cleaning up stale worker: {self.worker_name}")
-                    worker.clean_registry()
-
             # Create worker with priority queue order
             self.worker = Worker(
                 queues=[
@@ -77,12 +70,14 @@ class SUNOWorker:
 
             logger.info(f"Starting worker {self.worker_name}")
             logger.info("Processing jobs from queues: critical > high > normal > low")
+            logger.info(f"Connected to Redis: {self.redis_url}")
 
             # Register signal handlers for graceful shutdown
             signal.signal(signal.SIGINT, self._handle_shutdown)
             signal.signal(signal.SIGTERM, self._handle_shutdown)
 
-            # Run worker
+            # Run worker with job monitoring
+            logger.info(f"Worker {self.worker_name} ready to process jobs")
             self.worker.work(with_scheduler=False, logging_level=logging.INFO)
 
         except Exception as e:
