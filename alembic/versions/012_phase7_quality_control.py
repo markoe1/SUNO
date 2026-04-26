@@ -34,8 +34,9 @@ def upgrade():
 
     if not enum_exists:
         # Enum doesn't exist, create it with all values
+        # Use CREATE TYPE IF NOT EXISTS to avoid errors if SQLAlchemy also tries to create it
         op.execute("""
-            CREATE TYPE cliplifecycle AS ENUM (
+            CREATE TYPE IF NOT EXISTS cliplifecycle AS ENUM (
                 'discovered', 'eligible', 'queued', 'generated', 'needs_review',
                 'approved', 'captioned', 'scheduled', 'posted', 'submitted',
                 'tracked', 'rejected', 'failed', 'expired'
