@@ -85,6 +85,12 @@ class AccountProvisioner:
                 automation_enabled=True,
             )
             self.db.add(account)
+
+            # Update membership status to ACTIVE after successful provisioning
+            from suno.common.enums import MembershipLifecycle
+            membership.status = MembershipLifecycle.ACTIVE
+            membership.activated_at = datetime.utcnow()
+
             self.db.commit()
 
             logger.info(f"Successfully provisioned account {workspace_id} for user {user_id}")
