@@ -322,6 +322,11 @@ class MembershipLifecycleHandler:
 
             self.db.commit()
 
+        # DEBUG: Log all tiers and what we found
+        logger.info(f"[TIER_DEBUG] Querying for tiers (STARTER and PRO)")
+        logger.info(f"[TIER_DEBUG] STARTER query result: id={starter.id if starter else None}, name={starter.name.value if starter else None}")
+        logger.info(f"[TIER_DEBUG] PRO query result: id={pro.id if pro else None}, name={pro.name.value if pro else None}")
+
         # Map plan_id to tier
         plan_to_tier = {
             "plan_starter": starter,
@@ -330,6 +335,7 @@ class MembershipLifecycleHandler:
 
         tier = plan_to_tier.get(plan_id)
         if tier:
+            logger.info(f"[TIER_DEBUG] plan_id='{plan_id}' mapped to tier id={tier.id}, name={tier.name.value}, clips={tier.max_daily_clips}")
             logger.info(f"Plan_id {plan_id} → {tier.name.value} tier")
             return tier
 
