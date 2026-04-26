@@ -322,10 +322,20 @@ class MembershipLifecycleHandler:
 
             self.db.commit()
 
-        # DEBUG: Log all tiers and what we found
-        logger.info(f"[TIER_DEBUG] Querying for tiers (STARTER and PRO)")
-        logger.info(f"[TIER_DEBUG] STARTER query result: id={starter.id if starter else None}, name={starter.name.value if starter else None}")
-        logger.info(f"[TIER_DEBUG] PRO query result: id={pro.id if pro else None}, name={pro.name.value if pro else None}")
+        # === TIER MAPPING DIAGNOSTIC LOGGING ===
+        logger.info(f"[TIER_MAP_START] Discovering tier for plan_id='{plan_id}'")
+
+        # Log starter tier details
+        if starter:
+            logger.info(f"[TIER_STARTER] id={starter.id}, name='{starter.name.value}', max_daily_clips={starter.max_daily_clips}, max_platforms={starter.max_platforms}")
+        else:
+            logger.warning(f"[TIER_STARTER] NOT FOUND in database")
+
+        # Log pro tier details
+        if pro:
+            logger.info(f"[TIER_PRO] id={pro.id}, name='{pro.name.value}', max_daily_clips={pro.max_daily_clips}, max_platforms={pro.max_platforms}")
+        else:
+            logger.warning(f"[TIER_PRO] NOT FOUND in database")
 
         # Map plan_id to tier
         plan_to_tier = {
@@ -335,12 +345,14 @@ class MembershipLifecycleHandler:
 
         tier = plan_to_tier.get(plan_id)
         if tier:
-            logger.info(f"[TIER_DEBUG] plan_id='{plan_id}' mapped to tier id={tier.id}, name={tier.name.value}, clips={tier.max_daily_clips}")
+            logger.info(f"[TIER_SELECTED] plan_id='{plan_id}' → id={tier.id}, name='{tier.name.value}', max_daily_clips={tier.max_daily_clips}, max_platforms={tier.max_platforms}")
             logger.info(f"Plan_id {plan_id} → {tier.name.value} tier")
             return tier
 
         # Unknown plan_id: default to STARTER for safety
-        logger.warning(f"Unknown plan_id '{plan_id}', defaulting to STARTER tier")
+        logger.warning(f"[TIER_UNKNOWN] plan_id='{plan_id}' not recognized, defaulting to STARTER")
+        if starter:
+            logger.warning(f"[TIER_SELECTED_DEFAULT] Defaulting to STARTER: id={starter.id}, name='{starter.name.value}', max_daily_clips={starter.max_daily_clips}")
         return starter
 
 
