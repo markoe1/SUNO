@@ -38,10 +38,10 @@ class JobQueueManager:
         """
         self.redis = Redis.from_url(redis_url, decode_responses=True)
         self.queues = {
-            JobQueueType.CRITICAL: Queue(JobQueueType.CRITICAL, connection=self.redis),
-            JobQueueType.HIGH: Queue(JobQueueType.HIGH, connection=self.redis),
-            JobQueueType.NORMAL: Queue(JobQueueType.NORMAL, connection=self.redis),
-            JobQueueType.LOW: Queue(JobQueueType.LOW, connection=self.redis),
+            JobQueueType.CRITICAL: Queue(JobQueueType.CRITICAL.value, connection=self.redis),
+            JobQueueType.HIGH: Queue(JobQueueType.HIGH.value, connection=self.redis),
+            JobQueueType.NORMAL: Queue(JobQueueType.NORMAL.value, connection=self.redis),
+            JobQueueType.LOW: Queue(JobQueueType.LOW.value, connection=self.redis),
         }
         logger.info("Job queue manager initialized")
 
