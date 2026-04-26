@@ -119,10 +119,10 @@ def get_me(
             detail="User not found"
         )
 
-    # Get active membership
+    # Get active or pending membership (allow both statuses for user access)
     membership = db.query(Membership).filter(
         Membership.user_id == user.id,
-        Membership.status == MembershipLifecycle.ACTIVE,
+        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
     ).first()
 
     if not membership:
@@ -176,7 +176,7 @@ def get_me_membership(
 
     membership = db.query(Membership).filter(
         Membership.user_id == user.id,
-        Membership.status == MembershipLifecycle.ACTIVE,
+        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
     ).first()
 
     if not membership:
@@ -220,7 +220,7 @@ def get_me_workspace(
 
     membership = db.query(Membership).filter(
         Membership.user_id == user.id,
-        Membership.status == MembershipLifecycle.ACTIVE,
+        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
     ).first()
 
     if not membership:
@@ -268,7 +268,7 @@ def get_me_limits(
 
     membership = db.query(Membership).filter(
         Membership.user_id == user.id,
-        Membership.status == MembershipLifecycle.ACTIVE,
+        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
     ).first()
 
     if not membership:
@@ -321,7 +321,7 @@ def get_dashboard_data(
 
     membership = db.query(Membership).filter(
         Membership.user_id == user.id,
-        Membership.status == MembershipLifecycle.ACTIVE,
+        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
     ).first()
 
     if not membership:
