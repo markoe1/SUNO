@@ -13,6 +13,13 @@ DATABASE_URL = os.getenv(
     "postgresql://suno:suno@localhost:5432/suno_clips"
 )
 
+# Strip Neon's ?sslmode=require query parameter (asyncpg/psycopg handle SSL automatically)
+DATABASE_URL = DATABASE_URL.split("?")[0]
+
+# Ensure we use psycopg3 for PostgreSQL
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://")
+
 # Create engine
 engine = create_engine(
     DATABASE_URL,
