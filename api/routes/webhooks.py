@@ -112,7 +112,7 @@ async def handle_whop_webhook(request: Request):
                 try:
                     job_id = queue_manager.enqueue(
                         "critical",
-                        "suno.billing.webhook_routes.process_webhook_event",
+                        "suno.billing.webhook_processor.process_webhook_event",
                         kwargs={
                             "event_id": event_record.id,
                             "event_type": event_type,
