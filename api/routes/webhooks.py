@@ -18,8 +18,12 @@ WEBHOOK_SECRET = os.getenv("WHOP_WEBHOOK_SECRET", "")
 
 def verify_whop_signature(body: bytes, signature: str) -> bool:
     """Verify Whop webhook HMAC signature."""
+    # DEBUG: Log signature verification details
+    has_secret = bool(WEBHOOK_SECRET)
+    logger.info(f"[WEBHOOK_DEBUG] Secret set: {has_secret}, secret_len: {len(WEBHOOK_SECRET) if has_secret else 0}, sig_len: {len(signature)}")
+
     if not signature or not WEBHOOK_SECRET:
-        logger.warning("Missing signature or secret")
+        logger.warning(f"[WEBHOOK_DEBUG] Missing signature or secret: sig={bool(signature)}, secret={bool(WEBHOOK_SECRET)}")
         return False
 
     computed = hmac.new(
@@ -28,8 +32,14 @@ def verify_whop_signature(body: bytes, signature: str) -> bool:
         hashlib.sha256
     ).hexdigest()
 
+    # DEBUG: Log signature comparison (first 8 chars only)
+    provided_start = signature[:8]
+    computed_start = computed[:8]
+    match = hmac.compare_digest(computed, signature)
+    logger.info(f"[WEBHOOK_DEBUG] Signature match: {match}, body_len: {len(body)}, provided[:8]: {provided_start}, computed[:8]: {computed_start}")
+
     # Constant-time comparison
-    return hmac.compare_digest(computed, signature)
+    return match
 
 
 @router.post("/whop")
