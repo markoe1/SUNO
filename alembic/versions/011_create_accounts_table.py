@@ -15,13 +15,17 @@ depends_on = None
 
 
 def upgrade():
-    # Define enum once
-    account_status_enum = sa.Enum('ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED', name='accountstatus')
+    # Define enum with create_type=False to prevent SQLAlchemy from auto-creating it
+    account_status_enum = sa.Enum(
+        'ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED',
+        name='accountstatus',
+        create_type=False
+    )
 
-    # Create ENUM type if it doesn't exist
+    # Explicitly create ENUM type in PostgreSQL
     account_status_enum.create(op.get_bind(), checkfirst=True)
 
-    # Create accounts table using the SAME enum object (do NOT redefine)
+    # Create accounts table using the SAME enum object
     op.create_table(
         'accounts',
         sa.Column('id', sa.Integer, primary_key=True),
@@ -42,6 +46,10 @@ def downgrade():
     op.drop_index('idx_account_workspace', table_name='accounts')
     op.drop_table('accounts')
 
-    # Drop accountstatus ENUM type if it exists
-    account_status_enum = sa.Enum('ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED', name='accountstatus')
+    # Drop accountstatus ENUM type with create_type=False
+    account_status_enum = sa.Enum(
+        'ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED',
+        name='accountstatus',
+        create_type=False
+    )
     account_status_enum.drop(op.get_bind(), checkfirst=True)
