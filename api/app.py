@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
-from api.routes import admin, auth, campaigns, client_clips, clients, debug, editors, health, hooks, invoices, jobs, platform_oauth, reports, settings, submissions, templates as clip_templates, users, webhooks
+from api.routes import admin, auth, campaigns, client_clips, clients, debug, editors, health, hooks, invoices, jobs, platform_oauth, profile, reports, settings, submissions, templates as clip_templates, users, webhooks
 from services.logger import configure_logging
 
 APP_ENV = os.getenv("APP_ENV", "development")
@@ -71,6 +71,7 @@ def create_app() -> FastAPI:
     # API routers
     app.include_router(admin.router)  # Admin verification (protected by token)
     app.include_router(webhooks.router)  # Whop webhook handler (critical)
+    app.include_router(profile.router)  # User profile endpoints (product layer)
     app.include_router(auth.router)
     app.include_router(users.router)
     app.include_router(campaigns.router)
