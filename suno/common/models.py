@@ -13,7 +13,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import uuid
-from suno.common.enums import MembershipLifecycle, ClipLifecycle, JobLifecycle, TierName, AccountStatus
+from suno.common.enums import (
+    MembershipLifecycle, ClipLifecycle, JobLifecycle, TierName, AccountStatus,
+    VariantType, VariantStatus
+)
 
 Base = declarative_base()
 
@@ -230,11 +233,22 @@ class Clip(Base):
     emotional_trigger_type = Column(String(50), nullable=True)
     rejection_reason = Column(Text, nullable=True)
     hook_start_ms = Column(Integer, nullable=True)
+    # Phase 8: Intelligence + Distribution Engine
+    predicted_views = Column(Integer, nullable=True)
+    estimated_value = Column(Float, nullable=True)
+    ai_generation_cost_usd = Column(Float, nullable=True)
+    ai_roi = Column(Float, nullable=True)
+    predicted_watch_time = Column(Float, nullable=True)
+    predicted_completion_rate = Column(Float, nullable=True)
+    predicted_dropoff_ms = Column(Integer, nullable=True)
+    posting_cooldown_hours = Column(Integer, default=2)
 
     campaign = relationship("Campaign", back_populates="clips")
     account = relationship("Account", back_populates="clips")
     assignments = relationship("ClipAssignment", back_populates="clip")
     post_jobs = relationship("PostJob", back_populates="clip")
+    variants = relationship("ClipVariant", back_populates="clip", order_by="ClipVariant.created_at")
+    performances = relationship("ClipPerformance", back_populates="clip")
 
     __table_args__ = (
         Index("idx_clip_campaign", "campaign_id"),
@@ -316,6 +330,67 @@ class PostJob(Base):
         Index("idx_post_job_account", "account_id"),
         Index("idx_post_job_status", "status"),
         Index("idx_post_job_scheduled", "scheduled_for"),
+    )
+
+
+class ClipVariant(Base):
+    """Clip variant (hook, caption, duration, subtitles) with signal tracking."""
+    __tablename__ = "clip_variants"
+
+    id = Column(Integer, primary_key=True)
+    clip_id = Column(Integer, ForeignKey("clips.id"), nullable=False, index=True)
+    variant_group_id = Column(String(64), nullable=True, index=True)
+    variant_type = Column(SQLEnum(VariantType), nullable=False)
+    content = Column(Text, nullable=False)
+    model_used = Column(String(100), nullable=True)
+    quality_tier = Column(String(20), nullable=True)  # "draft" or "elite"
+    hook_type = Column(String(50), nullable=True)  # curiosity, controversial, emotional, authority
+    predicted_engagement = Column(Float, nullable=True)  # 0.0-1.0
+    status = Column(SQLEnum(VariantStatus), default=VariantStatus.DRAFT, nullable=False)
+    signal_status = Column(String(20), default="pending", nullable=False)  # pending, strong, weak, paused
+    scheduled_for = Column(DateTime, nullable=True)
+    first_signal_at = Column(DateTime, nullable=True)
+    posted_at = Column(DateTime, nullable=True)
+    posted_platform = Column(String(50), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    clip = relationship("Clip", back_populates="variants")
+
+    __table_args__ = (
+        Index("idx_variant_clip", "clip_id"),
+        Index("idx_variant_status", "status"),
+        Index("idx_variant_scheduled", "scheduled_for"),
+        Index("idx_variant_group", "variant_group_id"),
+    )
+
+
+class ClipPerformance(Base):
+    """Performance metrics recorded for a clip or variant."""
+    __tablename__ = "clip_performances"
+
+    id = Column(Integer, primary_key=True)
+    clip_id = Column(Integer, ForeignKey("clips.id"), nullable=False, index=True)
+    variant_id = Column(Integer, ForeignKey("clip_variants.id"), nullable=True, index=True)
+    platform = Column(String(50), nullable=False, index=True)
+    views = Column(Integer, default=0)
+    watch_time_seconds = Column(Float, nullable=True)
+    completion_rate = Column(Float, nullable=True)  # 0.0-1.0
+    likes = Column(Integer, default=0)
+    shares = Column(Integer, default=0)
+    saves = Column(Integer, default=0)
+    comments = Column(Integer, default=0)
+    revenue_estimate = Column(Float, nullable=True)
+    recorded_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    clip = relationship("Clip", back_populates="performances")
+
+    __table_args__ = (
+        Index("idx_perf_clip", "clip_id"),
+        Index("idx_perf_variant", "variant_id"),
+        Index("idx_perf_platform", "platform"),
     )
 
 
