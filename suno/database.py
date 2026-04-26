@@ -6,6 +6,7 @@ SQLAlchemy session factory for the SUNO system.
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from suno.common.models import Base
 
 # Get database URL from environment
 DATABASE_URL = os.getenv(
@@ -53,6 +54,4 @@ def get_db() -> Session:
 
 def init_db():
     """Initialize database (create all tables)."""
-    from suno.common.models import Base
-
     Base.metadata.create_all(bind=engine)

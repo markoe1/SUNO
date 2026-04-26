@@ -9,9 +9,9 @@ from alembic import context
 # Add project root to path so we can import models
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from db.engine import Base
-import db.models  # noqa: F401 — ensure all models are registered
-import db.models_v2  # noqa: F401 — operator platform models
+# Import the correct Base and models
+from suno.database import Base
+import suno.common.models  # noqa: F401 — ensure SUNO models are registered (User, Tier, Membership, etc)
 
 config = context.config
 
