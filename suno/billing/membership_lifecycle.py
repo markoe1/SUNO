@@ -68,12 +68,13 @@ class MembershipLifecycleHandler:
                 tier_id=tier.id,
                 whop_membership_id=whop_membership_id,
                 whop_plan_id=plan_id,  # Store plan ID for tier mapping
-                status=MembershipLifecycle.PENDING,
+                status=MembershipLifecycle.ACTIVE,
+                activated_at=datetime.utcnow(),
             )
             self.db.add(membership)
             self.db.commit()
 
-            logger.info(f"Created membership {membership.id} for user {email} (tier: {tier.name})")
+            logger.info(f"Created membership {membership.id} for user {email} (tier: {tier.name}) - status: ACTIVE")
 
             # Enqueue provisioning job
             job_id = self.queue_manager.enqueue(
