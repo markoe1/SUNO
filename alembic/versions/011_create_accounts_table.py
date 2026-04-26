@@ -15,41 +15,39 @@ depends_on = None
 
 
 def upgrade():
-    # Define enum with create_type=False to prevent SQLAlchemy from auto-creating it
+    bind = op.get_bind()
+
     account_status_enum = sa.Enum(
         'ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED',
         name='accountstatus',
         create_type=False
     )
 
-    # Explicitly create ENUM type in PostgreSQL
-    account_status_enum.create(op.get_bind(), checkfirst=True)
+    # Explicit creation (safe)
+    account_status_enum.create(bind, checkfirst=True)
 
-    # Create accounts table using the SAME enum object
+    # Use SAME object here
     op.create_table(
         'accounts',
         sa.Column('id', sa.Integer, primary_key=True),
-        sa.Column('membership_id', sa.Integer, sa.ForeignKey('memberships.id'), nullable=False, unique=True, index=True),
-        sa.Column('workspace_id', sa.String(255), nullable=False, unique=True, index=True),
-        sa.Column('status', account_status_enum, nullable=False, server_default='ACTIVE'),
-        sa.Column('automation_enabled', sa.Boolean, nullable=False, server_default=sa.true()),
+        sa.Column('membership_id', sa.Integer, sa.ForeignKey('memberships.id'), nullable=False),
+        sa.Column('workspace_id', sa.String(255), nullable=True),
+        sa.Column('status', account_status_enum, nullable=False),
+        sa.Column('automation_enabled', sa.Boolean, nullable=False, server_default=sa.text('false')),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
 
-    # Create index for workspace_id
-    op.create_index('idx_account_workspace', 'accounts', ['workspace_id'])
-
 
 def downgrade():
-    # Drop index and table
-    op.drop_index('idx_account_workspace', table_name='accounts')
+    bind = op.get_bind()
+
     op.drop_table('accounts')
 
-    # Drop accountstatus ENUM type with create_type=False
     account_status_enum = sa.Enum(
         'ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED',
         name='accountstatus',
         create_type=False
     )
-    account_status_enum.drop(op.get_bind(), checkfirst=True)
+
+    account_status_enum.drop(bind, checkfirst=True)
