@@ -15,16 +15,25 @@ depends_on = None
 
 
 def upgrade():
-    # Add new ClipLifecycle enum values
-    # Safe: Check if type exists before attempting ALTER
+    # Add new ClipLifecycle enum values (safe for fresh + legacy databases)
+    # Check if cliplifecycle enum exists in the database
+    conn = op.get_bind()
+    cursor = conn.connection.cursor()
+
     try:
-        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'generated'")
-        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'needs_review'")
-        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'approved'")
-        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'rejected'")
+        # Check if the enum type exists
+        cursor.execute("""
+            SELECT 1 FROM pg_type
+            WHERE typname = 'cliplifecycle' AND typtype = 'e'
+        """)
+        enum_exists = cursor.fetchone() is not None
     except Exception:
-        # If enum doesn't exist, create it with all values
-        # This handles fresh databases where the enum was never created
+        enum_exists = False
+
+    cursor.close()
+
+    if not enum_exists:
+        # Enum doesn't exist, create it with all values
         op.execute("""
             CREATE TYPE cliplifecycle AS ENUM (
                 'discovered', 'eligible', 'queued', 'generated', 'needs_review',
@@ -32,6 +41,12 @@ def upgrade():
                 'tracked', 'rejected', 'failed', 'expired'
             )
         """)
+    else:
+        # Enum exists, add new values safely
+        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'generated'")
+        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'needs_review'")
+        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'approved'")
+        op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'rejected'")
 
     # Create creator_profiles table
     op.create_table(
