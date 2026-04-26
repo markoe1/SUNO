@@ -15,24 +15,12 @@ depends_on = None
 
 
 def upgrade():
-    bind = op.get_bind()
-
-    account_status_enum = sa.Enum(
-        'ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED',
-        name='accountstatus',
-        create_type=False
-    )
-
-    # Explicit creation (safe)
-    account_status_enum.create(bind, checkfirst=True)
-
-    # Use SAME object here
     op.create_table(
         'accounts',
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('membership_id', sa.Integer, sa.ForeignKey('memberships.id'), nullable=False),
         sa.Column('workspace_id', sa.String(255), nullable=True),
-        sa.Column('status', account_status_enum, nullable=False),
+        sa.Column('status', sa.Enum('ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED', name='accountstatus', create_type=False), nullable=False),
         sa.Column('automation_enabled', sa.Boolean, nullable=False, server_default=sa.text('false')),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
@@ -40,14 +28,4 @@ def upgrade():
 
 
 def downgrade():
-    bind = op.get_bind()
-
     op.drop_table('accounts')
-
-    account_status_enum = sa.Enum(
-        'ACTIVE', 'PAUSED', 'REVOKED', 'DISABLED',
-        name='accountstatus',
-        create_type=False
-    )
-
-    account_status_enum.drop(bind, checkfirst=True)
