@@ -46,6 +46,9 @@ class MembershipLifecycleHandler:
             whop_membership_id = event_data.get("whop_membership_id")
             plan_id = event_data.get("plan_id")
 
+            # === ENTRY LOGGING ===
+            logger.info(f"[PURCHASE_START] handle_purchase called with plan_id='{plan_id}'")
+
             if not all([email, whop_membership_id, plan_id]):
                 raise ValueError("Missing required fields: user_email, whop_membership_id, plan_id")
 
@@ -58,9 +61,11 @@ class MembershipLifecycleHandler:
                 logger.info(f"Created user {email}")
 
             # Discover tier from plan_id
+            logger.info(f"[TIER_DISCOVER] Calling _discover_tier_from_plan('{plan_id}')")
             tier = self._discover_tier_from_plan(plan_id)
             if not tier:
                 raise ValueError(f"Unknown plan_id: {plan_id}")
+            logger.info(f"[TIER_RETURNED] _discover_tier_from_plan returned tier id={tier.id}, name='{tier.name.value}', clips={tier.max_daily_clips}")
 
             # Create membership
             membership = Membership(
