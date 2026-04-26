@@ -5,7 +5,7 @@ GET /api/me, /api/me/membership, /api/me/workspace, /api/me/limits
 
 from datetime import datetime
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -102,7 +102,7 @@ def get_db():
 # Endpoints
 @router.get("/me", response_model=MeResponse)
 def get_me(
-    x_user_email: Optional[str] = None,
+    x_user_email: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
     """Get current user info."""
@@ -157,7 +157,7 @@ def get_me(
 
 @router.get("/me/membership", response_model=MembershipResponse)
 def get_me_membership(
-    x_user_email: Optional[str] = None,
+    x_user_email: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
     """Get current user's membership info."""
@@ -201,7 +201,7 @@ def get_me_membership(
 
 @router.get("/me/workspace", response_model=WorkspaceResponse)
 def get_me_workspace(
-    x_user_email: Optional[str] = None,
+    x_user_email: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
     """Get current user's workspace/account info."""
@@ -249,7 +249,7 @@ def get_me_workspace(
 
 @router.get("/me/limits", response_model=LimitsResponse)
 def get_me_limits(
-    x_user_email: Optional[str] = None,
+    x_user_email: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
     """Get current user's tier limits and feature access."""
@@ -302,7 +302,7 @@ def get_me_limits(
 
 @router.get("/dashboard/data", response_model=DashboardDataResponse)
 def get_dashboard_data(
-    x_user_email: Optional[str] = None,
+    x_user_email: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
     """Get complete dashboard data in one request."""
