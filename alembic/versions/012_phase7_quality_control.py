@@ -75,22 +75,80 @@ def upgrade():
     op.add_column('campaigns', sa.Column('forbidden_topics', sa.JSON, nullable=False, server_default='[]'))
     op.add_column('campaigns', sa.Column('approval_required', sa.Boolean, nullable=False, server_default='false'))
 
-    # Add quality score columns to clips table
-    op.add_column('clips', sa.Column('hook_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('relevance_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('platform_fit_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('duration_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('brand_alignment_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('viral_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('social_proof_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('overall_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('monetization_score', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('emotional_trigger_type', sa.String(50), nullable=True))
-    op.add_column('clips', sa.Column('rejection_reason', sa.Text, nullable=True))
-    op.add_column('clips', sa.Column('hook_start_ms', sa.Integer, nullable=True))
+    # Check if clips table exists; create it if not (for fresh databases)
+    conn = op.get_bind()
+    cursor = conn.connection.cursor()
 
-    # Add index to clips for account_id, status
-    op.create_index('idx_clip_account_status', 'clips', ['account_id', 'status'])
+    try:
+        cursor.execute("""
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = 'clips'
+        """)
+        clips_exists = cursor.fetchone() is not None
+    except Exception:
+        clips_exists = False
+
+    cursor.close()
+
+    if not clips_exists:
+        # Create clips table with all columns at once (for fresh databases)
+        op.create_table(
+            'clips',
+            sa.Column('id', sa.Integer, primary_key=True),
+            sa.Column('campaign_id', sa.Integer, sa.ForeignKey('campaigns.id'), nullable=False, index=True),
+            sa.Column('account_id', sa.Integer, sa.ForeignKey('accounts.id'), nullable=True, index=True),
+            sa.Column('source_url', sa.String(2000), nullable=False, unique=True, index=True),
+            sa.Column('source_platform', sa.String(50), nullable=False),
+            sa.Column('title', sa.String(500), nullable=False),
+            sa.Column('description', sa.Text, nullable=True),
+            sa.Column('creator', sa.String(255), nullable=True),
+            sa.Column('view_count', sa.Integer, nullable=False, server_default='0'),
+            sa.Column('engagement_score', sa.Float, nullable=False, server_default='0.0'),
+            sa.Column('trending_category', sa.String(100), nullable=True),
+            sa.Column('hashtags', sa.JSON, nullable=False, server_default='[]'),
+            sa.Column('audio_source', sa.String(255), nullable=True),
+            sa.Column('content_hash', sa.String(64), nullable=False, unique=True, index=True),
+            sa.Column('status', sa.Enum('discovered', 'eligible', 'queued', 'generated', 'needs_review', 'approved', 'captioned', 'scheduled', 'posted', 'submitted', 'tracked', 'rejected', 'failed', 'expired', name='cliplifecycle'), nullable=False),
+            sa.Column('platform_eligible', sa.Boolean, nullable=False, server_default=sa.true()),
+            sa.Column('available', sa.Boolean, nullable=False, server_default=sa.true()),
+            sa.Column('clip_metadata', sa.JSON, nullable=False, server_default='{}'),
+            sa.Column('last_seen_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+            sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+            sa.Column('hook_score', sa.Float, nullable=True),
+            sa.Column('relevance_score', sa.Float, nullable=True),
+            sa.Column('platform_fit_score', sa.Float, nullable=True),
+            sa.Column('duration_score', sa.Float, nullable=True),
+            sa.Column('brand_alignment_score', sa.Float, nullable=True),
+            sa.Column('viral_score', sa.Float, nullable=True),
+            sa.Column('social_proof_score', sa.Float, nullable=True),
+            sa.Column('overall_score', sa.Float, nullable=True),
+            sa.Column('monetization_score', sa.Float, nullable=True),
+            sa.Column('emotional_trigger_type', sa.String(50), nullable=True),
+            sa.Column('rejection_reason', sa.Text, nullable=True),
+            sa.Column('hook_start_ms', sa.Integer, nullable=True),
+        )
+        op.create_index('idx_clip_campaign', 'clips', ['campaign_id'])
+        op.create_index('idx_clip_status', 'clips', ['status'])
+        op.create_index('idx_clip_content_hash', 'clips', ['content_hash'])
+        op.create_index('idx_clip_account_status', 'clips', ['account_id', 'status'])
+    else:
+        # Table exists, just add the columns
+        op.add_column('clips', sa.Column('hook_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('relevance_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('platform_fit_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('duration_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('brand_alignment_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('viral_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('social_proof_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('overall_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('monetization_score', sa.Float, nullable=True))
+        op.add_column('clips', sa.Column('emotional_trigger_type', sa.String(50), nullable=True))
+        op.add_column('clips', sa.Column('rejection_reason', sa.Text, nullable=True))
+        op.add_column('clips', sa.Column('hook_start_ms', sa.Integer, nullable=True))
+
+        # Add index to clips for account_id, status
+        op.create_index('idx_clip_account_status', 'clips', ['account_id', 'status'])
 
 
 def downgrade():
