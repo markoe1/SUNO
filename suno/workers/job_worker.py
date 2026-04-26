@@ -54,14 +54,24 @@ class SUNOWorker:
             job_monitoring_interval: Monitor job progress every N seconds
         """
         try:
+            # Pre-import webhook processor so RQ can resolve the function path
+            import suno.billing.webhook_processor
+            logger.info("Pre-loaded suno.billing.webhook_processor for job execution")
+
+            # Create queues and log their current lengths
+            queues = [
+                Queue("critical", connection=self.redis),
+                Queue("high", connection=self.redis),
+                Queue("normal", connection=self.redis),
+                Queue("low", connection=self.redis),
+            ]
+
+            critical_queue_length = len(queues[0])
+            logger.info(f"Queue lengths - critical: {critical_queue_length}, high: {len(queues[1])}, normal: {len(queues[2])}, low: {len(queues[3])}")
+
             # Create worker with priority queue order
             self.worker = Worker(
-                queues=[
-                    Queue("critical", connection=self.redis),
-                    Queue("high", connection=self.redis),
-                    Queue("normal", connection=self.redis),
-                    Queue("low", connection=self.redis),
-                ],
+                queues=queues,
                 connection=self.redis,
                 name=self.worker_name,
                 default_result_ttl=500,
