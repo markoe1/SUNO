@@ -32,11 +32,14 @@ def verify_whop_signature(body: bytes, signature: str) -> bool:
         hashlib.sha256
     ).hexdigest()
 
-    # DEBUG: Log signature comparison (first 8 chars only)
+    # DEBUG: Log signature comparison and body content
     provided_start = signature[:8]
     computed_start = computed[:8]
     match = hmac.compare_digest(computed, signature)
+    body_start = body[:50]  # First 50 bytes of body
     logger.info(f"[WEBHOOK_DEBUG] Signature match: {match}, body_len: {len(body)}, provided[:8]: {provided_start}, computed[:8]: {computed_start}")
+    logger.warning(f"[WEBHOOK_DEBUG] Body first 50 bytes (hex): {body_start.hex()}")
+    logger.warning(f"[WEBHOOK_DEBUG] Body first 50 bytes (str): {body_start}")
 
     # Constant-time comparison
     return match
