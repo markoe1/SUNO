@@ -53,3 +53,20 @@ class AccountStatus(str, Enum):
     PAUSED = "paused"
     REVOKED = "revoked"
     DISABLED = "disabled"
+
+
+class VariantType(str, Enum):
+    """Clip variant types."""
+    HOOK = "hook"
+    CAPTION = "caption"
+    DURATION = "duration"
+    SUBTITLES = "subtitles"
+
+
+class VariantStatus(str, Enum):
+    """Clip variant lifecycle."""
+    DRAFT = "draft"
+    ELITE = "elite"
+    ELECTED = "elected"
+    POSTED = "posted"
+    REJECTED = "rejected"
