@@ -1,1 +1,3 @@
-"""Vantage — Advanced quality control and social intelligence layer."""
+"""
+Vantage AI + Intelligence Engines for Phase 8+
+"""
