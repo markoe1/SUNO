@@ -36,7 +36,7 @@ class JobQueueManager:
         Args:
             redis_url: Redis connection URL
         """
-        self.redis = Redis.from_url(redis_url, decode_responses=True)
+        self.redis = Redis.from_url(redis_url, decode_responses=False)
         self.queues = {
             JobQueueType.CRITICAL: Queue(JobQueueType.CRITICAL.value, connection=self.redis),
             JobQueueType.HIGH: Queue(JobQueueType.HIGH.value, connection=self.redis),

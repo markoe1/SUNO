@@ -41,7 +41,7 @@ class SUNOWorker:
         """
         self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
         self.worker_name = worker_name
-        self.redis = Redis.from_url(self.redis_url, decode_responses=True)
+        self.redis = Redis.from_url(self.redis_url, decode_responses=False)
         self.worker: Optional[Worker] = None
 
         logger.info(f"Initialized SUNO worker: {worker_name}")
