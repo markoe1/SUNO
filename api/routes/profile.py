@@ -4,14 +4,15 @@ GET /api/me, /api/me/membership, /api/me/workspace, /api/me/limits
 """
 
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from suno.database import SessionLocal
-from suno.common.models import User, Membership, Account, Tier
-from suno.common.enums import AccountStatus, MembershipLifecycle, TierName
+from suno.common.models import User, Membership, Account, Tier, Clip
+from suno.common.enums import AccountStatus, MembershipLifecycle, TierName, ClipLifecycle
 
 router = APIRouter(prefix="/api", tags=["profile"])
 
@@ -58,11 +59,32 @@ class LimitsResponse(BaseModel):
     features: Dict[str, bool]
 
 
+class RecentClipResponse(BaseModel):
+    clip_id: int
+    status: str
+    campaign_id: int
+    overall_score: Optional[float]
+    emotional_trigger_type: Optional[str]
+    created_at: str
+
+    model_config = {"from_attributes": True}
+
+
+class ClipStatsResponse(BaseModel):
+    clips_generated_today: int
+    total_clips: int
+    last_generated_at: Optional[str]
+    needs_review_count: int
+    approved_count: int
+    recent_clips: List[RecentClipResponse]
+
+
 class DashboardDataResponse(BaseModel):
     user: MeResponse
     membership: MembershipResponse
     workspace: WorkspaceResponse
     limits: LimitsResponse
+    clip_stats: ClipStatsResponse
 
 
 # Dependency: Get current user from header
@@ -342,6 +364,42 @@ def get_dashboard_data(
 
     tier = db.query(Tier).filter(Tier.id == membership.tier_id).first()
 
+    # Get clip stats
+    all_clips = db.query(Clip).filter(Clip.account_id == account.id).all()
+    total_clips = len(all_clips)
+    clips_generated_today = membership.clips_today_count
+
+    needs_review_count = db.query(func.count(Clip.id)).filter(
+        Clip.account_id == account.id,
+        Clip.status == ClipLifecycle.NEEDS_REVIEW
+    ).scalar() or 0
+
+    approved_count = db.query(func.count(Clip.id)).filter(
+        Clip.account_id == account.id,
+        Clip.status == ClipLifecycle.APPROVED
+    ).scalar() or 0
+
+    # Get recent clips (last 5)
+    recent_clips_data = db.query(Clip).filter(
+        Clip.account_id == account.id
+    ).order_by(Clip.created_at.desc()).limit(5).all()
+
+    recent_clips = [
+        RecentClipResponse(
+            clip_id=clip.id,
+            status=clip.status.value,
+            campaign_id=clip.campaign_id,
+            overall_score=clip.overall_score,
+            emotional_trigger_type=clip.emotional_trigger_type,
+            created_at=clip.created_at.isoformat() if clip.created_at else "",
+        )
+        for clip in recent_clips_data
+    ]
+
+    last_generated_at = None
+    if recent_clips_data:
+        last_generated_at = recent_clips_data[0].created_at.isoformat() if recent_clips_data[0].created_at else None
+
     return DashboardDataResponse(
         user=MeResponse(
             id=str(user.id),
@@ -378,5 +436,13 @@ def get_dashboard_data(
                 "api_access": tier.api_access if tier else False,
                 "auto_posting": tier.auto_posting if tier else False,
             },
+        ),
+        clip_stats=ClipStatsResponse(
+            clips_generated_today=clips_generated_today,
+            total_clips=total_clips,
+            last_generated_at=last_generated_at,
+            needs_review_count=needs_review_count,
+            approved_count=approved_count,
+            recent_clips=recent_clips,
         ),
     )
