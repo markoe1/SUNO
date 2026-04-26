@@ -42,6 +42,9 @@ async def ready():
             "postgresql+asyncpg://suno:suno@localhost:5432/suno_clips",
         ).replace("postgresql+asyncpg://", "postgresql+psycopg2://")
 
+        # Strip Neon's ?sslmode parameter
+        sync_url = sync_url.split("?")[0]
+
         engine = create_engine(sync_url)
         with engine.connect() as conn:
             context = MigrationContext.configure(conn)
