@@ -333,9 +333,9 @@ class MembershipLifecycleHandler:
             logger.info(f"Plan_id {plan_id} → {tier.name.value} tier")
             return tier
 
-        # Default to PRO if plan not recognized
-        logger.warning(f"Unknown plan_id {plan_id}, defaulting to PRO")
-        return pro
+        # Unknown plan_id: default to STARTER for safety
+        logger.warning(f"Unknown plan_id '{plan_id}', defaulting to STARTER tier")
+        return starter
 
 
 # Background job functions (called by RQ workers)
