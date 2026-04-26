@@ -8,6 +8,7 @@ import logging
 import os
 import signal
 import sys
+import socket
 from typing import Optional
 
 try:
@@ -123,7 +124,7 @@ class SUNOWorker:
 
 def run_worker(
     redis_url: str = None,
-    worker_name: str = "suno-worker-1",
+    worker_name: str = None,
     queue_check_interval: int = 30,
 ):
     """
@@ -131,7 +132,7 @@ def run_worker(
 
     Args:
         redis_url: Redis URL
-        worker_name: Worker name
+        worker_name: Worker name (auto-generated if not provided)
         queue_check_interval: How often to check queue in seconds
     """
     # Configure logging
@@ -139,6 +140,12 @@ def run_worker(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
+
+    # Generate unique worker name if not provided
+    if not worker_name:
+        hostname = socket.gethostname()
+        pid = os.getpid()
+        worker_name = f"suno-worker-{hostname}-{pid}"
 
     worker = SUNOWorker(redis_url, worker_name)
     worker.run(interval=queue_check_interval)
@@ -156,8 +163,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--worker-name",
-        default=os.getenv("WORKER_NAME") or f"suno-worker-{os.getenv('WORKER_ID', '1')}",
-        help="Worker name",
+        default=None,
+        help="Worker name (auto-generated if not provided)",
     )
     parser.add_argument(
         "--interval",
