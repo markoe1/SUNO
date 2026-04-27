@@ -173,7 +173,7 @@ class Campaign(Base):
     drive_url = Column(String(2000), nullable=True)
     youtube_url = Column(String(2000), nullable=True)
     allowed_platforms = Column(Text, nullable=True)
-    active = Column(Boolean, default=True)
+    available = Column(Boolean, default=True)
     last_seen_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
