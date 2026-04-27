@@ -126,9 +126,9 @@ def record_clip_performance(
         # 7. Enqueue profile update job (async)
         queue = JobQueueManager()
         queue.enqueue(
-            "update_creator_profile_job",
-            account.id,
-            queue_type=JobQueueType.LOW,
+            JobQueueType.LOW,
+            "suno.workers.clip_worker.update_creator_profile_job",
+            kwargs={"account_id": account.id},
         )
 
         logger.info(
