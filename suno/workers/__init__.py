@@ -1,8 +1,10 @@
-"""Background job workers powered by RQ"""
+"""Background job workers powered by RQ
 
-try:
-    from suno.workers.job_worker import SUNOWorker, run_worker
-    __all__ = ["SUNOWorker", "run_worker"]
-except ImportError:
-    # redis/rq not installed yet - will be installed at runtime
-    __all__ = []
+Worker is launched via: python -m suno.workers.job_worker
+which uses __main__.py for entry point.
+
+Do NOT import job_worker here — causes RuntimeWarning with sys.modules
+when running as a module.
+"""
+
+__all__ = []
