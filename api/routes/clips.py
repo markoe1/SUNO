@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api", tags=["clips"])
 
 # Pydantic models
 class GenerateClipRequest(BaseModel):
-    campaign_id: int
+    campaign_id: str  # UUID as string (e.g., "00000000-0000-0000-0000-000000000001")
     target_platforms: Optional[list[str]] = None
     tone: Optional[str] = None
 
@@ -111,8 +111,17 @@ def generate_clip(
         )
 
     # 6. Fetch campaign
+    # Convert campaign_id string to UUID for database comparison
+    try:
+        campaign_uuid = uuid.UUID(request.campaign_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="campaign_id must be a valid UUID"
+        )
+
     campaign = db.query(Campaign).filter(
-        Campaign.id == request.campaign_id,
+        Campaign.id == campaign_uuid,
         Campaign.available == True
     ).first()
 
@@ -125,7 +134,7 @@ def generate_clip(
 
     # 7. Duplicate check
     existing_clip = db.query(Clip).filter(
-        Clip.campaign_id == request.campaign_id,
+        Clip.campaign_id == campaign_uuid,
         Clip.account_id == account.id,
         Clip.status.notin_([ClipLifecycle.FAILED, ClipLifecycle.REJECTED, ClipLifecycle.EXPIRED])
     ).first()
@@ -139,7 +148,7 @@ def generate_clip(
 
     # 8. Create clip
     clip = Clip(
-        campaign_id=request.campaign_id,
+        campaign_id=campaign_uuid,
         account_id=account.id,
         source_url=f"stub://{uuid.uuid4().hex}",
         source_platform="generated",
