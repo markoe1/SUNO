@@ -164,7 +164,7 @@ class Campaign(Base):
     """Campaign containing clips to be posted."""
     __tablename__ = "campaigns"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     source_id = Column(String(255), nullable=False, index=True)
     source_type = Column(String(50), nullable=False)
     title = Column(String(500), nullable=False)
@@ -201,7 +201,7 @@ class Clip(Base):
     __tablename__ = "clips"
 
     id = Column(Integer, primary_key=True)
-    campaign_id = Column(Integer, ForeignKey("campaigns.id"), nullable=False, index=True)
+    campaign_id = Column(UUID(as_uuid=True), ForeignKey("campaigns.id"), nullable=False, index=True)
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True, index=True)
     source_url = Column(String(2000), nullable=False, unique=True, index=True)
     source_platform = Column(String(50), nullable=False)
