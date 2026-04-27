@@ -28,6 +28,14 @@ def verify_whop_signature(body: bytes, signature: str) -> bool:
         hashlib.sha256
     ).hexdigest()
 
+    # DEBUG LOGGING
+    logger.info(f"[WEBHOOK_DEBUG] body_length={len(body)} bytes")
+    logger.info(f"[WEBHOOK_DEBUG] body_sample={repr(body[:80])}")
+    logger.info(f"[WEBHOOK_DEBUG] secret_length={len(WEBHOOK_SECRET)} chars")
+    logger.info(f"[WEBHOOK_DEBUG] computed_sig={computed[:32]}...")
+    logger.info(f"[WEBHOOK_DEBUG] received_sig={signature[:32]}...")
+    logger.info(f"[WEBHOOK_DEBUG] signatures_match={hmac.compare_digest(computed, signature)}")
+
     # Constant-time comparison
     return hmac.compare_digest(computed, signature)
 
