@@ -116,7 +116,7 @@ def generate_clip(
 
     campaign = db.query(Campaign).filter(
         Campaign.id == campaign_uuid,
-        Campaign.available == True
+        Campaign.active == True
     ).first()
 
     if not campaign:
@@ -146,7 +146,7 @@ def generate_clip(
         account_id=account.id,
         source_url=f"stub://{uuid.uuid4().hex}",
         source_platform="generated",
-        title=f"Generated clip for {campaign.title}",
+        title=f"Generated clip for {campaign.name}",
         description="",
         content_hash=uuid.uuid4().hex,
         status=ClipLifecycle.QUEUED,

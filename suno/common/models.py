@@ -164,19 +164,16 @@ class Campaign(Base):
     """Campaign containing clips to be posted."""
     __tablename__ = "campaigns"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    source_id = Column(String(255), nullable=False, index=True)
-    source_type = Column(String(50), nullable=False)
-    title = Column(String(500), nullable=False)
-    description = Column(Text, nullable=True)
-    brief = Column(Text, nullable=True)
-    keywords = Column(JSON, nullable=False, default=list)  # List[str]
-    target_platforms = Column(JSON, nullable=False, default=list)  # List[str]
-    tone = Column(String(100), nullable=True)
-    style = Column(String(100), nullable=True)
-    duration_seconds = Column(Integer, default=30)
-    campaign_metadata = Column(JSON, nullable=False, default=dict)
-    available = Column(Boolean, default=True)
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    whop_campaign_id = Column(String(255), nullable=True, index=True)
+    name = Column(String(500), nullable=False)
+    cpm = Column(Float, nullable=True)
+    budget_remaining = Column(Float, nullable=True)
+    is_free = Column(Boolean, default=False)
+    drive_url = Column(String(2000), nullable=True)
+    youtube_url = Column(String(2000), nullable=True)
+    allowed_platforms = Column(Text, nullable=True)
+    active = Column(Boolean, default=True)
     last_seen_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
