@@ -3,6 +3,8 @@
 Revision ID: 012
 Revises: 011
 Create Date: 2026-04-26
+
+CRITICAL: Uses raw SQL for clips table to avoid SQLAlchemy enum auto-creation conflicts.
 """
 from alembic import op
 import sqlalchemy as sa
@@ -15,13 +17,13 @@ depends_on = None
 
 
 def upgrade():
-    # Add new ClipLifecycle enum values (safe for fresh + legacy databases)
-    # Check if cliplifecycle enum exists in the database
+    # =====================================================================
+    # PART 1: ENUM CREATION (manual control, no SQLAlchemy interference)
+    # =====================================================================
     conn = op.get_bind()
     cursor = conn.connection.cursor()
 
     try:
-        # Check if the enum type exists
         cursor.execute("""
             SELECT 1 FROM pg_type
             WHERE typname = 'cliplifecycle' AND typtype = 'e'
@@ -33,23 +35,24 @@ def upgrade():
     cursor.close()
 
     if not enum_exists:
-        # Enum doesn't exist, create it with all values
-        # Use CREATE TYPE IF NOT EXISTS to avoid errors if SQLAlchemy also tries to create it
+        # Fresh database: create cliplifecycle enum
         op.execute("""
-            CREATE TYPE IF NOT EXISTS cliplifecycle AS ENUM (
+            CREATE TYPE cliplifecycle AS ENUM (
                 'discovered', 'eligible', 'queued', 'generated', 'needs_review',
                 'approved', 'captioned', 'scheduled', 'posted', 'submitted',
                 'tracked', 'rejected', 'failed', 'expired'
             )
         """)
     else:
-        # Enum exists, add new values safely
+        # Legacy database: add new values if missing
         op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'generated'")
         op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'needs_review'")
         op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'approved'")
         op.execute("ALTER TYPE cliplifecycle ADD VALUE IF NOT EXISTS 'rejected'")
 
-    # Create creator_profiles table
+    # =====================================================================
+    # PART 2: CREATOR_PROFILES TABLE (SQLAlchemy safe, no enum conflicts)
+    # =====================================================================
     op.create_table(
         'creator_profiles',
         sa.Column('id', sa.Integer, primary_key=True),
@@ -67,7 +70,9 @@ def upgrade():
     )
     op.create_index('idx_creator_profile_account', 'creator_profiles', ['account_id'])
 
-    # Add columns to campaigns table
+    # =====================================================================
+    # PART 3: CAMPAIGNS TABLE COLUMNS (legacy database safe)
+    # =====================================================================
     op.add_column('campaigns', sa.Column('min_duration_seconds', sa.Integer, nullable=True))
     op.add_column('campaigns', sa.Column('max_duration_seconds', sa.Integer, nullable=True))
     op.add_column('campaigns', sa.Column('ideal_duration_seconds', sa.Integer, nullable=True))
@@ -76,7 +81,9 @@ def upgrade():
     op.add_column('campaigns', sa.Column('forbidden_topics', sa.JSON, nullable=False, server_default='[]'))
     op.add_column('campaigns', sa.Column('approval_required', sa.Boolean, nullable=False, server_default='false'))
 
-    # Check if clips table exists; create it if not (for fresh databases)
+    # =====================================================================
+    # PART 2: CLIPS TABLE (raw SQL to avoid SQLAlchemy enum conflicts)
+    # =====================================================================
     conn = op.get_bind()
     cursor = conn.connection.cursor()
 
@@ -92,64 +99,102 @@ def upgrade():
     cursor.close()
 
     if not clips_exists:
-        # Create clips table with all columns at once (for fresh databases)
-        op.create_table(
-            'clips',
-            sa.Column('id', sa.Integer, primary_key=True),
-            sa.Column('campaign_id', sa.Integer, sa.ForeignKey('campaigns.id'), nullable=False, index=True),
-            sa.Column('account_id', sa.Integer, sa.ForeignKey('accounts.id'), nullable=True, index=True),
-            sa.Column('source_url', sa.String(2000), nullable=False, unique=True, index=True),
-            sa.Column('source_platform', sa.String(50), nullable=False),
-            sa.Column('title', sa.String(500), nullable=False),
-            sa.Column('description', sa.Text, nullable=True),
-            sa.Column('creator', sa.String(255), nullable=True),
-            sa.Column('view_count', sa.Integer, nullable=False, server_default='0'),
-            sa.Column('engagement_score', sa.Float, nullable=False, server_default='0.0'),
-            sa.Column('trending_category', sa.String(100), nullable=True),
-            sa.Column('hashtags', sa.JSON, nullable=False, server_default='[]'),
-            sa.Column('audio_source', sa.String(255), nullable=True),
-            sa.Column('content_hash', sa.String(64), nullable=False, unique=True, index=True),
-            sa.Column('status', sa.Enum('discovered', 'eligible', 'queued', 'generated', 'needs_review', 'approved', 'captioned', 'scheduled', 'posted', 'submitted', 'tracked', 'rejected', 'failed', 'expired', name='cliplifecycle', create_type=False), nullable=False),
-            sa.Column('platform_eligible', sa.Boolean, nullable=False, server_default=sa.true()),
-            sa.Column('available', sa.Boolean, nullable=False, server_default=sa.true()),
-            sa.Column('clip_metadata', sa.JSON, nullable=False, server_default='{}'),
-            sa.Column('last_seen_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-            sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-            sa.Column('hook_score', sa.Float, nullable=True),
-            sa.Column('relevance_score', sa.Float, nullable=True),
-            sa.Column('platform_fit_score', sa.Float, nullable=True),
-            sa.Column('duration_score', sa.Float, nullable=True),
-            sa.Column('brand_alignment_score', sa.Float, nullable=True),
-            sa.Column('viral_score', sa.Float, nullable=True),
-            sa.Column('social_proof_score', sa.Float, nullable=True),
-            sa.Column('overall_score', sa.Float, nullable=True),
-            sa.Column('monetization_score', sa.Float, nullable=True),
-            sa.Column('emotional_trigger_type', sa.String(50), nullable=True),
-            sa.Column('rejection_reason', sa.Text, nullable=True),
-            sa.Column('hook_start_ms', sa.Integer, nullable=True),
-        )
-        op.create_index('idx_clip_campaign', 'clips', ['campaign_id'])
-        op.create_index('idx_clip_status', 'clips', ['status'])
-        op.create_index('idx_clip_content_hash', 'clips', ['content_hash'])
-        op.create_index('idx_clip_account_status', 'clips', ['account_id', 'status'])
+        # Create clips table with all columns at once (fresh database)
+        # Using raw SQL to avoid SQLAlchemy enum auto-creation conflicts
+        op.execute("""
+            CREATE TABLE clips (
+                id SERIAL PRIMARY KEY,
+                campaign_id INTEGER NOT NULL REFERENCES campaigns(id),
+                account_id INTEGER REFERENCES accounts(id),
+                source_url VARCHAR(2000) NOT NULL UNIQUE,
+                source_platform VARCHAR(50) NOT NULL,
+                title VARCHAR(500) NOT NULL,
+                description TEXT,
+                creator VARCHAR(255),
+                view_count INTEGER NOT NULL DEFAULT 0,
+                engagement_score REAL NOT NULL DEFAULT 0.0,
+                trending_category VARCHAR(100),
+                hashtags JSONB NOT NULL DEFAULT '[]'::jsonb,
+                audio_source VARCHAR(255),
+                content_hash VARCHAR(64) NOT NULL UNIQUE,
+                status cliplifecycle NOT NULL,
+                platform_eligible BOOLEAN NOT NULL DEFAULT true,
+                available BOOLEAN NOT NULL DEFAULT true,
+                clip_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+                last_seen_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                hook_score REAL,
+                relevance_score REAL,
+                platform_fit_score REAL,
+                duration_score REAL,
+                brand_alignment_score REAL,
+                viral_score REAL,
+                social_proof_score REAL,
+                overall_score REAL,
+                monetization_score REAL,
+                emotional_trigger_type VARCHAR(50),
+                rejection_reason TEXT,
+                hook_start_ms INTEGER
+            )
+        """)
+        # Create indexes for fresh database
+        op.execute("CREATE INDEX idx_clip_campaign ON clips(campaign_id)")
+        op.execute("CREATE INDEX idx_clip_account ON clips(account_id)")
+        op.execute("CREATE INDEX idx_clip_source_url ON clips(source_url)")
+        op.execute("CREATE INDEX idx_clip_content_hash ON clips(content_hash)")
+        op.execute("CREATE INDEX idx_clip_status ON clips(status)")
+        op.execute("CREATE INDEX idx_clip_account_status ON clips(account_id, status)")
     else:
-        # Table exists, just add the columns
-        op.add_column('clips', sa.Column('hook_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('relevance_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('platform_fit_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('duration_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('brand_alignment_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('viral_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('social_proof_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('overall_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('monetization_score', sa.Float, nullable=True))
-        op.add_column('clips', sa.Column('emotional_trigger_type', sa.String(50), nullable=True))
-        op.add_column('clips', sa.Column('rejection_reason', sa.Text, nullable=True))
-        op.add_column('clips', sa.Column('hook_start_ms', sa.Integer, nullable=True))
+        # Table exists, add columns if they don't exist
+        # Check and add each column individually to avoid duplicate column errors
+        conn = op.get_bind()
+        cursor = conn.connection.cursor()
 
-        # Add index to clips for account_id, status
-        op.create_index('idx_clip_account_status', 'clips', ['account_id', 'status'])
+        columns_to_add = [
+            ('hook_score', 'REAL'),
+            ('relevance_score', 'REAL'),
+            ('platform_fit_score', 'REAL'),
+            ('duration_score', 'REAL'),
+            ('brand_alignment_score', 'REAL'),
+            ('viral_score', 'REAL'),
+            ('social_proof_score', 'REAL'),
+            ('overall_score', 'REAL'),
+            ('monetization_score', 'REAL'),
+            ('emotional_trigger_type', 'VARCHAR(50)'),
+            ('rejection_reason', 'TEXT'),
+            ('hook_start_ms', 'INTEGER'),
+        ]
+
+        for col_name, col_type in columns_to_add:
+            try:
+                cursor.execute(f"""
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = 'clips' AND column_name = '{col_name}'
+                """)
+                column_exists = cursor.fetchone() is not None
+            except Exception:
+                column_exists = False
+
+            if not column_exists:
+                op.execute(f"ALTER TABLE clips ADD COLUMN {col_name} {col_type}")
+
+        cursor.close()
+
+        # Create idx_clip_account_status if it doesn't exist
+        try:
+            cursor = conn.connection.cursor()
+            cursor.execute("""
+                SELECT 1 FROM pg_indexes
+                WHERE indexname = 'idx_clip_account_status'
+            """)
+            index_exists = cursor.fetchone() is not None
+            cursor.close()
+        except Exception:
+            index_exists = False
+
+        if not index_exists:
+            op.execute("CREATE INDEX idx_clip_account_status ON clips(account_id, status)")
 
 
 def downgrade():
