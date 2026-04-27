@@ -15,11 +15,43 @@ depends_on = None
 
 
 def upgrade():
-    # Create VariantType enum
-    op.execute("CREATE TYPE varianttype AS ENUM ('hook', 'caption', 'duration', 'subtitles')")
+    # =====================================================================
+    # PART 1: ENUM CREATION (manual control, check before creating)
+    # =====================================================================
+    conn = op.get_bind()
+    cursor = conn.connection.cursor()
 
-    # Create VariantStatus enum
-    op.execute("CREATE TYPE variantstatus AS ENUM ('draft', 'elite', 'elected', 'posted', 'rejected')")
+    # Check and create varianttype enum
+    try:
+        cursor.execute("""
+            SELECT 1 FROM pg_type
+            WHERE typname = 'varianttype' AND typtype = 'e'
+        """)
+        varianttype_exists = cursor.fetchone() is not None
+    except Exception:
+        varianttype_exists = False
+
+    if not varianttype_exists:
+        op.execute("CREATE TYPE varianttype AS ENUM ('hook', 'caption', 'duration', 'subtitles')")
+
+    # Check and create variantstatus enum
+    try:
+        cursor.execute("""
+            SELECT 1 FROM pg_type
+            WHERE typname = 'variantstatus' AND typtype = 'e'
+        """)
+        variantstatus_exists = cursor.fetchone() is not None
+    except Exception:
+        variantstatus_exists = False
+
+    if not variantstatus_exists:
+        op.execute("CREATE TYPE variantstatus AS ENUM ('draft', 'elite', 'elected', 'posted', 'rejected')")
+
+    cursor.close()
+
+    # =====================================================================
+    # PART 2: CLIP_VARIANTS TABLE
+    # =====================================================================
 
     # Create clip_variants table
     op.create_table(
@@ -27,13 +59,13 @@ def upgrade():
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('clip_id', sa.Integer, sa.ForeignKey('clips.id'), nullable=False),
         sa.Column('variant_group_id', sa.String(64), nullable=True),
-        sa.Column('variant_type', sa.Enum('hook', 'caption', 'duration', 'subtitles', name='varianttype'), nullable=False),
+        sa.Column('variant_type', sa.Enum('hook', 'caption', 'duration', 'subtitles', name='varianttype', create_type=False), nullable=False),
         sa.Column('content', sa.Text, nullable=False),
         sa.Column('model_used', sa.String(100), nullable=True),
         sa.Column('quality_tier', sa.String(20), nullable=True),
         sa.Column('hook_type', sa.String(50), nullable=True),
         sa.Column('predicted_engagement', sa.Float, nullable=True),
-        sa.Column('status', sa.Enum('draft', 'elite', 'elected', 'posted', 'rejected', name='variantstatus'), nullable=False, server_default='draft'),
+        sa.Column('status', sa.Enum('draft', 'elite', 'elected', 'posted', 'rejected', name='variantstatus', create_type=False), nullable=False, server_default='draft'),
         sa.Column('signal_status', sa.String(20), nullable=False, server_default='pending'),
         sa.Column('scheduled_for', sa.DateTime(timezone=True), nullable=True),
         sa.Column('first_signal_at', sa.DateTime(timezone=True), nullable=True),
