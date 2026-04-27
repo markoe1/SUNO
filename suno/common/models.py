@@ -167,7 +167,7 @@ class Campaign(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     source_id = Column(String(255), nullable=False, index=True)
     source_type = Column(String(50), nullable=False)
-    name = Column(String(500), nullable=False)
+    title = Column(String(500), nullable=False)
     description = Column(Text, nullable=True)
     brief = Column(Text, nullable=True)
     keywords = Column(JSON, nullable=False, default=list)  # List[str]
@@ -176,7 +176,7 @@ class Campaign(Base):
     style = Column(String(100), nullable=True)
     duration_seconds = Column(Integer, default=30)
     campaign_metadata = Column(JSON, nullable=False, default=dict)
-    active = Column(Boolean, default=True)
+    available = Column(Boolean, default=True)
     last_seen_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
