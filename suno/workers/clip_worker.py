@@ -224,7 +224,7 @@ def run_automation_loop():
 
             # Get available campaign
             campaign = db.query(Campaign).filter(
-                Campaign.available == True
+                Campaign.active == True
             ).first()
 
             if not campaign:
@@ -248,7 +248,7 @@ def run_automation_loop():
                 account_id=account.id,
                 source_url=f"stub://{uuid.uuid4().hex}",
                 source_platform="generated",
-                title=f"Automation clip for {campaign.title}",
+                title=f"Automation clip for {campaign.name}",
                 description="",
                 content_hash=uuid.uuid4().hex,
                 status=ClipLifecycle.QUEUED,
