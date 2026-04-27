@@ -16,74 +16,130 @@ depends_on = None
 
 def upgrade():
     # =====================================================================
-    # PART 1: ENUM CREATION (idempotent with IF NOT EXISTS)
+    # PART 1: ENUM CREATION (idempotent with PostgreSQL DO blocks)
     # =====================================================================
-    # Create varianttype enum (safe: IF NOT EXISTS prevents DuplicateObject)
+    # Create varianttype enum if it doesn't exist
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_type t
+                JOIN pg_namespace n ON n.oid = t.typnamespace
+                WHERE t.typname = 'varianttype'
+                  AND n.nspname = 'public'
+            ) THEN
+                CREATE TYPE varianttype AS ENUM ('hook', 'caption', 'duration', 'subtitles');
+            END IF;
+        END $$;
+    """)
+
+    # Create variantstatus enum if it doesn't exist
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_type t
+                JOIN pg_namespace n ON n.oid = t.typnamespace
+                WHERE t.typname = 'variantstatus'
+                  AND n.nspname = 'public'
+            ) THEN
+                CREATE TYPE variantstatus AS ENUM ('draft', 'elite', 'elected', 'posted', 'rejected');
+            END IF;
+        END $$;
+    """)
+
+    # =====================================================================
+    # PART 2: CLIP_VARIANTS TABLE (raw SQL to avoid enum conflicts)
+    # =====================================================================
+    # Check if clip_variants table exists
+    conn = op.get_bind()
+    cursor = conn.connection.cursor()
+
     try:
-        op.execute("CREATE TYPE varianttype AS ENUM ('hook', 'caption', 'duration', 'subtitles')")
+        cursor.execute("""
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = 'clip_variants'
+        """)
+        clip_variants_exists = cursor.fetchone() is not None
     except Exception:
-        # Already exists, which is fine for idempotency
-        pass
+        clip_variants_exists = False
 
-    # Create variantstatus enum (safe: IF NOT EXISTS prevents DuplicateObject)
+    cursor.close()
+
+    if not clip_variants_exists:
+        # Create clip_variants table with all columns (fresh database)
+        op.execute("""
+            CREATE TABLE clip_variants (
+                id SERIAL PRIMARY KEY,
+                clip_id INTEGER NOT NULL REFERENCES clips(id),
+                variant_group_id VARCHAR(64),
+                variant_type varianttype NOT NULL,
+                content TEXT NOT NULL,
+                model_used VARCHAR(100),
+                quality_tier VARCHAR(20),
+                hook_type VARCHAR(50),
+                predicted_engagement REAL,
+                status variantstatus NOT NULL DEFAULT 'draft',
+                signal_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                scheduled_for TIMESTAMP WITH TIME ZONE,
+                first_signal_at TIMESTAMP WITH TIME ZONE,
+                posted_at TIMESTAMP WITH TIME ZONE,
+                posted_platform VARCHAR(50),
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+            )
+        """)
+        # Create indexes
+        op.execute("CREATE INDEX idx_variant_clip ON clip_variants(clip_id)")
+        op.execute("CREATE INDEX idx_variant_status ON clip_variants(status)")
+        op.execute("CREATE INDEX idx_variant_scheduled ON clip_variants(scheduled_for)")
+        op.execute("CREATE INDEX idx_variant_group ON clip_variants(variant_group_id)")
+
+    # =====================================================================
+    # PART 3: CLIP_PERFORMANCES TABLE (raw SQL for consistency)
+    # =====================================================================
+    # Check if clip_performances table exists
+    conn = op.get_bind()
+    cursor = conn.connection.cursor()
+
     try:
-        op.execute("CREATE TYPE variantstatus AS ENUM ('draft', 'elite', 'elected', 'posted', 'rejected')")
+        cursor.execute("""
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = 'clip_performances'
+        """)
+        clip_performances_exists = cursor.fetchone() is not None
     except Exception:
-        # Already exists, which is fine for idempotency
-        pass
+        clip_performances_exists = False
 
-    # =====================================================================
-    # PART 2: CLIP_VARIANTS TABLE
-    # =====================================================================
+    cursor.close()
 
-    # Create clip_variants table
-    op.create_table(
-        'clip_variants',
-        sa.Column('id', sa.Integer, primary_key=True),
-        sa.Column('clip_id', sa.Integer, sa.ForeignKey('clips.id'), nullable=False),
-        sa.Column('variant_group_id', sa.String(64), nullable=True),
-        sa.Column('variant_type', sa.Enum('hook', 'caption', 'duration', 'subtitles', name='varianttype', create_type=False), nullable=False),
-        sa.Column('content', sa.Text, nullable=False),
-        sa.Column('model_used', sa.String(100), nullable=True),
-        sa.Column('quality_tier', sa.String(20), nullable=True),
-        sa.Column('hook_type', sa.String(50), nullable=True),
-        sa.Column('predicted_engagement', sa.Float, nullable=True),
-        sa.Column('status', sa.Enum('draft', 'elite', 'elected', 'posted', 'rejected', name='variantstatus', create_type=False), nullable=False, server_default='draft'),
-        sa.Column('signal_status', sa.String(20), nullable=False, server_default='pending'),
-        sa.Column('scheduled_for', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('first_signal_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('posted_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('posted_platform', sa.String(50), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-    )
-    op.create_index('idx_variant_clip', 'clip_variants', ['clip_id'])
-    op.create_index('idx_variant_status', 'clip_variants', ['status'])
-    op.create_index('idx_variant_scheduled', 'clip_variants', ['scheduled_for'])
-    op.create_index('idx_variant_group', 'clip_variants', ['variant_group_id'])
-
-    # Create clip_performances table
-    op.create_table(
-        'clip_performances',
-        sa.Column('id', sa.Integer, primary_key=True),
-        sa.Column('clip_id', sa.Integer, sa.ForeignKey('clips.id'), nullable=False),
-        sa.Column('variant_id', sa.Integer, sa.ForeignKey('clip_variants.id'), nullable=True),
-        sa.Column('platform', sa.String(50), nullable=False),
-        sa.Column('views', sa.Integer, nullable=False, server_default='0'),
-        sa.Column('watch_time_seconds', sa.Float, nullable=True),
-        sa.Column('completion_rate', sa.Float, nullable=True),
-        sa.Column('likes', sa.Integer, nullable=False, server_default='0'),
-        sa.Column('shares', sa.Integer, nullable=False, server_default='0'),
-        sa.Column('saves', sa.Integer, nullable=False, server_default='0'),
-        sa.Column('comments', sa.Integer, nullable=False, server_default='0'),
-        sa.Column('revenue_estimate', sa.Float, nullable=True),
-        sa.Column('recorded_at', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-    )
-    op.create_index('idx_perf_clip', 'clip_performances', ['clip_id'])
-    op.create_index('idx_perf_variant', 'clip_performances', ['variant_id'])
-    op.create_index('idx_perf_platform', 'clip_performances', ['platform'])
+    if not clip_performances_exists:
+        # Create clip_performances table with all columns (fresh database)
+        op.execute("""
+            CREATE TABLE clip_performances (
+                id SERIAL PRIMARY KEY,
+                clip_id INTEGER NOT NULL REFERENCES clips(id),
+                variant_id INTEGER REFERENCES clip_variants(id),
+                platform VARCHAR(50) NOT NULL,
+                views INTEGER NOT NULL DEFAULT 0,
+                watch_time_seconds REAL,
+                completion_rate REAL,
+                likes INTEGER NOT NULL DEFAULT 0,
+                shares INTEGER NOT NULL DEFAULT 0,
+                saves INTEGER NOT NULL DEFAULT 0,
+                comments INTEGER NOT NULL DEFAULT 0,
+                revenue_estimate REAL,
+                recorded_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+            )
+        """)
+        # Create indexes
+        op.execute("CREATE INDEX idx_perf_clip ON clip_performances(clip_id)")
+        op.execute("CREATE INDEX idx_perf_variant ON clip_performances(variant_id)")
+        op.execute("CREATE INDEX idx_perf_platform ON clip_performances(platform)")
 
     # Add 8 new columns to clips table
     op.add_column('clips', sa.Column('predicted_views', sa.Integer, nullable=True))
