@@ -28,13 +28,18 @@ def verify_whop_signature(body: bytes, signature: str) -> bool:
         hashlib.sha256
     ).hexdigest()
 
+    # Safe diagnostic fingerprints (no secret exposure)
+    body_sha256 = hashlib.sha256(body).hexdigest()
+    secret_fingerprint = hashlib.sha256(WEBHOOK_SECRET.encode()).hexdigest()[:12]
+
     # DEBUG LOGGING
-    logger.info(f"[WEBHOOK_DEBUG] body_length={len(body)} bytes")
-    logger.info(f"[WEBHOOK_DEBUG] body_sample={repr(body[:80])}")
-    logger.info(f"[WEBHOOK_DEBUG] secret_length={len(WEBHOOK_SECRET)} chars")
-    logger.info(f"[WEBHOOK_DEBUG] computed_sig={computed[:32]}...")
-    logger.info(f"[WEBHOOK_DEBUG] received_sig={signature[:32]}...")
-    logger.info(f"[WEBHOOK_DEBUG] signatures_match={hmac.compare_digest(computed, signature)}")
+    logger.info(f"[WEBHOOK_DIAG] body_sha256={body_sha256}")
+    logger.info(f"[WEBHOOK_DIAG] secret_fingerprint={secret_fingerprint}")
+    logger.info(f"[WEBHOOK_DIAG] body_is_bytes={isinstance(body, bytes)}")
+    logger.info(f"[WEBHOOK_DIAG] body_length={len(body)} bytes")
+    logger.info(f"[WEBHOOK_DIAG] computed_sig={computed[:32]}...")
+    logger.info(f"[WEBHOOK_DIAG] received_sig={signature[:32]}...")
+    logger.info(f"[WEBHOOK_DIAG] signatures_match={hmac.compare_digest(computed, signature)}")
 
     # Constant-time comparison
     return hmac.compare_digest(computed, signature)
@@ -55,6 +60,13 @@ async def handle_whop_webhook(request: Request):
         # Get raw body and signature
         raw_body = await request.body()
         signature = request.headers.get("Whop-Signature", "")
+        content_type = request.headers.get("Content-Type", "")
+
+        # DEBUG: Log exact headers and body type
+        logger.info(f"[WEBHOOK_REQUEST] header_whop_signature={signature[:32] if signature else 'MISSING'}...")
+        logger.info(f"[WEBHOOK_REQUEST] header_content_type={content_type}")
+        logger.info(f"[WEBHOOK_REQUEST] raw_body_is_bytes={isinstance(raw_body, bytes)}")
+        logger.info(f"[WEBHOOK_REQUEST] raw_body_length={len(raw_body)}")
 
         # Verify signature
         if not verify_whop_signature(raw_body, signature):
