@@ -116,7 +116,7 @@ def generate_clip(
 
     campaign = db.query(Campaign).filter(
         Campaign.id == campaign_uuid,
-        Campaign.active == True
+        Campaign.available == True
     ).first()
 
     if not campaign:
