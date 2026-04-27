@@ -104,7 +104,7 @@ def upgrade():
         op.execute("""
             CREATE TABLE clips (
                 id SERIAL PRIMARY KEY,
-                campaign_id INTEGER NOT NULL REFERENCES campaigns(id),
+                campaign_id UUID NOT NULL REFERENCES campaigns(id),
                 account_id INTEGER REFERENCES accounts(id),
                 source_url VARCHAR(2000) NOT NULL UNIQUE,
                 source_platform VARCHAR(50) NOT NULL,
