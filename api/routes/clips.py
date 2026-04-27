@@ -6,6 +6,7 @@ Generate new clips for campaigns with quality control pipeline.
 import logging
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/api", tags=["clips"])
 
 # Pydantic models
 class GenerateClipRequest(BaseModel):
-    campaign_id: str  # UUID as string (e.g., "00000000-0000-0000-0000-000000000001")
+    campaign_id: UUID
     target_platforms: Optional[list[str]] = None
     tone: Optional[str] = None
 
@@ -111,18 +112,11 @@ def generate_clip(
         )
 
     # 6. Fetch campaign
-    # Convert campaign_id string to UUID for database comparison
-    try:
-        campaign_uuid = uuid.UUID(request.campaign_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="campaign_id must be a valid UUID"
-        )
+    campaign_uuid = request.campaign_id
 
     campaign = db.query(Campaign).filter(
         Campaign.id == campaign_uuid,
-        Campaign.available == True
+        Campaign.active == True
     ).first()
 
     if not campaign:
@@ -152,7 +146,7 @@ def generate_clip(
         account_id=account.id,
         source_url=f"stub://{uuid.uuid4().hex}",
         source_platform="generated",
-        title=f"Generated clip for {campaign.title}",
+        title=f"Generated clip for {campaign.name}",
         description="",
         content_hash=uuid.uuid4().hex,
         status=ClipLifecycle.QUEUED,
