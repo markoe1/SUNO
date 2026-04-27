@@ -16,38 +16,21 @@ depends_on = None
 
 def upgrade():
     # =====================================================================
-    # PART 1: ENUM CREATION (manual control, check before creating)
+    # PART 1: ENUM CREATION (idempotent with IF NOT EXISTS)
     # =====================================================================
-    conn = op.get_bind()
-    cursor = conn.connection.cursor()
-
-    # Check and create varianttype enum
+    # Create varianttype enum (safe: IF NOT EXISTS prevents DuplicateObject)
     try:
-        cursor.execute("""
-            SELECT 1 FROM pg_type
-            WHERE typname = 'varianttype' AND typtype = 'e'
-        """)
-        varianttype_exists = cursor.fetchone() is not None
-    except Exception:
-        varianttype_exists = False
-
-    if not varianttype_exists:
         op.execute("CREATE TYPE varianttype AS ENUM ('hook', 'caption', 'duration', 'subtitles')")
-
-    # Check and create variantstatus enum
-    try:
-        cursor.execute("""
-            SELECT 1 FROM pg_type
-            WHERE typname = 'variantstatus' AND typtype = 'e'
-        """)
-        variantstatus_exists = cursor.fetchone() is not None
     except Exception:
-        variantstatus_exists = False
+        # Already exists, which is fine for idempotency
+        pass
 
-    if not variantstatus_exists:
+    # Create variantstatus enum (safe: IF NOT EXISTS prevents DuplicateObject)
+    try:
         op.execute("CREATE TYPE variantstatus AS ENUM ('draft', 'elite', 'elected', 'posted', 'rejected')")
-
-    cursor.close()
+    except Exception:
+        # Already exists, which is fine for idempotency
+        pass
 
     # =====================================================================
     # PART 2: CLIP_VARIANTS TABLE
