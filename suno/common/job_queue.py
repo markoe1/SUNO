@@ -4,6 +4,7 @@ Central queueing system for all background jobs.
 """
 
 import logging
+import os
 from typing import Dict, Any, Optional
 from enum import Enum
 from datetime import datetime, timedelta
@@ -29,13 +30,15 @@ class JobQueueType(str, Enum):
 class JobQueueManager:
     """Manages all background job queueing."""
 
-    def __init__(self, redis_url: str = "redis://localhost:6379/0"):
+    def __init__(self, redis_url: str = None):
         """
         Initialize job queue manager.
 
         Args:
-            redis_url: Redis connection URL
+            redis_url: Redis connection URL (defaults to SUNO_REDIS_URL env var)
         """
+        if redis_url is None:
+            redis_url = os.getenv("SUNO_REDIS_URL", "redis://localhost:6379/0")
         self.redis = Redis.from_url(redis_url, decode_responses=False)
         self.queues = {
             JobQueueType.CRITICAL: Queue(JobQueueType.CRITICAL.value, connection=self.redis),
