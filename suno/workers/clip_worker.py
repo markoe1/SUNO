@@ -224,7 +224,7 @@ def run_automation_loop():
 
             # Get available campaign
             campaign = db.query(Campaign).filter(
-                Campaign.active == True
+                Campaign.available == True
             ).first()
 
             if not campaign:
