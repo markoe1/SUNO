@@ -40,7 +40,7 @@ async def list_campaigns(
 ):
     q = select(Campaign)
     if active_only:
-        q = q.where(Campaign.active == True)
+        q = q.where(Campaign.available == True)
     q = q.order_by(Campaign.cpm.desc().nullslast())
     result = await db.execute(q)
     campaigns = result.scalars().all()

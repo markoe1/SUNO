@@ -91,7 +91,7 @@ class PipelineOrchestrator:
             result["campaign_ingestion"] = {
                 "is_new": is_new,
                 "campaign_id": campaign.id,
-                "title": campaign.name,
+                "title": campaign.title,
             }
 
             # STEP 2: Ingest clips

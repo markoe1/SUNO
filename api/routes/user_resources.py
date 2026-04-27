@@ -162,7 +162,7 @@ def create_campaign(
         id=new_campaign.id,
         source_id=new_campaign.source_id,
         source_type=new_campaign.source_type,
-        title=new_campaign.name,
+        title=new_campaign.title,
         keywords=new_campaign.keywords,
         target_platforms=new_campaign.target_platforms,
         tone=new_campaign.tone,
