@@ -187,11 +187,6 @@ class Campaign(Base):
 
     clips = relationship("Clip", back_populates="campaign")
 
-    __table_args__ = (
-        Index("idx_campaign_source", "source_id", "source_type"),
-        UniqueConstraint("source_id", "source_type", name="uq_campaign_source"),
-    )
-
 
 class Clip(Base):
     """Individual clip discovered/ingested from source."""
