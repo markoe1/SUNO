@@ -141,15 +141,40 @@ def upgrade():
         op.execute("CREATE INDEX idx_perf_variant ON clip_performances(variant_id)")
         op.execute("CREATE INDEX idx_perf_platform ON clip_performances(platform)")
 
-    # Add 8 new columns to clips table
-    op.add_column('clips', sa.Column('predicted_views', sa.Integer, nullable=True))
-    op.add_column('clips', sa.Column('estimated_value', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('ai_generation_cost_usd', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('ai_roi', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('predicted_watch_time', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('predicted_completion_rate', sa.Float, nullable=True))
-    op.add_column('clips', sa.Column('predicted_dropoff_ms', sa.Integer, nullable=True))
-    op.add_column('clips', sa.Column('posting_cooldown_hours', sa.Integer, nullable=False, server_default='2'))
+    # Add 8 new columns to clips table (idempotent - check before adding)
+    conn = op.get_bind()
+    cursor = conn.connection.cursor()
+
+    columns_to_add = [
+        ('predicted_views', 'INTEGER'),
+        ('estimated_value', 'REAL'),
+        ('ai_generation_cost_usd', 'REAL'),
+        ('ai_roi', 'REAL'),
+        ('predicted_watch_time', 'REAL'),
+        ('predicted_completion_rate', 'REAL'),
+        ('predicted_dropoff_ms', 'INTEGER'),
+        ('posting_cooldown_hours', 'INTEGER'),
+    ]
+
+    for col_name, col_type in columns_to_add:
+        try:
+            cursor.execute(f"""
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = 'clips' AND column_name = '{col_name}'
+            """)
+            column_exists = cursor.fetchone() is not None
+        except Exception:
+            column_exists = False
+
+        if not column_exists:
+            if col_name == 'posting_cooldown_hours':
+                op.add_column('clips', sa.Column(col_name, sa.Integer, nullable=False, server_default='2'))
+            elif col_name in ['estimated_value', 'ai_generation_cost_usd', 'ai_roi', 'predicted_watch_time', 'predicted_completion_rate']:
+                op.add_column('clips', sa.Column(col_name, sa.Float, nullable=True))
+            else:
+                op.add_column('clips', sa.Column(col_name, sa.Integer, nullable=True))
+
+    cursor.close()
 
 
 def downgrade():
