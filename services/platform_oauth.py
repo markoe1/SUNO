@@ -61,12 +61,18 @@ class TikTokOAuthService:
 
                 logger.info(f"TikTok token response status: {response.status_code}")
 
+                # Read response content once (avoid double-read issues)
+                response_text = response.text
                 if response.status_code != 200:
-                    error_text = response.text
-                    logger.error(f"TikTok token exchange failed: {error_text}")
-                    raise Exception(f"Token exchange failed: {error_text}")
+                    logger.error(f"TikTok token exchange failed: {response_text}")
+                    raise Exception(f"Token exchange failed: {response_text}")
 
-                data = response.json()
+                # Parse JSON from the already-read content
+                try:
+                    data = response.json()
+                except Exception as json_err:
+                    logger.error(f"TikTok response JSON parse failed: {response_text}")
+                    raise Exception(f"Invalid JSON response: {response_text}")
 
                 if data.get("error"):
                     error_msg = data.get("error_description", data.get("error"))
@@ -113,11 +119,18 @@ class TikTokOAuthService:
                     json=payload,
                 )
 
+                # Read response content once (avoid double-read issues)
+                response_text = response.text
                 if response.status_code != 200:
-                    logger.error(f"TikTok token refresh failed: {response.text}")
+                    logger.error(f"TikTok token refresh failed: {response_text}")
                     raise Exception("Token refresh failed")
 
-                data = response.json()
+                # Parse JSON from the already-read content
+                try:
+                    data = response.json()
+                except Exception as json_err:
+                    logger.error(f"TikTok refresh JSON parse failed: {response_text}")
+                    raise Exception(f"Invalid JSON response: {response_text}")
 
                 if data.get("error"):
                     error_msg = data.get("error_description", data.get("error"))
@@ -185,12 +198,18 @@ class InstagramOAuthService:
 
                 logger.info(f"Instagram token response status: {response.status_code}")
 
+                # Read response content once (avoid double-read issues)
+                response_text = response.text
                 if response.status_code != 200:
-                    error_text = response.text
-                    logger.error(f"Instagram token exchange failed: {error_text}")
-                    raise Exception(f"Token exchange failed: {error_text}")
+                    logger.error(f"Instagram token exchange failed: {response_text}")
+                    raise Exception(f"Token exchange failed: {response_text}")
 
-                data = response.json()
+                # Parse JSON from the already-read content
+                try:
+                    data = response.json()
+                except Exception as json_err:
+                    logger.error(f"Instagram response JSON parse failed: {response_text}")
+                    raise Exception(f"Invalid JSON response: {response_text}")
 
                 if data.get("error"):
                     error_msg = data.get("error", {}).get("message", "Unknown error")
@@ -262,11 +281,18 @@ class InstagramOAuthService:
                     },
                 )
 
+                # Read response content once (avoid double-read issues)
+                response_text = response.text
                 if response.status_code != 200:
-                    logger.error(f"Instagram token refresh failed: {response.text}")
+                    logger.error(f"Instagram token refresh failed: {response_text}")
                     raise Exception("Token refresh failed")
 
-                data = response.json()
+                # Parse JSON from the already-read content
+                try:
+                    data = response.json()
+                except Exception as json_err:
+                    logger.error(f"Instagram refresh JSON parse failed: {response_text}")
+                    raise Exception(f"Invalid JSON response: {response_text}")
 
                 return {
                     "access_token": data.get("access_token"),
