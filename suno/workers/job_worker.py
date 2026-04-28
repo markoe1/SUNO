@@ -41,6 +41,11 @@ class SUNOWorker:
         """
         self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
         self.worker_name = worker_name
+
+        # DEBUG: Log what Redis URL we're actually using
+        redis_url_masked = self.redis_url.replace(self.redis_url.split('@')[0].split('://')[1], "***") if '@' in self.redis_url else self.redis_url
+        logger.info(f"Redis URL being used: {redis_url_masked}")
+
         self.redis = Redis.from_url(self.redis_url, decode_responses=False)
         self.worker: Optional[Worker] = None
 
