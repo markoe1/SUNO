@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-04-28T03:24:26.913411",
+  "git_commit": "8f40ed9",
+  "environment": {
+    "DATABASE_URL": true,
+    "REDIS_URL": true,
+    "ANTHROPIC_API_KEY": true,
+    "WHOP_API_KEY": true,
+    "WHOP_WEBHOOK_SECRET": false,
+    "SUNO_API_KEY": false,
+    "ENVIRONMENT": false
+  },
+  "dependencies": {
+    "fastapi": "installed",
+    "uvicorn": "installed",
+    "sqlalchemy": "installed",
+    "asyncpg": "installed",
+    "psycopg2": "installed",
+    "redis": "installed",
+    "rq": "installed",
+    "python-dotenv": "missing",
+    "pydantic": "installed",
+    "anthropic": "installed"
+  },
+  "codebase": {},
+  "security": {},
+  "blockers": [
+    "Package not installed: python-dotenv"
+  ],
+  "warnings": [
+    "WHOP_WEBHOOK_SECRET not set (required for production)",
+    "SUNO_API_KEY not set (required for production)",
+    "Potential hardcoded secrets found in source"
+  ],
+  "git_modified_count": 4,
+  "api_routes_total": 92,
+  "api_route_prefixes": {
+    "/openapi.json": 1,
+    "/api": 69,
+    "/docs": 1,
+    "/static": 1,
+    "/admin": 1,
+    "/webhooks": 2,
+    "/health": 1,
+    "/ready": 1,
+    "/": 1,
+    "/login": 1,
+    "/register": 1,
+    "/dashboard": 1,
+    "/campaigns": 1,
+    "/submit": 1,
+    "/submissions": 1,
+    "/jobs": 1,
+    "/settings": 1,
+    "/operator": 5,
+    "/editor": 1
+  },
+  "database_tables": {
+    "memberships": {
+      "columns": 13
+    },
+    "tiers": {
+      "columns": 10
+    },
+    "post_jobs": {
+      "columns": 12
+    },
+    "users": {
+      "columns": 5
+    },
+    "clips": {
+      "columns": 41
+    },
+    "dead_letter_jobs": {
+      "columns": 8
+    },
+    "creator_profiles": {
+      "columns": 12
+    },
+    "clip_performances": {
+      "columns": 15
+    },
+    "caption_jobs": {
+      "columns": 9
+    },
+    "campaigns": {
+      "columns": 20
+    },
+    "audit_logs": {
+      "columns": 10
+    },
+    "accounts": {
+      "columns": 7
+    },
+    "clip_variants": {
+      "columns": 17
+    },
+    "clip_assignments": {
+      "columns": 8
+    },
+    "safety_state": {
+      "columns": 6
+    },
+    "webhook_events": {
+      "columns": 16
+    },
+    "submission_jobs": {
+      "columns": 11
+    }
+  },
+  "worker_files": 3
+}
