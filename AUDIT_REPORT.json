@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-04-28T03:22:38.118861",
+  "phases": {
+    "phase_0_env": {
+      "timestamp": "2026-04-28T03:22:32.427488",
+      "variables": {
+        "DATABASE_URL": {
+          "set": true,
+          "masked_value": "[SET]"
+        },
+        "REDIS_URL": {
+          "set": true,
+          "masked_value": "[SET]"
+        },
+        "ANTHROPIC_API_KEY": {
+          "set": true,
+          "masked_value": "[SET]"
+        },
+        "WHOP_API_KEY": {
+          "set": true,
+          "masked_value": "[SET]"
+        },
+        "WHOP_WEBHOOK_SECRET": {
+          "set": false,
+          "masked_value": "[NOT SET]"
+        },
+        "SUNO_API_KEY": {
+          "set": false,
+          "masked_value": "[NOT SET]"
+        },
+        "ENVIRONMENT": {
+          "set": true,
+          "masked_value": "[SET]"
+        }
+      },
+      "config_validation": "PASSED"
+    },
+    "phase_1_db": {
+      "status": "FAILED - greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)",
+      "error": "greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"
+    },
+    "phase_2_api": {
+      "endpoints": {},
+      "api_connection": "FAILED: Cannot connect to http://localhost:8000",
+      "status": "BLOCKED - API not running"
+    },
+    "phase_3_webhooks": {
+      "webhook_signature_validation": "DISABLED - No secret"
+    },
+    "phase_4_worker": {
+      "status": "FAILED: Install redis and rq: pip install redis rq"
+    }
+  }
+}

@@ -85,7 +85,7 @@ class CampaignRequirementsValidator:
                 req = CampaignRequirement(
                     campaign_id=campaign.whop_id,  # Use whop_id as canonical key
                     campaign_name=campaign.name,
-                    active=campaign.active,
+                    active=campaign.available,
                     min_clip_duration=campaign.min_duration or 15,
                     max_clip_duration=campaign.max_duration or 60,
                     allowed_sources=source_types,

@@ -168,7 +168,7 @@ def create_campaign(
         tone=new_campaign.tone,
         style=new_campaign.style,
         duration_seconds=new_campaign.duration_seconds,
-        available=new_campaign.active,
+        available=new_campaign.available,
     )
 
 

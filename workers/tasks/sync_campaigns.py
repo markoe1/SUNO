@@ -56,7 +56,7 @@ async def _sync_campaigns_async(user_id: str, job_id: str):
                     existing.drive_url = c.get("drive_url", existing.drive_url)
                     existing.youtube_url = c.get("youtube_url", existing.youtube_url)
                     existing.allowed_platforms = c.get("allowed_platforms", existing.allowed_platforms)
-                    existing.active = c.get("active", existing.active)
+                    existing.available = c.get("available", existing.available)
                     existing.last_checked = datetime.now(timezone.utc)
                 else:
                     db.add(

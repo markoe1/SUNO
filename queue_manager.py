@@ -476,7 +476,7 @@ class QueueManager:
                     drive_url          = excluded.drive_url,
                     youtube_url        = excluded.youtube_url,
                     allowed_platforms  = excluded.allowed_platforms,
-                    active             = excluded.active,
+                    active             = excluded.available,
                     last_checked       = excluded.last_checked,
                     content_type       = excluded.content_type,
                     source_types       = excluded.source_types,
@@ -487,7 +487,7 @@ class QueueManager:
                     daily_clip_limit   = excluded.daily_clip_limit
             """, (
                 c.whop_id, c.name, c.cpm, c.budget_remaining, int(c.is_free),
-                c.drive_url, c.youtube_url, c.allowed_platforms, int(c.active),
+                c.drive_url, c.youtube_url, c.allowed_platforms, int(c.available),
                 c.discovered_at or datetime.now().isoformat(),
                 datetime.now().isoformat(),
                 c.content_type, c.source_types, c.min_duration, c.max_duration,
