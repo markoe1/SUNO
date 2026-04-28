@@ -10,29 +10,29 @@ services:
     branch: main
     env:
       - key: WHOP_API_KEY
-        scope: build
+        scope: runtime
       - key: WHOP_COMPANY_ID
-        scope: build
+        scope: runtime
       - key: WHOP_WEBHOOK_SECRET
-        scope: build
+        scope: runtime
       - key: DATABASE_URL
-        scope: build
+        scope: runtime
       - key: REDIS_URL
-        scope: build
+        scope: runtime
       - key: ANTHROPIC_API_KEY
-        scope: build
+        scope: runtime
       - key: TIKTOK_CLIENT_ID
-        scope: build
+        scope: runtime
       - key: TIKTOK_CLIENT_SECRET
-        scope: build
+        scope: runtime
       - key: TIKTOK_KEY
-        scope: build
+        scope: runtime
       - key: TIKTOK_SECRET
-        scope: build
+        scope: runtime
       - key: INSTAGRAM_ACCESS_TOKEN
-        scope: build
+        scope: runtime
       - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
-        scope: build
+        scope: runtime
       - key: ADMIN_VERIFY_TOKEN
         value: Uhcq3o7_PDB1WOTlkDXkrz0dtLDozEThkDN2v7uaRAw
         scope: build
@@ -46,26 +46,26 @@ services:
     branch: main
     env:
       - key: WHOP_API_KEY
-        scope: build
+        scope: runtime
       - key: WHOP_COMPANY_ID
-        scope: build
+        scope: runtime
       - key: WHOP_WEBHOOK_SECRET
-        scope: build
+        scope: runtime
       - key: DATABASE_URL
-        scope: build
+        scope: runtime
       - key: REDIS_URL
-        scope: build
+        scope: runtime
       - key: ANTHROPIC_API_KEY
-        scope: build
+        scope: runtime
       - key: TIKTOK_CLIENT_ID
-        scope: build
+        scope: runtime
       - key: TIKTOK_CLIENT_SECRET
-        scope: build
+        scope: runtime
       - key: TIKTOK_KEY
-        scope: build
+        scope: runtime
       - key: TIKTOK_SECRET
-        scope: build
+        scope: runtime
       - key: INSTAGRAM_ACCESS_TOKEN
-        scope: build
+        scope: runtime
       - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
-        scope: build
+        scope: runtime
