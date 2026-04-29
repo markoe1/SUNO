@@ -17,7 +17,9 @@ _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(plain: str) -> str:
-    return _pwd_context.hash(plain)
+    # Bcrypt has a 72-byte limit. Truncate longer passwords.
+    truncated = plain[:72] if isinstance(plain, str) else plain
+    return _pwd_context.hash(truncated)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
