@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SUNO — Autonomous Clip Generation Platform</title>
-    <meta name="description" content="SUNO automates clip creation and distribution. Generate, optimize, and post viral clips across all platforms — powered by real intelligence.">
+    <title>SUNO — Elite Operator Platform</title>
+    <meta name="description" content="SUNO is a private beta platform for elite clip operators. Autonomous generation, real ROI tracking, and multi-platform distribution — for operators who scale.">
     <style>
         * {
             margin: 0;
@@ -33,28 +33,28 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at 20% 50%, rgba(255, 107, 0, 0.1) 0%, transparent 50%),
+            background: radial-gradient(ellipse at 20% 50%, rgba(255, 107, 0, 0.12) 0%, transparent 50%),
                         radial-gradient(ellipse at 80% 80%, rgba(255, 184, 0, 0.08) 0%, transparent 50%);
             pointer-events: none;
             z-index: -1;
-            animation: gradientFlow 15s ease infinite;
+            animation: gradientFlow 20s ease infinite;
         }
 
         @keyframes gradientFlow {
             0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(-50px, 50px); }
+            50% { transform: translate(-80px, 60px); }
         }
 
         /* Navigation */
         nav {
-            position: fixed;
+            position: sticky;
             top: 0;
             width: 100%;
-            background: rgba(10, 10, 10, 0.8);
-            backdrop-filter: blur(20px);
-            padding: 1.2rem 2rem;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(15px);
+            padding: 1.3rem 2rem;
             z-index: 1000;
-            border-bottom: 1px solid rgba(255, 107, 0, 0.15);
+            border-bottom: 1px solid rgba(255, 107, 0, 0.12);
         }
 
         nav .container {
@@ -78,34 +78,35 @@
         }
 
         .logo-text {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 900;
             background: linear-gradient(135deg, #FF6B00 0%, #FFB800 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.8px;
         }
 
         .nav-center {
             display: flex;
-            gap: 3rem;
+            gap: 4rem;
             list-style: none;
         }
 
         .nav-center a {
             color: rgba(255, 255, 255, 0.7);
             text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
+            font-size: 0.9rem;
+            font-weight: 600;
             transition: all 0.3s;
             position: relative;
+            letter-spacing: -0.3px;
         }
 
         .nav-center a::after {
             content: '';
             position: absolute;
-            bottom: -4px;
+            bottom: -5px;
             left: 0;
             width: 0;
             height: 2px;
@@ -118,12 +119,12 @@
         }
 
         .nav-center a:hover {
-            color: #fff;
+            color: #FFB800;
         }
 
         .nav-right {
             display: flex;
-            gap: 1rem;
+            gap: 1.2rem;
             align-items: center;
         }
 
@@ -131,18 +132,19 @@
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             transition: color 0.3s;
+            letter-spacing: -0.2px;
         }
 
         .btn-login:hover {
             color: #FFB800;
         }
 
-        .btn-signup {
+        .btn-access {
             background: linear-gradient(135deg, #FF6B00 0%, #FFB800 100%);
             color: #fff;
-            padding: 0.7rem 1.6rem;
+            padding: 0.75rem 1.8rem;
             border-radius: 8px;
             font-weight: 700;
             font-size: 0.9rem;
@@ -150,34 +152,35 @@
             border: none;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 8px 24px rgba(255, 107, 0, 0.3);
+            box-shadow: 0 6px 20px rgba(255, 107, 0, 0.25);
+            letter-spacing: -0.2px;
         }
 
-        .btn-signup:hover {
+        .btn-access:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(255, 107, 0, 0.4);
+            box-shadow: 0 10px 30px rgba(255, 107, 0, 0.35);
         }
 
         /* Hero Section */
         .hero {
-            padding: 10rem 2rem 8rem;
+            padding: 8rem 2rem 6rem;
             text-align: center;
             position: relative;
         }
 
         .hero .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
         .hero-badge {
             display: inline-block;
             background: rgba(255, 107, 0, 0.12);
-            border: 1px solid rgba(255, 184, 0, 0.3);
+            border: 1px solid rgba(255, 107, 0, 0.28);
             color: #FFB800;
-            padding: 0.5rem 1.2rem;
+            padding: 0.6rem 1.4rem;
             border-radius: 24px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 700;
             margin-bottom: 2rem;
             letter-spacing: 0.08em;
@@ -186,12 +189,12 @@
         }
 
         .hero h1 {
-            font-size: 5rem;
-            font-weight: 900;
+            font-size: 5.2rem;
+            font-weight: 950;
             margin-bottom: 1.5rem;
-            letter-spacing: -2px;
-            line-height: 1.05;
-            background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+            letter-spacing: -2.2px;
+            line-height: 1.02;
+            background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.75) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -205,53 +208,56 @@
         }
 
         .hero-sub {
-            font-size: 1.25rem;
-            color: rgba(255, 255, 255, 0.65);
-            max-width: 700px;
-            margin: 0 auto 3rem;
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.68);
+            max-width: 750px;
+            margin: 0 auto 3.5rem;
             font-weight: 400;
-            line-height: 1.7;
+            line-height: 1.8;
+            letter-spacing: -0.3px;
         }
 
         .hero-cta {
             display: flex;
             gap: 1.2rem;
             justify-content: center;
-            margin-bottom: 4rem;
+            margin-bottom: 5rem;
             flex-wrap: wrap;
         }
 
         .btn-primary {
             background: linear-gradient(135deg, #FF6B00 0%, #FFB800 100%);
             color: #fff;
-            padding: 1.2rem 3rem;
+            padding: 1.3rem 3.5rem;
             border-radius: 10px;
-            font-size: 1.05rem;
+            font-size: 1rem;
             font-weight: 700;
             text-decoration: none;
             border: none;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 12px 40px rgba(255, 107, 0, 0.35);
+            box-shadow: 0 14px 45px rgba(255, 107, 0, 0.32);
+            letter-spacing: -0.3px;
         }
 
         .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 20px 60px rgba(255, 107, 0, 0.45);
+            box-shadow: 0 20px 60px rgba(255, 107, 0, 0.42);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.07);
             color: #fff;
-            padding: 1.2rem 3rem;
+            padding: 1.3rem 3.5rem;
             border-radius: 10px;
-            font-size: 1.05rem;
+            font-size: 1rem;
             font-weight: 700;
             text-decoration: none;
-            border: 1.5px solid rgba(255, 107, 0, 0.3);
+            border: 1.5px solid rgba(255, 107, 0, 0.32);
             cursor: pointer;
             transition: all 0.3s;
             backdrop-filter: blur(10px);
+            letter-spacing: -0.3px;
         }
 
         .btn-secondary:hover {
@@ -263,38 +269,45 @@
         .hero-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-            margin-top: 3rem;
+            gap: 2.5rem;
+            margin-top: 2rem;
         }
 
         .stat {
-            background: rgba(255, 107, 0, 0.06);
-            border: 1px solid rgba(255, 107, 0, 0.15);
+            background: rgba(255, 107, 0, 0.07);
+            border: 1px solid rgba(255, 107, 0, 0.18);
             border-radius: 12px;
-            padding: 2rem;
+            padding: 2.2rem;
             backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .stat:hover {
+            border-color: rgba(255, 107, 0, 0.35);
+            background: rgba(255, 107, 0, 0.1);
         }
 
         .stat-number {
-            font-size: 2.8rem;
-            font-weight: 900;
+            font-size: 3rem;
+            font-weight: 950;
             background: linear-gradient(135deg, #FF6B00, #FFB800);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.6rem;
+            letter-spacing: -1px;
         }
 
         .stat-label {
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.62);
             font-weight: 500;
         }
 
         /* Sections */
         section {
-            padding: 7rem 2rem;
+            padding: 8rem 2rem;
             position: relative;
         }
 
@@ -309,22 +322,23 @@
             letter-spacing: 0.12em;
             color: #FFB800;
             font-weight: 700;
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
         }
 
         .section-title {
-            font-size: 3.2rem;
-            font-weight: 900;
-            margin-bottom: 1rem;
-            letter-spacing: -1.5px;
-            max-width: 700px;
+            font-size: 3.5rem;
+            font-weight: 950;
+            margin-bottom: 1.2rem;
+            letter-spacing: -1.8px;
+            max-width: 800px;
         }
 
         .section-sub {
             font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.6);
-            max-width: 600px;
+            color: rgba(255, 255, 255, 0.65);
+            max-width: 700px;
             margin-bottom: 4rem;
+            letter-spacing: -0.2px;
         }
 
         /* How It Works */
@@ -335,15 +349,15 @@
         .steps {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1.8rem;
+            gap: 2rem;
             margin-top: 4rem;
         }
 
         .step {
             background: rgba(255, 107, 0, 0.08);
             border: 1px solid rgba(255, 107, 0, 0.2);
-            border-radius: 16px;
-            padding: 2.5rem 2rem;
+            border-radius: 14px;
+            padding: 2.8rem 2.2rem;
             backdrop-filter: blur(10px);
             transition: all 0.3s;
             position: relative;
@@ -357,14 +371,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, rgba(255, 107, 0, 0.1) 0%, transparent 100%);
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.12) 0%, transparent 100%);
             opacity: 0;
             transition: opacity 0.3s;
         }
 
         .step:hover {
-            border-color: rgba(255, 107, 0, 0.5);
-            transform: translateY(-4px);
+            border-color: rgba(255, 107, 0, 0.45);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(255, 107, 0, 0.12);
         }
 
         .step:hover::before {
@@ -373,30 +388,33 @@
 
         .step-num {
             display: inline-flex;
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, rgba(255, 107, 0, 0.3), rgba(255, 184, 0, 0.2));
-            border: 1.5px solid rgba(255, 107, 0, 0.4);
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.25), rgba(255, 184, 0, 0.15));
+            border: 1.5px solid rgba(255, 107, 0, 0.42);
             color: #FFB800;
             border-radius: 10px;
             align-items: center;
             justify-content: center;
-            font-weight: 900;
-            font-size: 1.3rem;
-            margin-bottom: 1.5rem;
+            font-weight: 950;
+            font-size: 1.4rem;
+            margin-bottom: 1.6rem;
+            letter-spacing: -0.5px;
         }
 
         .step h3 {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             font-weight: 800;
             margin-bottom: 0.8rem;
             color: #fff;
+            letter-spacing: -0.4px;
         }
 
         .step p {
             font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.65);
-            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.66);
+            line-height: 1.75;
+            letter-spacing: -0.2px;
         }
 
         /* Features */
@@ -407,203 +425,268 @@
         .features-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
+            gap: 2.2rem;
             margin-top: 4rem;
         }
 
         .feature {
             background: rgba(255, 107, 0, 0.08);
             border: 1px solid rgba(255, 107, 0, 0.15);
-            border-radius: 16px;
-            padding: 2.5rem;
+            border-radius: 14px;
+            padding: 2.8rem;
             backdrop-filter: blur(10px);
             transition: all 0.3s;
         }
 
         .feature:hover {
-            border-color: rgba(255, 107, 0, 0.5);
-            transform: translateY(-4px);
-            box-shadow: 0 12px 48px rgba(255, 107, 0, 0.15);
+            border-color: rgba(255, 107, 0, 0.45);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(255, 107, 0, 0.12);
         }
 
         .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-            display: block;
+            width: 56px;
+            height: 56px;
+            margin-bottom: 1.8rem;
+        }
+
+        .feature-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: #FFB800;
+            fill: none;
+            stroke-width: 1.5;
         }
 
         .feature h3 {
             font-size: 1.2rem;
             font-weight: 800;
             margin-bottom: 0.8rem;
+            letter-spacing: -0.4px;
         }
 
         .feature p {
             font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.65);
-            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.66);
+            line-height: 1.75;
+            letter-spacing: -0.2px;
         }
 
-        /* Pricing */
-        #pricing {
+        /* Dashboard Preview */
+        #dashboard-preview {
             background: rgba(255, 107, 0, 0.02);
         }
 
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
+        .preview-container {
+            background: rgba(255, 107, 0, 0.1);
+            border: 1px solid rgba(255, 107, 0, 0.2);
+            border-radius: 16px;
+            padding: 3rem;
+            backdrop-filter: blur(10px);
             margin-top: 4rem;
         }
 
-        .tier {
-            background: rgba(255, 107, 0, 0.08);
-            border: 1.5px solid rgba(255, 107, 0, 0.15);
-            border-radius: 16px;
-            padding: 3rem;
+        .preview-mock {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .preview-text h3 {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.8px;
+        }
+
+        .preview-text p {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.65);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            letter-spacing: -0.2px;
+        }
+
+        .preview-graph {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 107, 0, 0.25);
+            border-radius: 12px;
+            padding: 2rem;
+            min-height: 300px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 1rem;
+        }
+
+        .graph-bar {
+            flex: 1;
+            background: linear-gradient(180deg, #FF6B00, #FFB800);
+            border-radius: 4px;
             position: relative;
             transition: all 0.3s;
-            backdrop-filter: blur(10px);
+            opacity: 0.7;
         }
 
-        .tier:hover {
-            transform: translateY(-8px);
-            border-color: rgba(255, 107, 0, 0.4);
+        .graph-bar:nth-child(1) { height: 60%; }
+        .graph-bar:nth-child(2) { height: 75%; opacity: 0.85; }
+        .graph-bar:nth-child(3) { height: 85%; opacity: 1; }
+        .graph-bar:nth-child(4) { height: 70%; }
+        .graph-bar:nth-child(5) { height: 80%; opacity: 0.9; }
+
+        .preview-graph:hover .graph-bar {
+            opacity: 1;
         }
 
-        .tier.popular {
-            border-color: #FF6B00;
-            background: rgba(255, 107, 0, 0.15);
-            box-shadow: 0 20px 60px rgba(255, 107, 0, 0.2);
+        /* Beta Request Section */
+        #beta-request {
+            background: rgba(255, 107, 0, 0.04);
         }
 
-        .popular-badge {
-            position: absolute;
-            top: -16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #FF6B00, #FFB800);
-            color: #fff;
-            padding: 0.5rem 1.4rem;
-            border-radius: 24px;
-            font-weight: 800;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            box-shadow: 0 8px 24px rgba(255, 107, 0, 0.3);
-        }
-
-        .tier-name {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 700;
-            margin-bottom: 1.2rem;
-        }
-
-        .tier-price {
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: #fff;
-            margin-bottom: 0.3rem;
-            letter-spacing: -2px;
-        }
-
-        .tier-price span {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 500;
-        }
-
-        .tier-desc {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 2.5rem;
-        }
-
-        .tier-features {
-            list-style: none;
-            margin-bottom: 2.5rem;
-        }
-
-        .tier-features li {
-            padding: 0.8rem 0;
-            border-bottom: 1px solid rgba(255, 107, 0, 0.1);
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.75);
-        }
-
-        .tier-features li:last-child {
-            border-bottom: none;
-        }
-
-        .tier-features li::before {
-            content: "✓ ";
-            color: #FFB800;
-            font-weight: 900;
-            margin-right: 0.6rem;
-        }
-
-        .tier-btn {
-            width: 100%;
-            padding: 1rem;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .tier-btn-primary {
-            background: linear-gradient(135deg, #FF6B00, #FFB800);
-            color: #fff;
-            box-shadow: 0 8px 24px rgba(255, 107, 0, 0.3);
-        }
-
-        .tier-btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 36px rgba(255, 107, 0, 0.4);
-        }
-
-        .tier-btn-secondary {
-            background: rgba(255, 107, 0, 0.1);
-            color: #FFB800;
-            border: 1.5px solid rgba(255, 107, 0, 0.3);
-        }
-
-        .tier-btn-secondary:hover {
-            background: rgba(255, 107, 0, 0.2);
-            border-color: rgba(255, 107, 0, 0.6);
-        }
-
-        /* CTA Section */
-        .cta-section {
+        .request-card {
             background: rgba(255, 107, 0, 0.1);
             border: 1.5px solid rgba(255, 107, 0, 0.25);
             border-radius: 16px;
             padding: 4rem 3rem;
             text-align: center;
             backdrop-filter: blur(10px);
-            margin-top: 6rem;
+            margin-top: 3rem;
         }
 
-        .cta-section h2 {
-            font-size: 2.8rem;
-            font-weight: 900;
-            margin-bottom: 1rem;
+        .request-card h2 {
+            font-size: 3rem;
+            font-weight: 950;
+            margin-bottom: 1.2rem;
+            letter-spacing: -1.5px;
         }
 
-        .cta-section p {
+        .request-card p {
             font-size: 1.1rem;
             color: rgba(255, 255, 255, 0.65);
+            margin-bottom: 2.5rem;
+            letter-spacing: -0.2px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(10, 10, 10, 0.95);
+            border: 1.5px solid rgba(255, 107, 0, 0.25);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 500px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #FFB800;
+        }
+
+        .modal h2 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            letter-spacing: -0.6px;
+        }
+
+        .modal p {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.65);
             margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .modal-form input {
+            padding: 0.9rem 1.1rem;
+            background: rgba(255, 107, 0, 0.08);
+            border: 1.5px solid rgba(255, 107, 0, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .modal-form input:focus {
+            outline: none;
+            background: rgba(255, 107, 0, 0.12);
+            border-color: rgba(255, 107, 0, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+        }
+
+        .modal-form input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .modal-submit {
+            background: linear-gradient(135deg, #FF6B00 0%, #FFB800 100%);
+            color: #fff;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(255, 107, 0, 0.3);
+        }
+
+        .modal-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 36px rgba(255, 107, 0, 0.4);
         }
 
         /* Footer */
         footer {
             background: rgba(0, 0, 0, 0.8);
-            border-top: 1px solid rgba(255, 107, 0, 0.15);
+            border-top: 1px solid rgba(255, 107, 0, 0.12);
             padding: 4rem 2rem;
             text-align: center;
             backdrop-filter: blur(10px);
@@ -622,6 +705,7 @@
             text-decoration: none;
             font-size: 0.9rem;
             transition: color 0.3s;
+            letter-spacing: -0.2px;
         }
 
         .footer-links a:hover {
@@ -631,10 +715,11 @@
         footer p {
             color: rgba(255, 255, 255, 0.35);
             font-size: 0.85rem;
-            line-height: 1.6;
+            line-height: 1.7;
+            letter-spacing: -0.2px;
         }
 
-        /* Mobile Responsive */
+        /* Mobile */
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 3rem;
@@ -645,8 +730,11 @@
             }
 
             .steps,
-            .features-grid,
-            .pricing-grid {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-mock {
                 grid-template-columns: 1fr;
             }
 
@@ -655,7 +743,7 @@
             }
 
             .section-title {
-                font-size: 2rem;
+                font-size: 2.2rem;
             }
 
             .hero-cta {
@@ -667,21 +755,16 @@
                 width: 100%;
             }
 
-            .cta-section {
+            .request-card {
                 padding: 2rem 1.5rem;
             }
 
-            .cta-section h2 {
-                font-size: 2rem;
+            .request-card h2 {
+                font-size: 1.8rem;
             }
 
-            footer {
-                padding: 2rem 1rem;
-            }
-
-            .footer-links {
-                flex-direction: column;
-                gap: 1rem;
+            .modal-content {
+                margin: 1rem;
             }
         }
     </style>
@@ -697,38 +780,38 @@
         <ul class="nav-center">
             <li><a href="#how">How it Works</a></li>
             <li><a href="#features">Features</a></li>
-            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#dashboard-preview">Dashboard</a></li>
         </ul>
         <div class="nav-right">
             <a href="/login" class="btn-login">Log In</a>
-            <a href="/register" class="btn-signup">Start Free</a>
+            <button class="btn-access" onclick="openAccessModal()">Request Access</button>
         </div>
     </div>
 </nav>
 
 <section class="hero">
     <div class="container">
-        <div class="hero-badge">🚀 Autonomous AI Platform</div>
-        <h1>Generate clips that <span>actually convert</span></h1>
-        <p class="hero-sub">SUNO automates the entire clip lifecycle. From intelligent hook generation to multi-platform distribution — powered by real-time learning and ROI optimization.</p>
+        <div class="hero-badge">🔒 Private Beta for Elite Operators</div>
+        <h1>The autonomous engine for <span>serious operators</span></h1>
+        <p class="hero-sub">SUNO automates clip generation, testing, and distribution at scale. Real intelligence. Real ROI tracking. Real competitive advantage.</p>
 
         <div class="hero-cta">
-            <a href="/register" class="btn-primary">Start Free Trial</a>
+            <button class="btn-primary" onclick="openAccessModal()">Request Access</button>
             <a href="#how" class="btn-secondary">See How It Works</a>
         </div>
 
         <div class="hero-stats">
             <div class="stat">
-                <span class="stat-number">10x</span>
-                <span class="stat-label">Faster clip generation</span>
+                <span class="stat-number">60+</span>
+                <span class="stat-label">Clips per creator/month</span>
             </div>
             <div class="stat">
                 <span class="stat-number">37,500x</span>
-                <span class="stat-label">Average ROI</span>
+                <span class="stat-label">Avg. ROI (cost vs. value)</span>
             </div>
             <div class="stat">
                 <span class="stat-number">4+</span>
-                <span class="stat-label">Platforms synced</span>
+                <span class="stat-label">Platforms (TikTok, IG, YT)</span>
             </div>
         </div>
     </div>
@@ -736,30 +819,30 @@
 
 <section id="how">
     <div class="container">
-        <div class="section-label">How It Works</div>
-        <div class="section-title">Four steps to viral content</div>
-        <p class="section-sub">SUNO's intelligent pipeline turns raw footage into optimized clips that dominate your feeds.</p>
+        <div class="section-label">Automation Pipeline</div>
+        <div class="section-title">Four layers of intelligence</div>
+        <p class="section-sub">SUNO's proprietary system handles generation, testing, and distribution—eliminating manual bottlenecks.</p>
 
         <div class="steps">
             <div class="step">
                 <div class="step-num">1</div>
-                <h3>Ingest & Analyze</h3>
-                <p>Upload source material. SUNO analyzes engagement patterns and content structure to identify clip-worthy moments automatically.</p>
+                <h3>Ingest</h3>
+                <p>Upload source content. SUNO analyzes hooks, pacing, and engagement signals to identify clip-worthy moments instantly.</p>
             </div>
             <div class="step">
                 <div class="step-num">2</div>
-                <h3>Generate Variants</h3>
-                <p>Claude AI generates 10+ hook variations, captions, and durations. Each variant is scored for predicted engagement.</p>
+                <h3>Generate</h3>
+                <p>Claude AI drafts 10+ variants per clip. Hooks, captions, durations. Each variant is scored for predicted performance.</p>
             </div>
             <div class="step">
                 <div class="step-num">3</div>
-                <h3>Optimize & Schedule</h3>
-                <p>Variants compete in real-time. Winners are scheduled for posting with platform-specific timing and cooldown rules.</p>
+                <h3>Compete</h3>
+                <p>Variants go live in controlled rollout. Live engagement metrics feed back. Winners are elected. Losers are archived.</p>
             </div>
             <div class="step">
                 <div class="step-num">4</div>
-                <h3>Learn & Improve</h3>
-                <p>Live performance data feeds back into the system. Your creator profile improves with every clip posted.</p>
+                <h3>Learn</h3>
+                <p>Performance data trains your creator profile. System improves hook quality, timing, and platform selection every cycle.</p>
             </div>
         </div>
     </div>
@@ -767,105 +850,105 @@
 
 <section id="features">
     <div class="container">
-        <div class="section-label">Core Features</div>
+        <div class="section-label">Core Engine</div>
         <div class="section-title">Built for operators who scale</div>
-        <p class="section-sub">Everything you need to run a clip business — from generation to ROI tracking.</p>
+        <p class="section-sub">Every feature is designed for teams managing multiple creators at high velocity.</p>
 
         <div class="features-grid">
             <div class="feature">
-                <div class="feature-icon">🎯</div>
-                <h3>Hook Intelligence</h3>
-                <p>Real Claude AI generates and ranks hooks by predicted engagement. Save top performers to your library.</p>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 7v5l4 2"/>
+                    </svg>
+                </div>
+                <h3>Hook Generation</h3>
+                <p>Real Claude AI creates and ranks hooks. Save winners to your playbook. Your system learns what resonates with your audience.</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">📊</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 17"/>
+                        <polyline points="17 6 23 6 23 12"/>
+                    </svg>
+                </div>
                 <h3>ROI Tracking</h3>
-                <p>See cost-per-clip vs. estimated value. Track ROI across variants, accounts, and campaigns in real-time.</p>
+                <p>See cost-per-clip vs. estimated value. Track ROI across variants, accounts, and campaigns. Optimize spend in real-time.</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">🤖</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <polygon points="23 7 16 12 23 17 23 7"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
                 <h3>Autonomous Posting</h3>
-                <p>Schedule variants across TikTok, Instagram, YouTube & more. Smart cooldown prevents platform penalties.</p>
+                <p>Schedule variants across all platforms. Smart cooldowns prevent bans. Watch competitors miss while your engine posts constantly.</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">⚡</div>
-                <h3>Fast Generation</h3>
-                <p>From upload to posted — seconds to minutes. No manual editing. No human bottleneck.</p>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🎬</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                </div>
                 <h3>Variant Management</h3>
-                <p>Group variants by campaign. Track status (draft, elite, elected, posted). Full visibility at every stage.</p>
+                <p>Group clips by campaign. Track status at every stage. Elect winners and archive failures. Full visibility, zero manual work.</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">📈</div>
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
                 <h3>Creator Profiles</h3>
-                <p>System learns your niche, tone, and audience. Improves hook quality and performance predictions over time.</p>
+                <p>System learns your niche, tone, and audience. Improves predictions every cycle. Your best performing patterns become your edge.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <line x1="12" y1="2" x2="12" y2="22"/>
+                        <polyline points="19 9 12 2 5 9"/>
+                    </svg>
+                </div>
+                <h3>Real-Time Analytics</h3>
+                <p>Live performance dashboard. See wins as they happen. Adjust in seconds. Compete with data, not gut feel.</p>
             </div>
         </div>
     </div>
 </section>
 
-<section id="pricing">
+<section id="dashboard-preview">
     <div class="container">
-        <div class="section-label">Simple Pricing</div>
-        <div class="section-title">No surprises, just results</div>
-        <p class="section-sub">Flat rates. No per-clip fees. Unlimited variants and accounts.</p>
+        <div class="section-label">System in Action</div>
+        <div class="section-title">See the engine work</div>
 
-        <div class="pricing-grid">
-            <div class="tier">
-                <div class="tier-name">Solo Creator</div>
-                <div class="tier-price">$97<span>/month</span></div>
-                <div class="tier-desc">For indie creators and small teams</div>
-                <ul class="tier-features">
-                    <li>1 active account</li>
-                    <li>Unlimited clips & variants</li>
-                    <li>Hook generation (Haiku)</li>
-                    <li>2 platforms</li>
-                    <li>ROI dashboard</li>
-                    <li>Email support</li>
-                </ul>
-                <a href="/register?plan=solo" class="tier-btn tier-btn-secondary">Start Free Trial</a>
-            </div>
-
-            <div class="tier popular">
-                <div class="popular-badge">Recommended</div>
-                <div class="tier-name">Growth Agency</div>
-                <div class="tier-price">$297<span>/month</span></div>
-                <div class="tier-desc">For agencies managing 5–20 creators</div>
-                <ul class="tier-features">
-                    <li>5 active accounts</li>
-                    <li>Unlimited clips & variants</li>
-                    <li>Hook generation (Sonnet)</li>
-                    <li>4 platforms</li>
-                    <li>Performance analytics</li>
-                    <li>Webhooks & API</li>
-                    <li>Priority support</li>
-                </ul>
-                <a href="/register?plan=growth" class="tier-btn tier-btn-primary">Start Free Trial</a>
-            </div>
-
-            <div class="tier">
-                <div class="tier-name">Enterprise</div>
-                <div class="tier-price">Custom</div>
-                <div class="tier-desc">For large-scale operations</div>
-                <ul class="tier-features">
-                    <li>Unlimited accounts</li>
-                    <li>Unlimited everything</li>
-                    <li>Hook generation (Opus)</li>
-                    <li>All platforms</li>
-                    <li>Real-time webhooks</li>
-                    <li>Custom integrations</li>
-                    <li>Dedicated support</li>
-                </ul>
-                <a href="/dashboard" class="tier-btn tier-btn-secondary">Contact Sales</a>
+        <div class="preview-container">
+            <div class="preview-mock">
+                <div class="preview-text">
+                    <h3>Live Performance Dashboard</h3>
+                    <p>Watch your variants compete in real-time. Each bar represents a variant's engagement trajectory. The orange bars show your winners—the clips that drive revenue.</p>
+                    <p>This is your competitive advantage: while your competitors are manually editing clips, your system is testing, learning, and optimizing.</p>
+                </div>
+                <div class="preview-graph">
+                    <div class="graph-bar"></div>
+                    <div class="graph-bar"></div>
+                    <div class="graph-bar"></div>
+                    <div class="graph-bar"></div>
+                    <div class="graph-bar"></div>
+                </div>
             </div>
         </div>
+    </div>
+</section>
 
-        <div class="cta-section">
-            <h2>Ready to scale?</h2>
-            <p>Join creators generating 10+ clips daily with zero manual work.</p>
-            <a href="/register" class="btn-primary">Start Free Trial</a>
+<section id="beta-request">
+    <div class="container">
+        <div class="request-card">
+            <h2>Join the Private Beta</h2>
+            <p>SUNO is invitation-only. We're scaling carefully with elite operators who get the edge they need.</p>
+            <button class="btn-primary" onclick="openAccessModal()" style="margin: 0 auto;">Request Your Invite</button>
         </div>
     </div>
 </section>
@@ -873,16 +956,54 @@
 <footer>
     <div class="container">
         <div class="footer-links">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/register">Sign Up</a>
             <a href="/login">Log In</a>
+            <a href="#how">How It Works</a>
             <a href="#features">Features</a>
-            <a href="#pricing">Pricing</a>
             <a href="mailto:hello@sunoclips.com">Contact</a>
         </div>
-        <p>&copy; 2026 SUNO. The autonomous clip generation platform.<br>Sold Up Not Out.</p>
+        <p>&copy; 2026 SUNO. The private operator platform.<br>For teams that compete on speed.</p>
     </div>
 </footer>
+
+<!-- Access Modal -->
+<div class="modal" id="accessModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeAccessModal()">&times;</button>
+        <h2>Request Access</h2>
+        <p>Join the private beta. We'll review your application and send an invite within 24 hours.</p>
+        <form class="modal-form" id="accessForm">
+            <input type="text" placeholder="Your Name" required>
+            <input type="email" placeholder="Email Address" required>
+            <input type="text" placeholder="Company / Project Name" required>
+            <input type="text" placeholder="How many creators are you managing?" required>
+            <button type="submit" class="modal-submit">Submit Request</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openAccessModal() {
+        document.getElementById('accessModal').classList.add('active');
+    }
+
+    function closeAccessModal() {
+        document.getElementById('accessModal').classList.remove('active');
+    }
+
+    document.getElementById('accessForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        alert('Thank you for your interest. We will review your request and send an invite shortly.');
+        closeAccessModal();
+        document.getElementById('accessForm').reset();
+    });
+
+    // Close modal on outside click
+    document.getElementById('accessModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('accessModal')) {
+            closeAccessModal();
+        }
+    });
+</script>
 
 </body>
 </html>
