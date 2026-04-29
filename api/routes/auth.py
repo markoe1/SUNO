@@ -48,6 +48,10 @@ async def register(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
+    from datetime import datetime
+    from suno.common.models import Account
+    import uuid as uuid_lib
+
     # Beta whitelist: only these emails can register
     BETA_WHITELIST = {
         "sunoclips@elegantsolarinc.com",
@@ -67,13 +71,16 @@ async def register(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     try:
-        # Create user (new model)
-        user = User(email=body.email)
+        # 1. Create user WITH password_hash
+        user = User(
+            email=body.email,
+            password_hash=hash_password(body.password),
+        )
         db.add(user)
         await db.flush()
         logger.info(f"Created user {user.id} for email {body.email}")
 
-        # Get or create "starter" tier
+        # 2. Get or create "starter" tier
         tier_result = await db.execute(select(Tier).where(Tier.name == TierName.STARTER))
         tier = tier_result.scalar_one_or_none()
         if not tier:
@@ -89,28 +96,21 @@ async def register(
             )
             db.add(tier)
             await db.flush()
-            logger.info(f"Created starter tier")
+            logger.info("Created starter tier")
 
-        # Create membership
+        # 3. Create membership
         membership = Membership(
             user_id=user.id,
             tier_id=tier.id,
             whop_membership_id=f"beta_{user.id}",
-            status=MembershipLifecycle.PENDING,
+            status=MembershipLifecycle.ACTIVE,
+            activated_at=datetime.utcnow(),
         )
         db.add(membership)
         await db.flush()
         logger.info(f"Created membership {membership.id} for user {user.id}")
 
-        # Commit so we can use sync session for provisioner
-        await db.commit()
-
-        # Provision account using sync-friendly provisioner
-        # Note: This is a limitation - provisioner expects sync Session
-        # For now, we'll create account directly
-        from suno.common.models import Account
-        import uuid as uuid_lib
-
+        # 4. Create account (in same transaction)
         account = Account(
             membership_id=membership.id,
             workspace_id=f"ws_{uuid_lib.uuid4().hex[:12]}",
@@ -118,14 +118,12 @@ async def register(
             automation_enabled=True,
         )
         db.add(account)
+        await db.flush()
+        logger.info(f"Created account {account.workspace_id} for membership {membership.id}")
 
-        # Update membership to ACTIVE
-        from datetime import datetime
-        membership.status = MembershipLifecycle.ACTIVE
-        membership.activated_at = datetime.utcnow()
-
+        # 5. Commit ONCE at the end (atomic transaction)
         await db.commit()
-        logger.info(f"Provisioned account for membership {membership.id}")
+        logger.info(f"Registration complete for {body.email}")
 
         # Create tokens
         access_token = create_access_token({"sub": str(user.id)})
