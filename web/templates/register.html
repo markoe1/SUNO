@@ -345,7 +345,12 @@
                 credentials: 'include',
             });
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                throw new Error('Server error: ' + response.statusText);
+            }
 
             if (!response.ok) {
                 throw new Error(data.detail || 'Registration failed');
