@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from api.deps import get_db, get_current_user
 from suno.common.models import User, Tier, Membership
-from suno.common.enums import TierName, MembershipLifecycle
+from suno.common.enums import TierName, MembershipLifecycle, AccountStatus
 from suno.provisioning.account_ops import AccountProvisioner
 from services.auth import (
     create_access_token,
@@ -114,7 +114,7 @@ async def register(
         account = Account(
             membership_id=membership.id,
             workspace_id=f"ws_{uuid_lib.uuid4().hex[:12]}",
-            status="active",
+            status=AccountStatus.ACTIVE,
             automation_enabled=True,
         )
         db.add(account)
