@@ -10,7 +10,6 @@ from sqlalchemy import (
     Index, Table, Numeric
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import uuid
 from suno.common.enums import (
@@ -18,7 +17,8 @@ from suno.common.enums import (
     VariantType, VariantStatus
 )
 
-Base = declarative_base()
+# Use the shared database Base from db.engine
+from db.engine import Base
 
 
 class User(Base):
@@ -27,6 +27,7 @@ class User(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=True)  # For email/password auth
     whop_user_id = Column(String(255), unique=True, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,7 +1,7 @@
 """Authentication routes: register, login, refresh, logout."""
 
 import os
-import uuid
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, Response, status
@@ -10,9 +10,12 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from api.deps import get_db, get_current_user
-from db.models import User
+from suno.common.models import User, Tier, Membership
+from suno.common.enums import TierName, MembershipLifecycle
+from suno.provisioning.account_ops import AccountProvisioner
 from services.auth import (
     create_access_token,
     create_refresh_token,
@@ -20,6 +23,8 @@ from services.auth import (
     hash_password,
     verify_password,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 limiter = Limiter(key_func=get_remote_address)
@@ -56,45 +61,104 @@ async def register(
             detail="Email not on beta access list. Contact support for early access."
         )
 
+    # Check if user already exists
     result = await db.execute(select(User).where(User.email == body.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
-    user = User(
-        id=uuid.uuid4(),
-        email=body.email,
-        password_hash=hash_password(body.password),
-        tier="free",
-        is_active=True,
-        jobs_paused=False,
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
+    try:
+        # Create user (new model)
+        user = User(email=body.email)
+        db.add(user)
+        await db.flush()
+        logger.info(f"Created user {user.id} for email {body.email}")
 
-    access_token = create_access_token({"sub": str(user.id)})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
+        # Get or create "starter" tier
+        tier_result = await db.execute(select(Tier).where(Tier.name == TierName.STARTER))
+        tier = tier_result.scalar_one_or_none()
+        if not tier:
+            tier = Tier(
+                name=TierName.STARTER,
+                max_daily_clips=10,
+                max_platforms=3,
+                platforms=["tiktok", "instagram", "youtube"],
+                auto_posting=False,
+                scheduling=False,
+                analytics=False,
+                api_access=False,
+            )
+            db.add(tier)
+            await db.flush()
+            logger.info(f"Created starter tier")
 
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        samesite="lax",
-        secure=os.getenv("APP_ENV") == "production",
-        max_age=7 * 24 * 3600,
-        path="/api/auth",
-    )
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        max_age=15 * 60,
-        path="/",
-    )
+        # Create membership
+        membership = Membership(
+            user_id=user.id,
+            tier_id=tier.id,
+            whop_membership_id=f"beta_{user.id}",
+            status=MembershipLifecycle.PENDING,
+        )
+        db.add(membership)
+        await db.flush()
+        logger.info(f"Created membership {membership.id} for user {user.id}")
 
-    return TokenResponse(access_token=access_token)
+        # Commit so we can use sync session for provisioner
+        await db.commit()
+
+        # Provision account using sync-friendly provisioner
+        # Note: This is a limitation - provisioner expects sync Session
+        # For now, we'll create account directly
+        from suno.common.models import Account
+        import uuid as uuid_lib
+
+        account = Account(
+            membership_id=membership.id,
+            workspace_id=f"ws_{uuid_lib.uuid4().hex[:12]}",
+            status="active",
+            automation_enabled=True,
+        )
+        db.add(account)
+
+        # Update membership to ACTIVE
+        from datetime import datetime
+        membership.status = MembershipLifecycle.ACTIVE
+        membership.activated_at = datetime.utcnow()
+
+        await db.commit()
+        logger.info(f"Provisioned account for membership {membership.id}")
+
+        # Create tokens
+        access_token = create_access_token({"sub": str(user.id)})
+        refresh_token = create_refresh_token({"sub": str(user.id)})
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            samesite="lax",
+            secure=os.getenv("APP_ENV") == "production",
+            max_age=7 * 24 * 3600,
+            path="/api/auth",
+        )
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            samesite="lax",
+            secure=os.getenv("APP_ENV") == "production",
+            max_age=15 * 60,
+            path="/",
+        )
+
+        return TokenResponse(access_token=access_token)
+
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Registration failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed. Please try again."
+        )
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -109,14 +173,19 @@ async def login(
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(password, user.password_hash):
+    if not user or not user.password_hash or not verify_password(password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
 
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
+    # Check if user has an active membership
+    membership_result = await db.execute(
+        select(Membership).where(Membership.user_id == user.id)
+    )
+    membership = membership_result.scalar_one_or_none()
+    if membership is None or membership.status != MembershipLifecycle.ACTIVE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account not activated")
 
     access_token = create_access_token({"sub": str(user.id)})
     refresh_token = create_refresh_token({"sub": str(user.id)})
