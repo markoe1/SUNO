@@ -316,11 +316,12 @@
             try {
                 data = await response.json();
             } catch (e) {
-                throw new Error('Server error: ' + response.statusText);
+                const responseText = await response.text();
+                throw new Error(`Server error (${response.status}): ${responseText.slice(0, 100)}`);
             }
 
             if (!response.ok) {
-                throw new Error(data.detail || 'Login failed');
+                throw new Error(data.detail || `Login failed (${response.status})`);
             }
 
             // Success
