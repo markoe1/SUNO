@@ -96,8 +96,12 @@ def create_app() -> FastAPI:
     # --- Web page routes ---
 
     @app.get("/", include_in_schema=False)
-    async def root():
-        return RedirectResponse(url="/dashboard")
+    async def root(request: Request):
+        return templates.TemplateResponse(
+            name="index.html",
+            request=request,
+            context={}
+        )
 
     @app.get("/login", include_in_schema=False)
     async def login_page(request: Request):
