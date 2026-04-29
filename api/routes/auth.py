@@ -43,6 +43,19 @@ async def register(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
+    # Beta whitelist: only these emails can register
+    BETA_WHITELIST = {
+        "sunoclips@elegantsolarinc.com",
+        "nicole@elegantsolarinc.com",
+        "elliott@elegantsolarinc.com",
+    }
+
+    if body.email.lower() not in BETA_WHITELIST:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not on beta access list. Contact support for early access."
+        )
+
     result = await db.execute(select(User).where(User.email == body.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
