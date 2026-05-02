@@ -16,8 +16,14 @@ from slowapi.util import get_remote_address
 # Verify dependencies at startup
 import bcrypt
 import passlib
+import subprocess
 print("STARTUP: bcrypt version:", getattr(bcrypt, "__version__", "unknown"))
 print("STARTUP: passlib version:", passlib.__version__)
+try:
+    commit = subprocess.getoutput("git rev-parse HEAD").strip()
+    print("STARTUP: GIT COMMIT:", commit)
+except Exception as e:
+    print("STARTUP: GIT COMMIT ERROR:", e)
 
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
 from api.routes import admin, auth, clips, health, performance, profile, user_resources, webhooks
