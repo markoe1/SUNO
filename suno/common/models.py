@@ -46,7 +46,7 @@ class Tier(Base):
     __tablename__ = "tiers"
 
     id = Column(Integer, primary_key=True)
-    name = Column(SQLEnum(TierName), nullable=False, unique=True)
+    name = Column(String, nullable=False, unique=True)
     max_daily_clips = Column(Integer, nullable=False)
     max_platforms = Column(Integer, nullable=False)
     platforms = Column(JSON, nullable=False)  # List[str]

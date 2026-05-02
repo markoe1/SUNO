@@ -81,15 +81,12 @@ async def register(
         logger.info(f"Created user {user.id} for email {body.email}")
 
         # 2. Get or create "starter" tier
-        # DEBUG: Verify code and enum value
-        print("DEBUG AUTH FILE:", __file__)
-        print("DEBUG TIER ENUM:", TierName.STARTER, "type:", type(TierName.STARTER))
-        print("DEBUG TIER VALUE:", TierName.STARTER.value)
-        tier_result = await db.execute(select(Tier).where(Tier.name == TierName.STARTER.value))
+        # Use pure string to avoid SQLAlchemy enum coercion
+        tier_result = await db.execute(select(Tier).where(Tier.name == "starter"))
         tier = tier_result.scalar_one_or_none()
         if not tier:
             tier = Tier(
-                name=TierName.STARTER.value,
+                name="starter",
                 max_daily_clips=10,
                 max_platforms=3,
                 platforms=["tiktok", "instagram", "youtube"],
