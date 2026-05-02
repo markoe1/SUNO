@@ -8,7 +8,7 @@ from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, Re
 from pydantic import BaseModel, EmailStr
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from sqlalchemy import select
+from sqlalchemy import cast, select, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -81,7 +81,8 @@ async def register(
         logger.info(f"Created user {user.id} for email {body.email}")
 
         # 2. Get or create "starter" tier
-        tier_result = await db.execute(select(Tier).where(Tier.name == TierName.STARTER.value))
+        # Cast to String because Tier.name is SQLEnum in model but VARCHAR in database
+        tier_result = await db.execute(select(Tier).where(cast(Tier.name, String) == TierName.STARTER.value))
         tier = tier_result.scalar_one_or_none()
         if not tier:
             tier = Tier(
