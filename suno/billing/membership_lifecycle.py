@@ -286,14 +286,14 @@ class MembershipLifecycleHandler:
         from suno.common.enums import TierName
 
         # Ensure tiers exist (created at startup)
-        starter = self.db.query(Tier).filter(Tier.name == TierName.STARTER).first()
-        pro = self.db.query(Tier).filter(Tier.name == TierName.PRO).first()
+        starter = self.db.query(Tier).filter(Tier.name == TierName.STARTER.value).first()
+        pro = self.db.query(Tier).filter(Tier.name == TierName.PRO.value).first()
 
         if not starter or not pro:
             # Create tiers if they don't exist
             if not starter:
                 starter = Tier(
-                    name=TierName.STARTER,
+                    name=TierName.STARTER.value,
                     max_daily_clips=10,
                     max_platforms=3,
                     platforms=["tiktok", "instagram", "youtube"],
@@ -306,7 +306,7 @@ class MembershipLifecycleHandler:
 
             if not pro:
                 pro = Tier(
-                    name=TierName.PRO,
+                    name=TierName.PRO.value,
                     max_daily_clips=30,
                     max_platforms=6,
                     platforms=["tiktok", "instagram", "youtube", "twitter", "bluesky", "threads"],
