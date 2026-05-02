@@ -81,6 +81,10 @@ async def register(
         logger.info(f"Created user {user.id} for email {body.email}")
 
         # 2. Get or create "starter" tier
+        # DEBUG: Verify code and enum value
+        print("DEBUG AUTH FILE:", __file__)
+        print("DEBUG TIER ENUM:", TierName.STARTER, "type:", type(TierName.STARTER))
+        print("DEBUG TIER VALUE:", TierName.STARTER.value)
         tier_result = await db.execute(select(Tier).where(Tier.name == TierName.STARTER.value))
         tier = tier_result.scalar_one_or_none()
         if not tier:
