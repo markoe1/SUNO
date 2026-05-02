@@ -301,10 +301,10 @@ class SelfUseModeConfig:
         from suno.common.enums import TierName
 
         # Get or create SELF-USE tier
-        tier = db.query(Tier).filter(Tier.name == TierName.STARTER.value).first()
+        tier = db.query(Tier).filter(Tier.name == "starter").first()
         if not tier:
             tier = Tier(
-                name=TierName.STARTER.value,
+                name="starter",
                 max_daily_clips=SelfUseModeConfig.MAX_CLIPS_PER_DAY,
                 max_platforms=len(SelfUseModeConfig.PREFERRED_PLATFORMS),
                 platforms=SelfUseModeConfig.PREFERRED_PLATFORMS,

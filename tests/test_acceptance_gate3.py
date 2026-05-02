@@ -16,7 +16,7 @@ def test_provisioning_without_api_key(db_session):
     db_session.add(user)
     db_session.flush()
 
-    tier = db_session.query(Tier).filter(Tier.name == TierName.STARTER).first()
+    tier = db_session.query(Tier).filter(Tier.name == "starter").first()
     if not tier:
         tier = Tier(
             name=TierName.STARTER,
@@ -85,7 +85,7 @@ def test_provisioning_with_stub_api(db_session):
     db_session.add(user)
     db_session.flush()
 
-    tier = db_session.query(Tier).filter(Tier.name == TierName.STARTER).first()
+    tier = db_session.query(Tier).filter(Tier.name == "starter").first()
     if not tier:
         tier = Tier(
             name=TierName.STARTER,
@@ -146,7 +146,7 @@ def test_provisioning_idempotency(db_session):
     db_session.add(user)
     db_session.flush()
 
-    tier = db_session.query(Tier).filter(Tier.name == TierName.STARTER).first()
+    tier = db_session.query(Tier).filter(Tier.name == "starter").first()
     if not tier:
         tier = Tier(
             name=TierName.STARTER,

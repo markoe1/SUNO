@@ -51,7 +51,7 @@ def test_full_success_path(db_session):
     db_session.add(user)
     db_session.flush()
 
-    tier = db_session.query(Tier).filter(Tier.name == TierName.STARTER).first()
+    tier = db_session.query(Tier).filter(Tier.name == "starter").first()
     if not tier:
         tier = Tier(
             name=TierName.STARTER,
@@ -230,7 +230,7 @@ def test_failure_path(db_session):
     db_session.add(user)
     db_session.flush()
 
-    tier = db_session.query(Tier).filter(Tier.name == TierName.STARTER).first()
+    tier = db_session.query(Tier).filter(Tier.name == "starter").first()
     membership = Membership(
         user_id=user.id,
         tier_id=tier.id,

@@ -12,7 +12,7 @@ def test_caption_generation_success(db_session):
     import hashlib
 
     # Setup test data
-    tier = db_session.query(Tier).filter(Tier.name == TierName.STARTER).first()
+    tier = db_session.query(Tier).filter(Tier.name == "starter").first()
     if not tier:
         tier = Tier(
             name=TierName.STARTER,
@@ -109,7 +109,7 @@ def test_caption_retry_logic(db_session):
     import hashlib
 
     # Setup
-    tier = db_session.query(Tier).filter(Tier.name == TierName.STARTER).first()
+    tier = db_session.query(Tier).filter(Tier.name == "starter").first()
     from suno.common.models import User
     user = User(email="retry_test@example.com")
     db_session.add(user)
@@ -220,7 +220,7 @@ def test_caption_clean_failure(db_session):
     import hashlib
 
     # Setup
-    tier = db_session.query(Tier).filter(Tier.name == TierName.STARTER).first()
+    tier = db_session.query(Tier).filter(Tier.name == "starter").first()
     from suno.common.models import User
     user = User(email="clean_fail_test@example.com")
     db_session.add(user)

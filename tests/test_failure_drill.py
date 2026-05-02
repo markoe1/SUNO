@@ -121,7 +121,7 @@ def test_failure_3_missing_provisioning_secret(test_db_session):
         db.add(user)
         db.flush()
 
-        tier = db.query(Tier).filter(Tier.name == TierName.STARTER).first()
+        tier = db.query(Tier).filter(Tier.name == "starter").first()
         if not tier:
             tier = Tier(
                 name=TierName.STARTER,
@@ -188,7 +188,7 @@ def test_failure_4_caption_generation_failure(test_db_session):
 
     db = SessionLocal()
     try:
-        tier = db.query(Tier).filter(Tier.name == TierName.STARTER).first()
+        tier = db.query(Tier).filter(Tier.name == "starter").first()
         if not tier:
             tier = Tier(
                 name=TierName.STARTER,
@@ -354,7 +354,7 @@ def test_failure_6_malformed_payload(test_db_session):
 
     db = SessionLocal()
     try:
-        tier = db.query(Tier).filter(Tier.name == TierName.STARTER).first()
+        tier = db.query(Tier).filter(Tier.name == "starter").first()
         if not tier:
             tier = Tier(
                 name=TierName.STARTER,
