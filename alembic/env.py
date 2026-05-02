@@ -10,7 +10,7 @@ from alembic import context
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # Import the correct Base and models
-from suno.database import Base
+from db.engine import Base
 import suno.common.models  # noqa: F401 — ensure SUNO models are registered (User, Tier, Membership, etc)
 
 config = context.config

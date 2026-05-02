@@ -1,12 +1,13 @@
 """
-Database Connection Management
-SQLAlchemy session factory for the SUNO system.
+Database Connection Management (Sync)
+For background workers, webhooks, and tests only.
+FastAPI routes MUST use db/engine.py (async).
 """
 
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from suno.common.models import Base
+from db.engine import Base
 
 # Get database URL from environment
 DATABASE_URL = os.getenv(
@@ -14,14 +15,14 @@ DATABASE_URL = os.getenv(
     "postgresql://suno:suno@localhost:5432/suno_clips"
 )
 
-# Strip Neon's ?sslmode=require query parameter (psycopg2/asyncpg handle SSL automatically)
+# Strip Neon's ?sslmode=require query parameter
 DATABASE_URL = DATABASE_URL.split("?")[0]
 
-# Ensure we use psycopg2 (installed as psycopg2-binary) for synchronous PostgreSQL connections
+# Ensure we use psycopg2 for sync connections
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
 
-# Create engine
+# Create sync engine
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
@@ -37,21 +38,9 @@ SessionLocal = sessionmaker(
 
 
 def get_db() -> Session:
-    """
-    Get a database session.
-
-    Usage in FastAPI:
-    @app.get("/example")
-    def example(db: Session = Depends(get_db)):
-        ...
-    """
+    """Get a database session (sync). For workers and webhooks only."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-
-def init_db():
-    """Initialize database (create all tables)."""
-    Base.metadata.create_all(bind=engine)

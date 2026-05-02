@@ -3,28 +3,33 @@ Tier-based feature gating and limit checking.
 Helpers for enforcing tier rules.
 """
 
-from typing import Dict, Any
-from sqlalchemy.orm import Session
+from typing import Dict, Any, Optional
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from suno.common.models import User, Membership, Tier
 from suno.common.enums import MembershipLifecycle, TierName
 
 
-def get_user_tier(user_id, db: Session) -> Tier:
+async def get_user_tier(user_id, db: AsyncSession) -> Optional[Tier]:
     """Get user's current tier. Returns None if no active membership."""
-    membership = db.query(Membership).filter(
-        Membership.user_id == user_id,
-        Membership.status == MembershipLifecycle.ACTIVE,
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user_id,
+            Membership.status == MembershipLifecycle.ACTIVE,
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         return None
 
-    return db.query(Tier).filter(Tier.id == membership.tier_id).first()
+    result = await db.execute(select(Tier).where(Tier.id == membership.tier_id))
+    return result.scalar_one_or_none()
 
 
-def require_tier(user_id, minimum_tier: str, db: Session) -> bool:
+async def require_tier(user_id, minimum_tier: str, db: AsyncSession) -> bool:
     """Check if user has minimum tier level. Returns True if met, False otherwise."""
-    tier = get_user_tier(user_id, db)
+    tier = await get_user_tier(user_id, db)
 
     if not tier:
         return False
@@ -68,20 +73,24 @@ def get_tier_limits(tier_name: str) -> Dict[str, Any]:
     return limits.get(tier_name, {})
 
 
-def can_create_clip(user_id, db: Session) -> tuple[bool, str]:
+async def can_create_clip(user_id, db: AsyncSession) -> tuple[bool, str]:
     """
     Check if user can create a new clip.
     Returns (can_create, reason).
     """
-    membership = db.query(Membership).filter(
-        Membership.user_id == user_id,
-        Membership.status == MembershipLifecycle.ACTIVE,
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user_id,
+            Membership.status == MembershipLifecycle.ACTIVE,
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         return False, "No active membership"
 
-    tier = db.query(Tier).filter(Tier.id == membership.tier_id).first()
+    result = await db.execute(select(Tier).where(Tier.id == membership.tier_id))
+    tier = result.scalar_one_or_none()
 
     if not tier:
         return False, "Tier not found"
@@ -92,12 +101,12 @@ def can_create_clip(user_id, db: Session) -> tuple[bool, str]:
     return True, "OK"
 
 
-def can_use_platform(user_id, platform: str, db: Session) -> tuple[bool, str]:
+async def can_use_platform(user_id, platform: str, db: AsyncSession) -> tuple[bool, str]:
     """
     Check if user's tier supports a platform.
     Returns (can_use, reason).
     """
-    tier = get_user_tier(user_id, db)
+    tier = await get_user_tier(user_id, db)
 
     if not tier:
         return False, "No active tier"
@@ -108,9 +117,9 @@ def can_use_platform(user_id, platform: str, db: Session) -> tuple[bool, str]:
     return True, "OK"
 
 
-def has_feature(user_id, feature: str, db: Session) -> bool:
+async def has_feature(user_id, feature: str, db: AsyncSession) -> bool:
     """Check if user's tier has access to a feature."""
-    tier = get_user_tier(user_id, db)
+    tier = await get_user_tier(user_id, db)
 
     if not tier:
         return False

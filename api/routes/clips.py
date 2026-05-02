@@ -7,12 +7,14 @@ import logging
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Header
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
 import uuid
 
-from suno.database import SessionLocal
+from fastapi import APIRouter, Depends, HTTPException, status, Header
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from api.deps import get_db
 from suno.common.models import User, Membership, Account, Campaign, Clip
 from suno.common.enums import MembershipLifecycle, AccountStatus, ClipLifecycle
 from suno.product.tier_helpers import can_create_clip
@@ -37,20 +39,11 @@ class GenerateClipResponse(BaseModel):
     job_id: str
 
 
-def get_db():
-    """Get database session."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 @router.post("/clips/generate", response_model=GenerateClipResponse, status_code=201)
-def generate_clip(
+async def generate_clip(
     request: GenerateClipRequest,
     x_user_email: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Generate a new clip for a campaign.
@@ -63,7 +56,8 @@ def generate_clip(
             detail="Missing X-User-Email header"
         )
 
-    user = db.query(User).filter(User.email == x_user_email).first()
+    result = await db.execute(select(User).where(User.email == x_user_email))
+    user = result.scalar_one_or_none()
     if not user:
         logger.warning(f"[CLIP_401] User not found: {x_user_email}")
         raise HTTPException(
@@ -72,10 +66,13 @@ def generate_clip(
         )
 
     # 2. Check PENDING or ACTIVE membership
-    membership = db.query(Membership).filter(
-        Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         logger.warning(f"[CLIP_403] No active membership: {x_user_email}")
@@ -87,13 +84,14 @@ def generate_clip(
     # 3. Lazy daily reset
     if membership.updated_at.date() < datetime.utcnow().date() and membership.clips_today_count > 0:
         membership.clips_today_count = 0
-        db.commit()
+        await db.commit()
         logger.info(f"[LAZY_RESET] Reset clips_today for membership {membership.id}")
 
     # 4. Check account status
-    account = db.query(Account).filter(
-        Account.membership_id == membership.id
-    ).first()
+    result = await db.execute(
+        select(Account).where(Account.membership_id == membership.id)
+    )
+    account = result.scalar_one_or_none()
 
     if not account or account.status != AccountStatus.ACTIVE:
         logger.warning(f"[CLIP_403] Account not active: {x_user_email}")
@@ -103,7 +101,7 @@ def generate_clip(
         )
 
     # 5. Check can_create_clip
-    can_create, reason = can_create_clip(user.id, db)
+    can_create, reason = await can_create_clip(user.id, db)
     if not can_create:
         logger.warning(f"[CLIP_403] Cannot create clip: {reason}")
         raise HTTPException(
@@ -114,10 +112,13 @@ def generate_clip(
     # 6. Fetch campaign
     campaign_uuid = request.campaign_id
 
-    campaign = db.query(Campaign).filter(
-        Campaign.id == campaign_uuid,
-        Campaign.available == True
-    ).first()
+    result = await db.execute(
+        select(Campaign).where(
+            Campaign.id == campaign_uuid,
+            Campaign.available == True
+        )
+    )
+    campaign = result.scalar_one_or_none()
 
     if not campaign:
         logger.warning(f"[CLIP_404] Campaign not found: {request.campaign_id}")
@@ -127,11 +128,14 @@ def generate_clip(
         )
 
     # 7. Duplicate check
-    existing_clip = db.query(Clip).filter(
-        Clip.campaign_id == campaign_uuid,
-        Clip.account_id == account.id,
-        Clip.status.notin_([ClipLifecycle.FAILED, ClipLifecycle.REJECTED, ClipLifecycle.EXPIRED])
-    ).first()
+    result = await db.execute(
+        select(Clip).where(
+            Clip.campaign_id == campaign_uuid,
+            Clip.account_id == account.id,
+            Clip.status.notin_([ClipLifecycle.FAILED, ClipLifecycle.REJECTED, ClipLifecycle.EXPIRED])
+        )
+    )
+    existing_clip = result.scalar_one_or_none()
 
     if existing_clip:
         logger.info(f"[CLIP_409] Duplicate in progress: campaign={request.campaign_id}, account={account.id}")
@@ -157,7 +161,7 @@ def generate_clip(
         }
     )
     db.add(clip)
-    db.flush()
+    await db.flush()
     clip_id = clip.id
 
     # 9. Enqueue generate_clip_job
@@ -172,10 +176,10 @@ def generate_clip(
                 "membership_id": membership.id,
             }
         )
-        db.commit()
+        await db.commit()
         logger.info(f"[CLIP_ENQUEUED] clip_id={clip_id}, job_id={job_id}, account={account.id}")
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         logger.error(f"[CLIP_ENQUEUE_FAILED] clip_id={clip_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

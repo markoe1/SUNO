@@ -5,12 +5,13 @@ GET /api/me, /api/me/membership, /api/me/workspace, /api/me/limits
 
 from datetime import datetime
 from typing import Optional, Dict, Any, List
+
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from suno.database import SessionLocal
+from api.deps import get_db
 from suno.common.models import User, Membership, Account, Tier, Clip
 from suno.common.enums import AccountStatus, MembershipLifecycle, TierName, ClipLifecycle
 
@@ -87,45 +88,11 @@ class DashboardDataResponse(BaseModel):
     clip_stats: ClipStatsResponse
 
 
-# Dependency: Get current user from header
-def get_current_user_from_header(
-    x_user_email: Optional[str] = None,
-    db: Session = Depends(SessionLocal),
-) -> User:
-    """
-    Get current user from X-User-Email header.
-    Falls back to checking authorization headers.
-    """
-    if not x_user_email:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing X-User-Email header"
-        )
-
-    user = db.query(User).filter(User.email == x_user_email).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
-        )
-
-    return user
-
-
-def get_db():
-    """Get database session."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 # Endpoints
 @router.get("/me", response_model=MeResponse)
-def get_me(
+async def get_me(
     x_user_email: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get current user info."""
     if not x_user_email:
@@ -134,7 +101,8 @@ def get_me(
             detail="Missing X-User-Email header"
         )
 
-    user = db.query(User).filter(User.email == x_user_email).first()
+    result = await db.execute(select(User).where(User.email == x_user_email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -142,10 +110,13 @@ def get_me(
         )
 
     # Get active or pending membership (allow both statuses for user access)
-    membership = db.query(Membership).filter(
-        Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         raise HTTPException(
@@ -154,9 +125,10 @@ def get_me(
         )
 
     # Get account/workspace
-    account = db.query(Account).filter(
-        Account.membership_id == membership.id
-    ).first()
+    result = await db.execute(
+        select(Account).where(Account.membership_id == membership.id)
+    )
+    account = result.scalar_one_or_none()
 
     if not account:
         raise HTTPException(
@@ -165,7 +137,8 @@ def get_me(
         )
 
     # Get tier
-    tier = db.query(Tier).filter(Tier.id == membership.tier_id).first()
+    result = await db.execute(select(Tier).where(Tier.id == membership.tier_id))
+    tier = result.scalar_one_or_none()
 
     return MeResponse(
         id=str(user.id),
@@ -178,9 +151,9 @@ def get_me(
 
 
 @router.get("/me/membership", response_model=MembershipResponse)
-def get_me_membership(
+async def get_me_membership(
     x_user_email: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get current user's membership info."""
     if not x_user_email:
@@ -189,17 +162,21 @@ def get_me_membership(
             detail="Missing X-User-Email header"
         )
 
-    user = db.query(User).filter(User.email == x_user_email).first()
+    result = await db.execute(select(User).where(User.email == x_user_email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
 
-    membership = db.query(Membership).filter(
-        Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         raise HTTPException(
@@ -208,7 +185,8 @@ def get_me_membership(
         )
 
     # Get tier
-    tier = db.query(Tier).filter(Tier.id == membership.tier_id).first()
+    result = await db.execute(select(Tier).where(Tier.id == membership.tier_id))
+    tier = result.scalar_one_or_none()
 
     return MembershipResponse(
         membership_id=membership.id,
@@ -222,9 +200,9 @@ def get_me_membership(
 
 
 @router.get("/me/workspace", response_model=WorkspaceResponse)
-def get_me_workspace(
+async def get_me_workspace(
     x_user_email: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get current user's workspace/account info."""
     if not x_user_email:
@@ -233,17 +211,21 @@ def get_me_workspace(
             detail="Missing X-User-Email header"
         )
 
-    user = db.query(User).filter(User.email == x_user_email).first()
+    result = await db.execute(select(User).where(User.email == x_user_email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
 
-    membership = db.query(Membership).filter(
-        Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         raise HTTPException(
@@ -251,9 +233,10 @@ def get_me_workspace(
             detail="No active membership"
         )
 
-    account = db.query(Account).filter(
-        Account.membership_id == membership.id
-    ).first()
+    result = await db.execute(
+        select(Account).where(Account.membership_id == membership.id)
+    )
+    account = result.scalar_one_or_none()
 
     if not account:
         raise HTTPException(
@@ -270,9 +253,9 @@ def get_me_workspace(
 
 
 @router.get("/me/limits", response_model=LimitsResponse)
-def get_me_limits(
+async def get_me_limits(
     x_user_email: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get current user's tier limits and feature access."""
     if not x_user_email:
@@ -281,17 +264,21 @@ def get_me_limits(
             detail="Missing X-User-Email header"
         )
 
-    user = db.query(User).filter(User.email == x_user_email).first()
+    result = await db.execute(select(User).where(User.email == x_user_email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
 
-    membership = db.query(Membership).filter(
-        Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         raise HTTPException(
@@ -299,7 +286,8 @@ def get_me_limits(
             detail="No active membership"
         )
 
-    tier = db.query(Tier).filter(Tier.id == membership.tier_id).first()
+    result = await db.execute(select(Tier).where(Tier.id == membership.tier_id))
+    tier = result.scalar_one_or_none()
 
     if not tier:
         raise HTTPException(
@@ -323,9 +311,9 @@ def get_me_limits(
 
 
 @router.get("/dashboard/data", response_model=DashboardDataResponse)
-def get_dashboard_data(
+async def get_dashboard_data(
     x_user_email: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get complete dashboard data in one request."""
     if not x_user_email:
@@ -334,17 +322,21 @@ def get_dashboard_data(
             detail="Missing X-User-Email header"
         )
 
-    user = db.query(User).filter(User.email == x_user_email).first()
+    result = await db.execute(select(User).where(User.email == x_user_email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
 
-    membership = db.query(Membership).filter(
-        Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         raise HTTPException(
@@ -352,9 +344,10 @@ def get_dashboard_data(
             detail="No active membership"
         )
 
-    account = db.query(Account).filter(
-        Account.membership_id == membership.id
-    ).first()
+    result = await db.execute(
+        select(Account).where(Account.membership_id == membership.id)
+    )
+    account = result.scalar_one_or_none()
 
     if not account:
         raise HTTPException(
@@ -362,27 +355,38 @@ def get_dashboard_data(
             detail="No account provisioned"
         )
 
-    tier = db.query(Tier).filter(Tier.id == membership.tier_id).first()
+    result = await db.execute(select(Tier).where(Tier.id == membership.tier_id))
+    tier = result.scalar_one_or_none()
 
     # Get clip stats
-    all_clips = db.query(Clip).filter(Clip.account_id == account.id).all()
+    result = await db.execute(select(Clip).where(Clip.account_id == account.id))
+    all_clips = result.scalars().all()
     total_clips = len(all_clips)
     clips_generated_today = membership.clips_today_count
 
-    needs_review_count = db.query(func.count(Clip.id)).filter(
-        Clip.account_id == account.id,
-        Clip.status == ClipLifecycle.NEEDS_REVIEW
-    ).scalar() or 0
+    result = await db.execute(
+        select(func.count(Clip.id)).where(
+            Clip.account_id == account.id,
+            Clip.status == ClipLifecycle.NEEDS_REVIEW
+        )
+    )
+    needs_review_count = result.scalar() or 0
 
-    approved_count = db.query(func.count(Clip.id)).filter(
-        Clip.account_id == account.id,
-        Clip.status == ClipLifecycle.APPROVED
-    ).scalar() or 0
+    result = await db.execute(
+        select(func.count(Clip.id)).where(
+            Clip.account_id == account.id,
+            Clip.status == ClipLifecycle.APPROVED
+        )
+    )
+    approved_count = result.scalar() or 0
 
     # Get recent clips (last 5)
-    recent_clips_data = db.query(Clip).filter(
-        Clip.account_id == account.id
-    ).order_by(Clip.created_at.desc()).limit(5).all()
+    result = await db.execute(
+        select(Clip).where(
+            Clip.account_id == account.id
+        ).order_by(Clip.created_at.desc()).limit(5)
+    )
+    recent_clips_data = result.scalars().all()
 
     recent_clips = [
         RecentClipResponse(

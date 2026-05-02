@@ -7,10 +7,12 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from suno.database import SessionLocal
+from api.deps import get_db
 from suno.common.models import User, Membership, Account, Clip, ClipPerformance
 from suno.common.enums import MembershipLifecycle
 from suno.performance.learning_engine import PerformanceLearningEngine
@@ -53,43 +55,47 @@ class PerformanceDataOut(BaseModel):
     response_model=PerformanceDataOut,
     status_code=status.HTTP_201_CREATED,
 )
-def record_clip_performance(
+async def record_clip_performance(
     clip_id: int,
     data: PerformanceDataIn,
     x_user_email: str = Header(..., alias="X-User-Email"),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Record performance metrics for a clip.
     Auth via X-User-Email header.
     """
-    db = SessionLocal()
     try:
         # 1. Auth: Find user
-        user = db.query(User).filter(User.email == x_user_email).first()
+        result = await db.execute(select(User).where(User.email == x_user_email))
+        user = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
         # 2. Membership: Check active membership
-        membership = (
-            db.query(Membership)
-            .filter(Membership.user_id == user.id)
-            .first()
+        result = await db.execute(
+            select(Membership).where(Membership.user_id == user.id)
         )
+        membership = result.scalar_one_or_none()
         if not membership or membership.status != MembershipLifecycle.ACTIVE:
             raise HTTPException(status_code=403, detail="No active membership")
 
         # 3. Account: Get account
-        account = db.query(Account).filter(
-            Account.membership_id == membership.id
-        ).first()
+        result = await db.execute(
+            select(Account).where(Account.membership_id == membership.id)
+        )
+        account = result.scalar_one_or_none()
         if not account:
             raise HTTPException(status_code=403, detail="Account not found")
 
         # 4. Clip: Verify belongs to account
-        clip = db.query(Clip).filter(
-            Clip.id == clip_id,
-            Clip.account_id == account.id,
-        ).first()
+        result = await db.execute(
+            select(Clip).where(
+                Clip.id == clip_id,
+                Clip.account_id == account.id,
+            )
+        )
+        clip = result.scalar_one_or_none()
         if not clip:
             raise HTTPException(status_code=404, detail="Clip not found")
 
@@ -121,7 +127,7 @@ def record_clip_performance(
             data=perf_data,
             db=db,
         )
-        db.commit()
+        await db.commit()
 
         # 7. Enqueue profile update job (async)
         queue = JobQueueManager()
@@ -148,8 +154,6 @@ def record_clip_performance(
     except HTTPException:
         raise
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         logger.error(f"[PERFORMANCE_FAILED] clip_id={clip_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-    finally:
-        db.close()

@@ -4,12 +4,14 @@ POST /api/campaigns, PATCH /api/me/workspace
 """
 
 from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from suno.database import SessionLocal
+from api.deps import get_db
 from suno.common.models import User, Membership, Account, Campaign
 from suno.common.enums import MembershipLifecycle
 from suno.product.tier_helpers import can_create_clip
@@ -58,22 +60,12 @@ class WorkspaceResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# Dependency: Get database session
-def get_db():
-    """Get database session."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 # Endpoints
 @router.post("/campaigns", response_model=CampaignResponse, status_code=201)
-def create_campaign(
+async def create_campaign(
     campaign_data: CampaignCreate,
     x_user_email: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Register a TikTok/YouTube/etc. URL as a clip source."""
     # 1. Validate X-User-Email header → find User
@@ -83,7 +75,8 @@ def create_campaign(
             detail="Missing X-User-Email header"
         )
 
-    user = db.query(User).filter(User.email == x_user_email).first()
+    result = await db.execute(select(User).where(User.email == x_user_email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,10 +84,13 @@ def create_campaign(
         )
 
     # 2. Check PENDING or ACTIVE membership → 403 if none
-    membership = db.query(Membership).filter(
-        Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         raise HTTPException(
@@ -103,9 +99,10 @@ def create_campaign(
         )
 
     # 3. Check account exists → 403 if none
-    account = db.query(Account).filter(
-        Account.membership_id == membership.id
-    ).first()
+    result = await db.execute(
+        select(Account).where(Account.membership_id == membership.id)
+    )
+    account = result.scalar_one_or_none()
 
     if not account:
         raise HTTPException(
@@ -114,7 +111,7 @@ def create_campaign(
         )
 
     # 4. Check can_create_clip feature gate (tier limits)
-    can_create, reason = can_create_clip(user.id, db)
+    can_create, reason = await can_create_clip(user.id, db)
     if not can_create:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -122,10 +119,13 @@ def create_campaign(
         )
 
     # 5. Deduplicate: check (source_url, source_type) unique constraint
-    existing = db.query(Campaign).filter(
-        Campaign.source_id == campaign_data.source_url,
-        Campaign.source_type == campaign_data.source_type,
-    ).first()
+    result = await db.execute(
+        select(Campaign).where(
+            Campaign.source_id == campaign_data.source_url,
+            Campaign.source_type == campaign_data.source_type,
+        )
+    )
+    existing = result.scalar_one_or_none()
 
     if existing:
         raise HTTPException(
@@ -148,10 +148,10 @@ def create_campaign(
 
     try:
         db.add(new_campaign)
-        db.commit()
-        db.refresh(new_campaign)
+        await db.commit()
+        await db.refresh(new_campaign)
     except IntegrityError as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Campaign source already registered"
@@ -173,10 +173,10 @@ def create_campaign(
 
 
 @router.patch("/me/workspace", response_model=WorkspaceResponse, status_code=200)
-def update_workspace(
+async def update_workspace(
     workspace_data: WorkspaceUpdate,
     x_user_email: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Update workspace settings (automation_enabled)."""
     # 1. Validate X-User-Email header → find User
@@ -186,7 +186,8 @@ def update_workspace(
             detail="Missing X-User-Email header"
         )
 
-    user = db.query(User).filter(User.email == x_user_email).first()
+    result = await db.execute(select(User).where(User.email == x_user_email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -194,10 +195,13 @@ def update_workspace(
         )
 
     # 2. Check PENDING or ACTIVE membership → 403 if none
-    membership = db.query(Membership).filter(
-        Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
-    ).first()
+    result = await db.execute(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        )
+    )
+    membership = result.scalar_one_or_none()
 
     if not membership:
         raise HTTPException(
@@ -206,9 +210,10 @@ def update_workspace(
         )
 
     # 3. Find Account via membership_id → 403 if none
-    account = db.query(Account).filter(
-        Account.membership_id == membership.id
-    ).first()
+    result = await db.execute(
+        select(Account).where(Account.membership_id == membership.id)
+    )
+    account = result.scalar_one_or_none()
 
     if not account:
         raise HTTPException(
@@ -223,8 +228,8 @@ def update_workspace(
     for field, value in update_data.items():
         setattr(account, field, value)
 
-    db.commit()
-    db.refresh(account)
+    await db.commit()
+    await db.refresh(account)
 
     # 6. Return updated WorkspaceResponse
     return WorkspaceResponse(
