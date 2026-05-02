@@ -81,11 +81,11 @@ async def register(
         logger.info(f"Created user {user.id} for email {body.email}")
 
         # 2. Get or create "starter" tier
-        tier_result = await db.execute(select(Tier).where(Tier.name == TierName.STARTER))
+        tier_result = await db.execute(select(Tier).where(Tier.name == TierName.STARTER.value))
         tier = tier_result.scalar_one_or_none()
         if not tier:
             tier = Tier(
-                name=TierName.STARTER,
+                name=TierName.STARTER.value,
                 max_daily_clips=10,
                 max_platforms=3,
                 platforms=["tiktok", "instagram", "youtube"],
