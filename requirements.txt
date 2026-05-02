@@ -1,5 +1,6 @@
 # SUNO Production Dependencies
 # =============================
+# FORCE REBUILD: Clear Docker cache and reinstall all dependencies
 
 # Web Framework
 fastapi

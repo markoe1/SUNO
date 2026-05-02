@@ -13,6 +13,12 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+# Verify dependencies at startup
+import bcrypt
+import passlib
+print("STARTUP: bcrypt version:", getattr(bcrypt, "__version__", "unknown"))
+print("STARTUP: passlib version:", passlib.__version__)
+
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
 from api.routes import admin, auth, clips, health, performance, profile, user_resources, webhooks
 # PHASE 8: Disabled legacy routes that depend on db.models (will re-enable after E2E validation)
