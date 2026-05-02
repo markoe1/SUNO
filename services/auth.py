@@ -13,7 +13,14 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Initialize passlib with explicit config to bypass bcrypt version check
+# Handles cases where bcrypt.__about__ is missing (bcrypt 1.5+)
+_pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+    bcrypt__ident="2b"
+)
 
 
 def _bcrypt_safe_password(password: str) -> str:
