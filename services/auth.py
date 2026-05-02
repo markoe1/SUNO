@@ -16,14 +16,33 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def _bcrypt_safe_password(password: str) -> str:
+    """
+    Normalize password for bcrypt hashing.
+
+    Bcrypt has a strict 72-byte limit (not characters).
+    Encode to UTF-8, truncate to 72 bytes, decode back.
+
+    Args:
+        password: Plain text password
+
+    Returns:
+        Password safe for bcrypt (max 72 UTF-8 bytes)
+    """
+    raw = password.encode("utf-8")
+    if len(raw) > 72:
+        raw = raw[:72]
+    return raw.decode("utf-8", errors="ignore")
+
+
 def hash_password(plain: str) -> str:
-    # Bcrypt has a 72-byte limit. Truncate longer passwords.
-    truncated = plain[:72] if isinstance(plain, str) else plain
-    return _pwd_context.hash(truncated)
+    """Hash password with bcrypt, handling 72-byte UTF-8 limit."""
+    return _pwd_context.hash(_bcrypt_safe_password(plain))
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    """Verify password against bcrypt hash, handling 72-byte UTF-8 limit."""
+    return _pwd_context.verify(_bcrypt_safe_password(plain), hashed)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
