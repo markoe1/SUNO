@@ -14,7 +14,9 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.middleware import AuthWallMiddleware, RequestIDMiddleware
-from api.routes import admin, auth, campaigns, client_clips, clients, clips, debug, editors, health, hooks, invoices, jobs, performance, platform_oauth, profile, reports, settings, submissions, templates as clip_templates, user_resources, users, webhooks
+from api.routes import admin, auth, clips, health, performance, profile, user_resources, webhooks
+# PHASE 8: Disabled legacy routes that depend on db.models (will re-enable after E2E validation)
+# from api.routes import campaigns, client_clips, clients, debug, editors, hooks, invoices, jobs, reports, settings, submissions, templates as clip_templates, users
 from services.logger import configure_logging
 
 APP_ENV = os.getenv("APP_ENV", "development")
@@ -68,30 +70,34 @@ def create_app() -> FastAPI:
     if STATIC_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-    # API routers
+    # API routers - SUNO Product Layer (Phase 8)
     app.include_router(admin.router)  # Admin verification (protected by token)
     app.include_router(webhooks.router)  # Whop webhook handler (critical)
+    app.include_router(auth.router)  # Authentication (SUNO)
     app.include_router(profile.router)  # User profile endpoints (product layer)
     app.include_router(user_resources.router)  # User resource write operations (product layer)
     app.include_router(clips.router)  # Clip generation (product layer)
     app.include_router(performance.router)  # Performance tracking (Phase 8)
-    app.include_router(auth.router)
-    app.include_router(users.router)
-    app.include_router(campaigns.router)
-    app.include_router(jobs.router)
-    app.include_router(submissions.router)
-    app.include_router(settings.router)
-    app.include_router(health.router)
-    app.include_router(clients.router)
-    app.include_router(editors.router)
-    app.include_router(client_clips.router)
-    app.include_router(invoices.router)
-    app.include_router(reports.router)
-    app.include_router(clip_templates.router)
-    app.include_router(hooks.router)
-    app.include_router(platform_oauth.router)
-    if APP_ENV != "production":
-        app.include_router(debug.router)
+    app.include_router(health.router)  # Health check monitoring
+
+    # DISABLED: Legacy routes that depend on db.models (will re-enable after E2E validation)
+    # These routes are from the old manual Whop submission system and conflict with SUNO's
+    # suno.common.models. They will be evaluated/archived after the E2E pipeline validates.
+    # app.include_router(users.router)
+    # app.include_router(campaigns.router)
+    # app.include_router(jobs.router)
+    # app.include_router(submissions.router)
+    # app.include_router(settings.router)
+    # app.include_router(clients.router)
+    # app.include_router(editors.router)
+    # app.include_router(client_clips.router)
+    # app.include_router(invoices.router)
+    # app.include_router(reports.router)
+    # app.include_router(clip_templates.router)
+    # app.include_router(hooks.router)
+    # app.include_router(platform_oauth.router)
+    # if APP_ENV != "production":
+    #     app.include_router(debug.router)
 
     # --- Web page routes ---
 
