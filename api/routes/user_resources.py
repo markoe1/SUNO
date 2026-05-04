@@ -118,11 +118,10 @@ async def create_campaign(
             detail=f"Cannot create clip: {reason}"
         )
 
-    # 5. Deduplicate: check (source_url, source_type) unique constraint
+    # 5. Deduplicate: check if source_url already registered
     result = await db.execute(
         select(Campaign).where(
-            Campaign.source_id == campaign_data.source_url,
-            Campaign.source_type == campaign_data.source_type,
+            Campaign.youtube_url == campaign_data.source_url,
         )
     )
     existing = result.scalar_one_or_none()
@@ -133,16 +132,13 @@ async def create_campaign(
             detail="Campaign source already registered"
         )
 
-    # 6. Create Campaign(source_id=source_url, source_type=source_type, ...)
+    # 6. Create Campaign with correct fields
     new_campaign = Campaign(
-        source_id=campaign_data.source_url,
-        source_type=campaign_data.source_type,
-        title=campaign_data.title,
-        keywords=campaign_data.keywords or [],
-        target_platforms=campaign_data.target_platforms or [],
-        tone=campaign_data.tone,
-        style=campaign_data.style,
-        duration_seconds=campaign_data.duration_seconds or 30,
+        name=campaign_data.title,
+        youtube_url=campaign_data.source_url,
+        allowed_platforms=",".join(campaign_data.target_platforms or ["tiktok", "instagram", "youtube"]),
+        ideal_duration_seconds=campaign_data.duration_seconds or 30,
+        audience=campaign_data.tone,
         available=True,
     )
 
