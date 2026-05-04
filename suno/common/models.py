@@ -7,11 +7,17 @@ from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, ForeignKey,
     Text, JSON, Float, Enum as SQLEnum, UniqueConstraint,
-    Index, Table, Numeric, VARCHAR
+    Index, Table, Numeric, VARCHAR, TypeDecorator
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
+
+# TypeDecorator to force string type and avoid enum reflection from database schema
+class TextString(TypeDecorator):
+    """Force text type, ignoring database enum definitions."""
+    impl = Text
+    cache_ok = True
 from suno.common.enums import (
     MembershipLifecycle, ClipLifecycle, JobLifecycle, TierName, AccountStatus,
     VariantType, VariantStatus
@@ -68,7 +74,7 @@ class Membership(Base):
     tier_id = Column(Integer, ForeignKey("tiers.id"), nullable=False)
     whop_membership_id = Column(String(255), unique=True, nullable=False, index=True)
     whop_plan_id = Column(String(255), nullable=True, index=True)  # Track plan ID for tier discovery
-    status = Column(VARCHAR, default="pending", nullable=False)
+    status = Column(TextString, default="pending", nullable=False)
     activated_at = Column(DateTime, nullable=True)
     paused_at = Column(DateTime, nullable=True)
     cancelled_at = Column(DateTime, nullable=True)
