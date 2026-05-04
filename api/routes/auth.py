@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from api.deps import get_db, get_current_user
 from suno.common.models import User, Tier, Membership
-from suno.common.enums import TierName, MembershipLifecycle, AccountStatus
+from suno.common.enums import MembershipLifecycle, AccountStatus
 from suno.provisioning.account_ops import AccountProvisioner
 from services.auth import (
     create_access_token,
