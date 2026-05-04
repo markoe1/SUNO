@@ -73,7 +73,7 @@ class MembershipLifecycleHandler:
                 tier_id=tier.id,
                 whop_membership_id=whop_membership_id,
                 whop_plan_id=plan_id,  # Store plan ID for tier mapping
-                status=MembershipLifecycle.ACTIVE,
+                status="active",
                 activated_at=datetime.utcnow(),
             )
             self.db.add(membership)
@@ -134,7 +134,7 @@ class MembershipLifecycleHandler:
                 return {"success": False, "error": "Membership not found"}
 
             # Mark as cancelled
-            membership.status = MembershipLifecycle.CANCELLED
+            membership.status = "cancelled"
             membership.cancelled_at = datetime.utcnow()
             self.db.commit()
 
@@ -185,7 +185,7 @@ class MembershipLifecycleHandler:
                 return {"success": False, "error": "Membership not found"}
 
             # Update status to active
-            membership.status = MembershipLifecycle.ACTIVE
+            membership.status = "active"
             membership.activated_at = datetime.utcnow()
             self.db.commit()
 

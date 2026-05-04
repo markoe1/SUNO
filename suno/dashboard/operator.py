@@ -44,11 +44,11 @@ class OperatorDashboard:
         active_members = self.db.query(func.count(User.id.distinct())).join(
             Membership, User.id == Membership.user_id
         ).filter(
-            Membership.status == MembershipLifecycle.ACTIVE
+            Membership.status == "active"
         ).scalar() or 0
 
         active_memberships = self.db.query(func.count(Membership.id)).filter(
-            Membership.status == MembershipLifecycle.ACTIVE
+            Membership.status == "active"
         ).scalar() or 0
         active_accounts = self.db.query(func.count(Account.id)).filter(
             Account.automation_enabled == True
@@ -202,7 +202,7 @@ class OperatorDashboard:
         from suno.common.enums import MembershipLifecycle
 
         memberships = self.db.query(Membership).filter(
-            Membership.status == MembershipLifecycle.ACTIVE
+            Membership.status == "active"
         ).order_by(Membership.created_at.desc()).limit(limit).all()
 
         return [
@@ -270,7 +270,7 @@ class OperatorDashboard:
             ).all()
 
             for m in memberships:
-                m.status = MembershipLifecycle.REVOKED
+                m.status = "revoked"
                 m.revoked_at = datetime.utcnow()
 
                 # Disable associated accounts

@@ -39,7 +39,7 @@ class CustomerDashboard:
         # Get active membership
         membership = self.db.query(Membership).filter(
             Membership.user_id == user_id,
-            Membership.status == MembershipLifecycle.ACTIVE,
+            Membership.status == "active",
         ).first()
 
         if not membership:
@@ -151,7 +151,7 @@ class CustomerDashboard:
 
         membership = self.db.query(Membership).filter(
             Membership.user_id == user_id,
-            Membership.status == MembershipLifecycle.ACTIVE,
+            Membership.status == "active",
         ).first()
 
         if not membership or not membership.account:

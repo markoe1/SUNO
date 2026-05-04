@@ -70,7 +70,7 @@ async def get_current_user(
         select(Membership).where(Membership.user_id == user.id)
     )
     membership = membership_result.scalar_one_or_none()
-    if membership is None or membership.status != MembershipLifecycle.ACTIVE:
+    if membership is None or membership.status != "active":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User membership not active")
 
     return user

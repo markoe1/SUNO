@@ -77,7 +77,7 @@ async def record_clip_performance(
             select(Membership).where(Membership.user_id == user.id)
         )
         membership = result.scalar_one_or_none()
-        if not membership or membership.status != MembershipLifecycle.ACTIVE:
+        if not membership or membership.status != "active":
             raise HTTPException(status_code=403, detail="No active membership")
 
         # 3. Account: Get account

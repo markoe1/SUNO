@@ -122,7 +122,7 @@ class GlobalSafetyControls:
             # Resume only accounts that have active memberships
             # (don't resume manually disabled accounts)
             memberships = self.db.query(Membership).filter(
-                Membership.status == MembershipLifecycle.ACTIVE
+                Membership.status == "active"
             ).all()
 
             for m in memberships:

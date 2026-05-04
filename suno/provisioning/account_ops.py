@@ -87,8 +87,7 @@ class AccountProvisioner:
             self.db.add(account)
 
             # Update membership status to ACTIVE after successful provisioning
-            from suno.common.enums import MembershipLifecycle
-            membership.status = MembershipLifecycle.ACTIVE
+            membership.status = "active"
             membership.activated_at = datetime.utcnow()
 
             self.db.commit()
@@ -176,7 +175,7 @@ class AccountRevoker:
                 logger.info(f"Disabled automation for account {account.workspace_id}")
 
             # Mark membership as revoked
-            membership.status = MembershipLifecycle.REVOKED
+            membership.status = "revoked"
             membership.revoked_at = datetime.utcnow()
             self.db.commit()
 

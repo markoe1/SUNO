@@ -15,7 +15,7 @@ async def get_user_tier(user_id, db: AsyncSession) -> Optional[Tier]:
     result = await db.execute(
         select(Membership).where(
             Membership.user_id == user_id,
-            Membership.status == MembershipLifecycle.ACTIVE,
+            Membership.status == "active",
         )
     )
     membership = result.scalar_one_or_none()
@@ -81,7 +81,7 @@ async def can_create_clip(user_id, db: AsyncSession) -> tuple[bool, str]:
     result = await db.execute(
         select(Membership).where(
             Membership.user_id == user_id,
-            Membership.status == MembershipLifecycle.ACTIVE,
+            Membership.status == "active",
         )
     )
     membership = result.scalar_one_or_none()
