@@ -100,6 +100,9 @@ async def register(
             logger.info("Created starter tier")
 
         # 3. Create membership
+        # DEBUG: Verify column type at runtime
+        print("DEBUG STATUS COLUMN TYPE:", Membership.__table__.c.status.type)
+        logger.info(f"DEBUG STATUS COLUMN TYPE: {Membership.__table__.c.status.type}")
         membership = Membership(
             user_id=user.id,
             tier_id=tier.id,
