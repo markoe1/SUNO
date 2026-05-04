@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from api.deps import get_db, get_current_user
 from suno.common.models import User, Tier, Membership
-from suno.common.enums import MembershipLifecycle, AccountStatus
+from suno.common.enums import AccountStatus
 from suno.provisioning.account_ops import AccountProvisioner
 from services.auth import (
     create_access_token,
@@ -104,7 +104,7 @@ async def register(
             user_id=user.id,
             tier_id=tier.id,
             whop_membership_id=f"beta_{user.id}",
-            status=MembershipLifecycle.ACTIVE,
+            status="active",
             activated_at=datetime.utcnow(),
         )
         db.add(membership)
@@ -183,7 +183,7 @@ async def login(
         select(Membership).where(Membership.user_id == user.id)
     )
     membership = membership_result.scalar_one_or_none()
-    if membership is None or membership.status != MembershipLifecycle.ACTIVE:
+    if membership is None or membership.status != "active":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account not activated")
 
     access_token = create_access_token({"sub": str(user.id)})

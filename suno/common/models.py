@@ -68,7 +68,7 @@ class Membership(Base):
     tier_id = Column(Integer, ForeignKey("tiers.id"), nullable=False)
     whop_membership_id = Column(String(255), unique=True, nullable=False, index=True)
     whop_plan_id = Column(String(255), nullable=True, index=True)  # Track plan ID for tier discovery
-    status = Column(SQLEnum(MembershipLifecycle), default=MembershipLifecycle.PENDING, nullable=False)
+    status = Column(String, default="pending", nullable=False)
     activated_at = Column(DateTime, nullable=True)
     paused_at = Column(DateTime, nullable=True)
     cancelled_at = Column(DateTime, nullable=True)
