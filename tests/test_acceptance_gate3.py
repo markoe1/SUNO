@@ -36,7 +36,7 @@ def test_provisioning_without_api_key(db_session):
         tier_id=tier.id,
         whop_membership_id="mem_test_123",
         whop_plan_id="plan_001",
-        status=MembershipLifecycle.PENDING,
+        status="pending",
     )
     db_session.add(membership)
     db_session.commit()
@@ -105,7 +105,7 @@ def test_provisioning_with_stub_api(db_session):
         tier_id=tier.id,
         whop_membership_id="mem_test_456",
         whop_plan_id="plan_001",
-        status=MembershipLifecycle.PENDING,
+        status="pending",
     )
     db_session.add(membership)
     db_session.commit()
@@ -166,7 +166,7 @@ def test_provisioning_idempotency(db_session):
         tier_id=tier.id,
         whop_membership_id="mem_test_789",
         whop_plan_id="plan_001",
-        status=MembershipLifecycle.PENDING,
+        status="pending",
     )
     db_session.add(membership)
     db_session.commit()

@@ -52,14 +52,14 @@ def diagnose(email):
         print(f"    - ID: {m.id}")
         print(f"      Status: '{m.status}' (type: {type(m.status).__name__})")
         print(f"      Status == 'active': {m.status == 'active'}")
-        print(f"      Status == MembershipLifecycle.ACTIVE: {m.status == MembershipLifecycle.ACTIVE}")
-        print(f"      Status in [PENDING, ACTIVE]: {m.status in [MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]}")
+        print(f"      Status == MembershipLifecycle.ACTIVE: {m.status == "active"}")
+        print(f"      Status in [PENDING, ACTIVE]: {m.status in ["pending", "active"]}")
         print()
 
     # Now run the EXACT API query
     membership = db.query(Membership).filter(
         Membership.user_id == user.id,
-        Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+        Membership.status.in_(["pending", "active"]),
     ).first()
 
     if not membership:

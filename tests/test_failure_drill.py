@@ -141,7 +141,7 @@ def test_failure_3_missing_provisioning_secret(test_db_session):
             tier_id=tier.id,
             whop_membership_id="mem_secret_test",
             whop_plan_id="plan_001",
-            status=MembershipLifecycle.PENDING,
+            status="pending",
         )
         db.add(membership)
         db.commit()

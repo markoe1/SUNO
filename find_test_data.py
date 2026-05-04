@@ -46,7 +46,7 @@ def find_test_data():
         db.query(User)
         .join(Membership, User.id == Membership.user_id)
         .join(Account, Membership.id == Account.membership_id)
-        .filter(Membership.status == MembershipLifecycle.ACTIVE)
+        .filter(Membership.status == "active")
         .limit(5)
         .all()
     )
@@ -60,7 +60,7 @@ def find_test_data():
     for u in users:
         membership = db.query(Membership).filter(
             Membership.user_id == u.id,
-            Membership.status == MembershipLifecycle.ACTIVE
+            Membership.status == "active"
         ).first()
         print(f"  Email: {u.email}")
         print(f"    Membership Status: {membership.status.value}")

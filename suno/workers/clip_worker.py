@@ -164,7 +164,7 @@ def reset_daily_clips_job():
     db = SessionLocal()
     try:
         memberships = db.query(Membership).filter(
-            Membership.status.in_([MembershipLifecycle.ACTIVE, MembershipLifecycle.PENDING]),
+            Membership.status.in_(["active", "pending"]),
             Membership.clips_today_count > 0
         ).all()
 

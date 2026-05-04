@@ -69,7 +69,7 @@ async def generate_clip(
     result = await db.execute(
         select(Membership).where(
             Membership.user_id == user.id,
-            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+            Membership.status.in_(["pending", "active"]),
         )
     )
     membership = result.scalar_one_or_none()

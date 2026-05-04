@@ -113,7 +113,7 @@ async def get_me(
     result = await db.execute(
         select(Membership).where(
             Membership.user_id == user.id,
-            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+            Membership.status.in_(["pending", "active"]),
         )
     )
     membership = result.scalar_one_or_none()
@@ -173,7 +173,7 @@ async def get_me_membership(
     result = await db.execute(
         select(Membership).where(
             Membership.user_id == user.id,
-            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+            Membership.status.in_(["pending", "active"]),
         )
     )
     membership = result.scalar_one_or_none()
@@ -222,7 +222,7 @@ async def get_me_workspace(
     result = await db.execute(
         select(Membership).where(
             Membership.user_id == user.id,
-            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+            Membership.status.in_(["pending", "active"]),
         )
     )
     membership = result.scalar_one_or_none()
@@ -275,7 +275,7 @@ async def get_me_limits(
     result = await db.execute(
         select(Membership).where(
             Membership.user_id == user.id,
-            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+            Membership.status.in_(["pending", "active"]),
         )
     )
     membership = result.scalar_one_or_none()
@@ -333,7 +333,7 @@ async def get_dashboard_data(
     result = await db.execute(
         select(Membership).where(
             Membership.user_id == user.id,
-            Membership.status.in_([MembershipLifecycle.PENDING, MembershipLifecycle.ACTIVE]),
+            Membership.status.in_(["pending", "active"]),
         )
     )
     membership = result.scalar_one_or_none()

@@ -71,7 +71,7 @@ def test_full_success_path(db_session):
         tier_id=tier.id,
         whop_membership_id="mem_e2e_1",
         whop_plan_id="plan_starter_001",
-        status=MembershipLifecycle.ACTIVE,
+        status="active",
     )
     db_session.add(membership)
     db_session.flush()
@@ -236,7 +236,7 @@ def test_failure_path(db_session):
         tier_id=tier.id,
         whop_membership_id="mem_e2e_fail_1",
         whop_plan_id="plan_starter_001",
-        status=MembershipLifecycle.ACTIVE,
+        status="active",
     )
     db_session.add(membership)
     db_session.flush()

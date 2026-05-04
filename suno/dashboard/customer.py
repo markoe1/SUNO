@@ -276,7 +276,7 @@ class CustomerDashboard:
             warnings.append("No active membership")
             return warnings
 
-        if membership.status != MembershipLifecycle.ACTIVE:
+        if membership.status != "active":
             warnings.append(f"Membership status: {membership.status.value}")
 
         # Check automation
