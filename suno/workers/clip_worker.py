@@ -37,7 +37,7 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
         membership = db.query(Membership).filter(Membership.id == membership_id).first()
         if not membership:
             logger.error(f"[CLIP_FAILED] Membership not found: {membership_id}")
-            clip.status = ClipLifecycle.FAILED
+            clip.status = "failed"
             db.commit()
             return {"success": False, "error": "Membership not found"}
 
@@ -45,7 +45,7 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
         can_create, reason = can_create_clip(membership.user_id, db)
         if not can_create:
             logger.info(f"[CLIP_BLOCKED] clip_id={clip_id}: {reason}")
-            clip.status = ClipLifecycle.FAILED
+            clip.status = "failed"
             db.commit()
             return {"success": False, "error": reason}
 
@@ -116,7 +116,7 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
         clip.brand_alignment_score = 0.5
         clip.social_proof_score = 0.5
 
-        clip.status = ClipLifecycle.NEEDS_REVIEW
+        clip.status = "needs_review"
         clip.last_seen_at = datetime.utcnow()
         membership.clips_today_count += 1
         db.commit()
@@ -129,7 +129,7 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
         return {
             "success": True,
             "clip_id": clip_id,
-            "status": ClipLifecycle.NEEDS_REVIEW.value,
+            "status": "needs_review",
             "overall_score": clip.overall_score,
             "estimated_value": clip.estimated_value,
             "ai_roi": clip.ai_roi,
@@ -142,7 +142,7 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
         try:
             clip = db.query(Clip).filter(Clip.id == clip_id).first()
             if clip:
-                clip.status = ClipLifecycle.FAILED
+                clip.status = "failed"
                 db.commit()
         except:
             pass
@@ -235,7 +235,7 @@ def run_automation_loop():
             existing_clip = db.query(Clip).filter(
                 Clip.campaign_id == campaign.id,
                 Clip.account_id == account.id,
-                Clip.status.notin_([ClipLifecycle.FAILED, ClipLifecycle.REJECTED, ClipLifecycle.EXPIRED])
+                Clip.status.notin_(["failed", "rejected", "expired"])
             ).first()
 
             if existing_clip:
@@ -251,7 +251,7 @@ def run_automation_loop():
                 title=f"Automation clip for {campaign.title}",
                 description="",
                 content_hash=uuid.uuid4().hex,
-                status=ClipLifecycle.QUEUED,
+                status="queued",
                 clip_metadata={
                     "automation": True,
                     "generated_at": datetime.utcnow().isoformat(),
@@ -308,9 +308,9 @@ def post_approved_clip_job(clip_id: int):
             logger.error(f"[POST_FAILED] Clip not found: {clip_id}")
             return {"success": False, "error": "Clip not found"}
 
-        if clip.status != ClipLifecycle.APPROVED:
+        if clip.status != "approved":
             logger.error(f"[POST_FAILED] clip_id={clip_id}, status={clip.status}, expected=approved")
-            clip.status = ClipLifecycle.FAILED
+            clip.status = "failed"
             db.commit()
             return {"success": False, "error": f"Clip not approved: {clip.status}"}
 
@@ -318,7 +318,7 @@ def post_approved_clip_job(clip_id: int):
         variants = clip.variants
         if not variants:
             logger.error(f"[POST_FAILED] clip_id={clip_id}, no variants")
-            clip.status = ClipLifecycle.FAILED
+            clip.status = "failed"
             db.commit()
             return {"success": False, "error": "No variants"}
 
@@ -339,7 +339,7 @@ def post_approved_clip_job(clip_id: int):
         try:
             clip = db.query(Clip).filter(Clip.id == clip_id).first()
             if clip:
-                clip.status = ClipLifecycle.FAILED
+                clip.status = "failed"
                 db.commit()
         except:
             pass

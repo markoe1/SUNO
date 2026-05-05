@@ -132,7 +132,7 @@ async def generate_clip(
         select(Clip).where(
             Clip.campaign_id == campaign_uuid,
             Clip.account_id == account.id,
-            Clip.status.notin_([ClipLifecycle.FAILED, ClipLifecycle.REJECTED, ClipLifecycle.EXPIRED])
+            Clip.status.notin_(["failed", "rejected", "expired"])
         )
     )
     existing_clip = result.scalar_one_or_none()
@@ -153,7 +153,7 @@ async def generate_clip(
         title=f"Generated clip for {campaign.title}",
         description="",
         content_hash=uuid.uuid4().hex,
-        status=ClipLifecycle.QUEUED,
+        status="queued",
         clip_metadata={
             "request_tone": request.tone,
             "request_platforms": request.target_platforms,
@@ -188,6 +188,6 @@ async def generate_clip(
 
     return GenerateClipResponse(
         clip_id=clip_id,
-        status=ClipLifecycle.NEEDS_REVIEW.value,
+        status="needs_review".value,
         job_id=job_id
     )

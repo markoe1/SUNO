@@ -207,7 +207,7 @@ class Clip(Base):
     hashtags = Column(JSON, nullable=False, default=list)  # List[str]
     audio_source = Column(String(255), nullable=True)
     content_hash = Column(String(64), unique=True, nullable=False, index=True)
-    status = Column(SQLEnum(ClipLifecycle), default=ClipLifecycle.DISCOVERED, nullable=False)
+    status = Column(String, nullable=False, default="discovered")
     platform_eligible = Column(Boolean, default=True)
     available = Column(Boolean, default=True)
     clip_metadata = Column(JSON, nullable=False, default=dict)
@@ -259,7 +259,7 @@ class ClipAssignment(Base):
     clip_id = Column(Integer, ForeignKey("clips.id"), nullable=False, index=True)
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False, index=True)
     target_platform = Column(String(50), nullable=False)
-    status = Column(SQLEnum(ClipLifecycle), default=ClipLifecycle.ELIGIBLE, nullable=False)
+    status = Column(String, nullable=False, default="eligible")
     priority = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

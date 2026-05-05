@@ -367,7 +367,7 @@ async def get_dashboard_data(
     result = await db.execute(
         select(func.count(Clip.id)).where(
             Clip.account_id == account.id,
-            Clip.status == ClipLifecycle.NEEDS_REVIEW
+            Clip.status == "needs_review"
         )
     )
     needs_review_count = result.scalar() or 0
@@ -375,7 +375,7 @@ async def get_dashboard_data(
     result = await db.execute(
         select(func.count(Clip.id)).where(
             Clip.account_id == account.id,
-            Clip.status == ClipLifecycle.APPROVED
+            Clip.status == "approved"
         )
     )
     approved_count = result.scalar() or 0
