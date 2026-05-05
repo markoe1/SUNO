@@ -17,7 +17,8 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
     """
     import os
     from suno.database import SessionLocal
-    from suno.common.models import Clip, Membership, Campaign, CreatorProfile    from suno.product.tier_helpers import can_create_clip
+    from suno.common.models import Clip, Membership, Campaign, CreatorProfile
+    from suno.product.tier_helpers import can_create_clip
     from suno.vantage.hook_engine import HookEngine
     from suno.vantage.retention_predictor import RetentionPredictor
     from suno.vantage.variant_engine import VariantEngine
@@ -295,7 +296,8 @@ def post_approved_clip_job(clip_id: int):
     Phase 8: DB-only scheduling (no live platform API calls).
     """
     from suno.database import SessionLocal
-    from suno.common.models import Clip    from suno.posting.clip_poster import PostingEngine
+    from suno.common.models import Clip
+    from suno.posting.clip_poster import PostingEngine
 
     db = SessionLocal()
     try:
