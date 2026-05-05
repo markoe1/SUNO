@@ -209,7 +209,7 @@ class OperatorDashboard:
             {
                 "membership_id": m.id,
                 "user_email": m.user.email,
-                "tier": m.tier.name.value,
+                "tier": m.tier.name,
                 "automation": m.account.automation_enabled if m.account else False,
                 "created": m.created_at.isoformat(),
             }

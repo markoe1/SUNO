@@ -53,7 +53,7 @@ class CustomerDashboard:
 
         return {
             "status": "active",
-            "tier": tier.name.value,
+            "tier": tier.name,
             "email": user.email,
             "automation_enabled": account.automation_enabled if account else False,
             "workspace_id": account.workspace_id if account else None,

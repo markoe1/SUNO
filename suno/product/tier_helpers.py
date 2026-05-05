@@ -40,7 +40,7 @@ async def require_tier(user_id, minimum_tier: str, db: AsyncSession) -> bool:
     }
 
     required_level = tier_hierarchy.get(minimum_tier, 0)
-    user_level = tier_hierarchy.get(tier.name.value, 0)
+    user_level = tier_hierarchy.get(tier.name, 0)
 
     return user_level >= required_level
 
@@ -112,7 +112,7 @@ async def can_use_platform(user_id, platform: str, db: AsyncSession) -> tuple[bo
         return False, "No active tier"
 
     if platform not in tier.platforms:
-        return False, f"Platform '{platform}' not available in {tier.name.value} tier"
+        return False, f"Platform '{platform}' not available in {tier.name} tier"
 
     return True, "OK"
 
