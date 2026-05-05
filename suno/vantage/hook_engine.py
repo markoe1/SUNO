@@ -56,7 +56,7 @@ class HookEngine:
         )
         do_not_use = creator_profile.do_not_use if creator_profile else []
 
-        campaign_brief = campaign.brief or campaign.description or ""
+        campaign_brief = f"CTA: {campaign.cta}" if campaign.cta else f"Audience: {campaign.audience}" if campaign.audience else campaign.name
         do_not_use_str = ", ".join(do_not_use) if do_not_use else "none"
         platform_str = ", ".join(platform_focus) if platform_focus else "TikTok, Instagram"
 

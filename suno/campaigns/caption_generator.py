@@ -67,9 +67,9 @@ class CaptionGenerator:
                 raise CaptionGenerationError(f"Campaign not found for clip {clip_id}")
 
             # Build prompt context
-            brief = campaign_brief or campaign.brief or ""
-            tone = tone or campaign.tone or "engaging"
-            style = style or campaign.style or "native"
+            brief = campaign_brief or (f"CTA: {campaign.cta}" if campaign.cta else f"Audience: {campaign.audience}" if campaign.audience else "")
+            tone = tone or "engaging"
+            style = style or "native"
 
             prompt = self._build_caption_prompt(
                 clip.title,

@@ -90,9 +90,12 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
         winner = variant_engine.select_winner(variants)
 
         # 4. Polish winner via Sonnet
+        campaign_brief = ""
+        if campaign:
+            campaign_brief = campaign.cta or (f"Audience: {campaign.audience}" if campaign.audience else campaign.name)
         polish_result = hook_engine.polish_winner(winner.content, winner.hook_type, {
             "niche": creator_profile.niche if creator_profile else None,
-            "brief": campaign.brief if campaign else "",
+            "brief": campaign_brief,
         })
         winner.content = polish_result["content"]
         winner.model_used = hook_engine.elite_model

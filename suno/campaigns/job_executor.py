@@ -80,13 +80,16 @@ class CaptionJobExecutor:
             campaign = self.db.query(Campaign).filter(Campaign.id == clip.campaign_id).first()
 
             # Generate caption
+            campaign_brief = None
+            if campaign:
+                campaign_brief = campaign.cta or (f"Audience: {campaign.audience}" if campaign.audience else None)
             result = self.generator.generate_caption(
                 clip_id=clip.id,
                 assignment_id=assignment.id,
                 target_platform=assignment.target_platform,
-                campaign_brief=campaign.brief if campaign else None,
-                tone=campaign.tone if campaign else None,
-                style=campaign.style if campaign else None,
+                campaign_brief=campaign_brief,
+                tone=None,
+                style=None,
             )
 
             # Update job with success
