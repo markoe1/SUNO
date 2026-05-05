@@ -16,6 +16,7 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
     Phase 8: Real Claude AI for hooks, retention, revenue, and ROI.
     """
     import os
+    import inspect
     from suno.database import SessionLocal
     from suno.common.models import Clip, Membership, Campaign, CreatorProfile
     from suno.product.tier_helpers import can_create_clip_sync
@@ -24,29 +25,39 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
     from suno.vantage.variant_engine import VariantEngine
     from suno.vantage.revenue_engine import RevenueEngine
 
+    logger.info(f"[JOB_START] job_context=generate_clip, clip_id={clip_id}, account_id={account_id}, membership_id={membership_id}")
+
     db = SessionLocal()
     try:
         # Fetch clip
         clip = db.query(Clip).filter(Clip.id == clip_id).first()
         if not clip:
-            logger.error(f"[CLIP_FAILED] Clip not found: {clip_id}")
+            logger.error(f"[JOB_FAILED] clip_id={clip_id} reason=clip_not_found")
             return {"success": False, "error": "Clip not found"}
 
         # Fetch membership
         membership = db.query(Membership).filter(Membership.id == membership_id).first()
         if not membership:
-            logger.error(f"[CLIP_FAILED] Membership not found: {membership_id}")
+            logger.error(f"[JOB_FAILED] clip_id={clip_id} reason=membership_not_found")
             clip.status = "failed"
             db.commit()
             return {"success": False, "error": "Membership not found"}
 
         # Worker gate: can_create_clip check (use sync version for RQ worker)
+        logger.info(f"[VALIDATION_START] clip_id={clip_id}")
         can_create, reason = can_create_clip_sync(membership.user_id, db)
+
+        # TASK 2: Hard fail if async function is used (safety guard)
+        if inspect.iscoroutine(can_create):
+            raise RuntimeError(f"[CRITICAL] Async function returned coroutine in worker context. clip_id={clip_id}")
+
         if not can_create:
-            logger.info(f"[CLIP_BLOCKED] clip_id={clip_id}: {reason}")
+            logger.info(f"[VALIDATION_FAILED] clip_id={clip_id} reason={reason}")
             clip.status = "failed"
             db.commit()
             return {"success": False, "error": reason}
+
+        logger.info(f"[VALIDATION_PASSED] clip_id={clip_id}")
 
         # Fetch campaign and creator profile
         campaign = db.query(Campaign).filter(Campaign.id == clip.campaign_id).first()
@@ -56,6 +67,8 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
 
         api_key = os.environ.get("ANTHROPIC_API_KEY", "")
         total_ai_cost = 0.0
+
+        logger.info(f"[PROCESSING_START] clip_id={clip_id}")
 
         # 1. Generate 10 hooks via Haiku
         hook_engine = HookEngine(api_key)
@@ -118,10 +131,13 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
         clip.status = "needs_review"
         clip.last_seen_at = datetime.utcnow()
         membership.clips_today_count += 1
+
+        logger.info(f"[DB_COMMIT_START] clip_id={clip_id}")
         db.commit()
+        logger.info(f"[DB_COMMIT_SUCCESS] clip_id={clip_id} status_written=needs_review")
 
         logger.info(
-            f"[CLIP_GENERATED] clip_id={clip_id}, overall_score={clip.overall_score}, "
+            f"[JOB_COMPLETE] clip_id={clip_id}, overall_score={clip.overall_score}, "
             f"predicted_views={clip.predicted_views}, estimated_value=${clip.estimated_value}, "
             f"ai_cost=${clip.ai_generation_cost_usd:.4f}, roi={clip.ai_roi}x"
         )
@@ -136,14 +152,18 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
 
     except Exception as e:
         db.rollback()
-        logger.error(f"[CLIP_FAILED] clip_id={clip_id}: {e}")
-        # Try to set failed status
+        logger.error(f"[JOB_FAILED] clip_id={clip_id} exception={type(e).__name__} message={str(e)}")
+        # Try to set failed status (TASK 4: Verify DB write)
         try:
             clip = db.query(Clip).filter(Clip.id == clip_id).first()
             if clip:
                 clip.status = "failed"
                 db.commit()
-        except:
+                logger.info(f"[DB_ROLLBACK_AND_FAIL_STATUS] clip_id={clip_id} status_written=failed")
+            else:
+                logger.error(f"[FAIL_STATUS_SKIPPED] clip_id={clip_id} reason=clip_not_found_in_exception_handler")
+        except Exception as inner_e:
+            logger.error(f"[FAIL_STATUS_FAILED] clip_id={clip_id} exception={type(inner_e).__name__}")
             pass
         raise
 
@@ -191,7 +211,7 @@ def run_automation_loop():
     from suno.database import SessionLocal
     from suno.common.models import Account, Membership, Campaign, Clip
     from suno.common.enums import AccountStatus, MembershipLifecycle
-    from suno.product.tier_helpers import can_create_clip
+    from suno.product.tier_helpers import can_create_clip_sync
     from suno.common.job_queue import JobQueueManager, JobQueueType
 
     db = SessionLocal()
@@ -215,8 +235,8 @@ def run_automation_loop():
                 logger.info(f"[AUTOMATION_SKIPPED] account_id={account.id} reason=no_membership")
                 continue
 
-            # Check can_create_clip
-            can_create, reason = can_create_clip(membership.user_id, db)
+            # Check can_create_clip (use sync version for RQ worker)
+            can_create, reason = can_create_clip_sync(membership.user_id, db)
             if not can_create:
                 logger.info(f"[AUTOMATION_SKIPPED] account_id={account.id} reason={reason}")
                 continue
