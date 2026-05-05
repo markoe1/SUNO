@@ -18,7 +18,7 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
     import os
     from suno.database import SessionLocal
     from suno.common.models import Clip, Membership, Campaign, CreatorProfile
-    from suno.product.tier_helpers import can_create_clip
+    from suno.product.tier_helpers import can_create_clip_sync
     from suno.vantage.hook_engine import HookEngine
     from suno.vantage.retention_predictor import RetentionPredictor
     from suno.vantage.variant_engine import VariantEngine
@@ -40,8 +40,8 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
             db.commit()
             return {"success": False, "error": "Membership not found"}
 
-        # Worker gate: can_create_clip check
-        can_create, reason = can_create_clip(membership.user_id, db)
+        # Worker gate: can_create_clip check (use sync version for RQ worker)
+        can_create, reason = can_create_clip_sync(membership.user_id, db)
         if not can_create:
             logger.info(f"[CLIP_BLOCKED] clip_id={clip_id}: {reason}")
             clip.status = "failed"

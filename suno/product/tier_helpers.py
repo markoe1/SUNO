@@ -75,7 +75,7 @@ def get_tier_limits(tier_name: str) -> Dict[str, Any]:
 
 async def can_create_clip(user_id, db: AsyncSession) -> tuple[bool, str]:
     """
-    Check if user can create a new clip.
+    Check if user can create a new clip (async version for FastAPI routes).
     Returns (can_create, reason).
     """
     result = await db.execute(
@@ -91,6 +91,31 @@ async def can_create_clip(user_id, db: AsyncSession) -> tuple[bool, str]:
 
     result = await db.execute(select(Tier).where(Tier.id == membership.tier_id))
     tier = result.scalar_one_or_none()
+
+    if not tier:
+        return False, "Tier not found"
+
+    if membership.clips_today_count >= tier.max_daily_clips:
+        return False, f"Daily limit reached ({tier.max_daily_clips} clips)"
+
+    return True, "OK"
+
+
+def can_create_clip_sync(user_id, db) -> tuple[bool, str]:
+    """
+    Check if user can create a new clip (sync version for RQ workers).
+    Accepts regular SQLAlchemy Session.
+    Returns (can_create, reason).
+    """
+    membership = db.query(Membership).filter(
+        Membership.user_id == user_id,
+        Membership.status == "active",
+    ).first()
+
+    if not membership:
+        return False, "No active membership"
+
+    tier = db.query(Tier).filter(Tier.id == membership.tier_id).first()
 
     if not tier:
         return False, "Tier not found"
