@@ -117,7 +117,7 @@ class AssignmentScheduler:
                             clip_id=clip.id,
                             account_id=account_id,
                             target_platform=platform,
-                            status=ClipLifecycle.QUEUED,
+                            status="queued",
                             priority=self._calculate_priority(clip),
                         )
                         self.db.add(assignment)

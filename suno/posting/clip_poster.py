@@ -21,7 +21,7 @@ class PostingEngine:
         from suno.common.enums import ClipLifecycle
         from suno.vantage.variant_engine import VariantEngine
 
-        if clip.status != ClipLifecycle.APPROVED:
+        if clip.status != "approved":
             raise ValueError(
                 f"Clip {clip.id} must be APPROVED to post. Current: {clip.status}"
             )
@@ -32,7 +32,7 @@ class PostingEngine:
         variant_engine.assign_posting_schedule(variants, winner, db, cooldown_minutes)
 
         # Mark clip as POSTED (DB-only, no platform calls yet)
-        clip.status = ClipLifecycle.POSTED
+        clip.status = "posted"
         db.flush()
 
         first_post = winner.scheduled_for if winner else None

@@ -337,7 +337,7 @@ class AssignmentQueueManager:
                         clip_id=clip_id,
                         account_id=account_id,
                         target_platform=target_platform,
-                        status=ClipLifecycle.ELIGIBLE,
+                        status="eligible",
                         priority=self._calculate_priority(clip, account_id, target_platform)
                     )
                     self.db.add(assignment)
@@ -380,7 +380,7 @@ class AssignmentQueueManager:
                     continue
 
                 # Update assignment status
-                assignment.status = ClipLifecycle.QUEUED
+                assignment.status = "queued"
                 self.db.commit()
 
                 # Create caption generation job
