@@ -141,13 +141,10 @@ def generate_clip_job(clip_id: int, account_id: int, membership_id: int):
             f"predicted_views={clip.predicted_views}, estimated_value=${clip.estimated_value}, "
             f"ai_cost=${clip.ai_generation_cost_usd:.4f}, roi={clip.ai_roi}x"
         )
+        # TASK 5: Minimal debug return (powerful for E2E validation)
         return {
-            "success": True,
             "clip_id": clip_id,
-            "status": "needs_review",
-            "overall_score": clip.overall_score,
-            "estimated_value": clip.estimated_value,
-            "ai_roi": clip.ai_roi,
+            "status": "completed",
         }
 
     except Exception as e:
