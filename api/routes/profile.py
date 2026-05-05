@@ -143,7 +143,7 @@ async def get_me(
     return MeResponse(
         id=str(user.id),
         email=user.email,
-        tier=tier.name.value if tier else "unknown",
+        tier=tier.name if tier else "unknown",
         workspace_id=account.workspace_id,
         status=account.status.value,
         created_at=user.created_at.isoformat() if user.created_at else "",
@@ -190,8 +190,8 @@ async def get_me_membership(
 
     return MembershipResponse(
         membership_id=membership.id,
-        tier=tier.name.value if tier else "unknown",
-        status=membership.status.value,
+        tier=tier.name if tier else "unknown",
+        status=membership.status,
         whop_membership_id=membership.whop_membership_id,
         whop_plan_id=membership.whop_plan_id,
         activated_at=membership.activated_at.isoformat() if membership.activated_at else None,
@@ -296,7 +296,7 @@ async def get_me_limits(
         )
 
     return LimitsResponse(
-        tier=tier.name.value,
+        tier=tier.name,
         max_daily_clips=tier.max_daily_clips,
         clips_used_today=membership.clips_today_count,
         clips_remaining_today=max(0, tier.max_daily_clips - membership.clips_today_count),
@@ -391,7 +391,7 @@ async def get_dashboard_data(
     recent_clips = [
         RecentClipResponse(
             clip_id=clip.id,
-            status=clip.status.value,
+            status=clip.status,
             campaign_id=clip.campaign_id,
             overall_score=clip.overall_score,
             emotional_trigger_type=clip.emotional_trigger_type,
@@ -408,15 +408,15 @@ async def get_dashboard_data(
         user=MeResponse(
             id=str(user.id),
             email=user.email,
-            tier=tier.name.value if tier else "unknown",
+            tier=tier.name if tier else "unknown",
             workspace_id=account.workspace_id,
             status=account.status.value,
             created_at=user.created_at.isoformat() if user.created_at else "",
         ),
         membership=MembershipResponse(
             membership_id=membership.id,
-            tier=tier.name.value if tier else "unknown",
-            status=membership.status.value,
+            tier=tier.name if tier else "unknown",
+            status=membership.status,
             whop_membership_id=membership.whop_membership_id,
             whop_plan_id=membership.whop_plan_id,
             activated_at=membership.activated_at.isoformat() if membership.activated_at else None,
@@ -429,7 +429,7 @@ async def get_dashboard_data(
             created_at=account.created_at.isoformat() if account.created_at else "",
         ),
         limits=LimitsResponse(
-            tier=tier.name.value if tier else "unknown",
+            tier=tier.name if tier else "unknown",
             max_daily_clips=tier.max_daily_clips if tier else 0,
             clips_used_today=membership.clips_today_count,
             clips_remaining_today=max(0, (tier.max_daily_clips if tier else 0) - membership.clips_today_count),

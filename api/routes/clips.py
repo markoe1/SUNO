@@ -188,6 +188,6 @@ async def generate_clip(
 
     return GenerateClipResponse(
         clip_id=clip_id,
-        status="needs_review".value,
+        status="needs_review",
         job_id=job_id
     )

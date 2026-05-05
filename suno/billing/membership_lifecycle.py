@@ -65,7 +65,7 @@ class MembershipLifecycleHandler:
             tier = self._discover_tier_from_plan(plan_id)
             if not tier:
                 raise ValueError(f"Unknown plan_id: {plan_id}")
-            logger.info(f"[TIER_RETURNED] _discover_tier_from_plan returned tier id={tier.id}, name='{tier.name.value}', clips={tier.max_daily_clips}")
+            logger.info(f"[TIER_RETURNED] _discover_tier_from_plan returned tier id={tier.id}, name='{tier.name}', clips={tier.max_daily_clips}")
 
             # Create membership
             membership = Membership(
@@ -89,7 +89,7 @@ class MembershipLifecycleHandler:
                     "membership_id": membership.id,
                     "user_id": user.id,
                     "email": email,
-                    "tier_name": tier.name.value,
+                    "tier_name": tier.name,
                 },
             )
 
@@ -97,7 +97,7 @@ class MembershipLifecycleHandler:
                 "success": True,
                 "membership_id": membership.id,
                 "user_id": user.id,
-                "tier": tier.name.value,
+                "tier": tier.name,
                 "job_id": job_id,
             }
 
@@ -243,14 +243,14 @@ class MembershipLifecycleHandler:
                 update_tier_job,
                 kwargs={
                     "membership_id": membership.id,
-                    "new_tier_name": new_tier.name.value,
+                    "new_tier_name": new_tier.name,
                 },
             )
 
             return {
                 "success": True,
                 "membership_id": membership.id,
-                "new_tier": new_tier.name.value,
+                "new_tier": new_tier.name,
                 "job_id": job_id,
             }
 
@@ -324,13 +324,13 @@ class MembershipLifecycleHandler:
 
         # Log starter tier details
         if starter:
-            logger.info(f"[TIER_STARTER] id={starter.id}, name='{starter.name.value}', max_daily_clips={starter.max_daily_clips}, max_platforms={starter.max_platforms}")
+            logger.info(f"[TIER_STARTER] id={starter.id}, name='{starter.name}', max_daily_clips={starter.max_daily_clips}, max_platforms={starter.max_platforms}")
         else:
             logger.warning(f"[TIER_STARTER] NOT FOUND in database")
 
         # Log pro tier details
         if pro:
-            logger.info(f"[TIER_PRO] id={pro.id}, name='{pro.name.value}', max_daily_clips={pro.max_daily_clips}, max_platforms={pro.max_platforms}")
+            logger.info(f"[TIER_PRO] id={pro.id}, name='{pro.name}', max_daily_clips={pro.max_daily_clips}, max_platforms={pro.max_platforms}")
         else:
             logger.warning(f"[TIER_PRO] NOT FOUND in database")
 
@@ -342,14 +342,14 @@ class MembershipLifecycleHandler:
 
         tier = plan_to_tier.get(plan_id)
         if tier:
-            logger.info(f"[TIER_SELECTED] plan_id='{plan_id}' → id={tier.id}, name='{tier.name.value}', max_daily_clips={tier.max_daily_clips}, max_platforms={tier.max_platforms}")
-            logger.info(f"Plan_id {plan_id} → {tier.name.value} tier")
+            logger.info(f"[TIER_SELECTED] plan_id='{plan_id}' → id={tier.id}, name='{tier.name}', max_daily_clips={tier.max_daily_clips}, max_platforms={tier.max_platforms}")
+            logger.info(f"Plan_id {plan_id} → {tier.name} tier")
             return tier
 
         # Unknown plan_id: default to STARTER for safety
         logger.warning(f"[TIER_UNKNOWN] plan_id='{plan_id}' not recognized, defaulting to STARTER")
         if starter:
-            logger.warning(f"[TIER_SELECTED_DEFAULT] Defaulting to STARTER: id={starter.id}, name='{starter.name.value}', max_daily_clips={starter.max_daily_clips}")
+            logger.warning(f"[TIER_SELECTED_DEFAULT] Defaulting to STARTER: id={starter.id}, name='{starter.name}', max_daily_clips={starter.max_daily_clips}")
         return starter
 
 

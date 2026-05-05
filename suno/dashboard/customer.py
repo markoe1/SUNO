@@ -210,7 +210,7 @@ class CustomerDashboard:
                 "platform": p.target_platform,
                 "posted_at": p.posted_at.isoformat(),
                 "posted_url": p.posted_url,
-                "status": p.status.value,
+                "status": p.status,
             }
             for p in posts
         ]
@@ -277,7 +277,7 @@ class CustomerDashboard:
             return warnings
 
         if membership.status != "active":
-            warnings.append(f"Membership status: {membership.status.value}")
+            warnings.append(f"Membership status: {membership.status}")
 
         # Check automation
         if membership.account and not membership.account.automation_enabled:
