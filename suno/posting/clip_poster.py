@@ -17,9 +17,7 @@ class PostingEngine:
         """
         Mark clip as POSTED and schedule variants for posting.
         Raises ValueError if clip is not APPROVED.
-        """
-        from suno.common.enums import ClipLifecycle
-        from suno.vantage.variant_engine import VariantEngine
+        """        from suno.vantage.variant_engine import VariantEngine
 
         if clip.status != "approved":
             raise ValueError(

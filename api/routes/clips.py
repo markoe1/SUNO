@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_db
 from suno.common.models import User, Membership, Account, Campaign, Clip
-from suno.common.enums import MembershipLifecycle, AccountStatus, ClipLifecycle
+from suno.common.enums import MembershipLifecycle, AccountStatus
 from suno.product.tier_helpers import can_create_clip
 from suno.common.job_queue import JobQueueManager, JobQueueType
 from suno.workers.clip_worker import generate_clip_job

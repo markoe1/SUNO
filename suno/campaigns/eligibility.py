@@ -289,8 +289,6 @@ class AssignmentQueueManager:
             Stats dict with assignment_count, skipped_count, error_count
         """
         from suno.common.models import Clip, ClipAssignment, Account
-        from suno.common.enums import ClipLifecycle
-
         stats = {"created": 0, "skipped": 0, "errors": 0}
 
         clip = self.db.query(Clip).filter(Clip.id == clip_id).first()
@@ -365,7 +363,7 @@ class AssignmentQueueManager:
             Stats dict with queued_count, error_count
         """
         from suno.common.models import ClipAssignment, CaptionJob
-        from suno.common.enums import ClipLifecycle, JobLifecycle
+        from suno.common.enums import JobLifecycle
 
         stats = {"queued": 0, "errors": 0}
 

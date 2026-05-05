@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from suno.common.enums import (
-    MembershipLifecycle, ClipLifecycle, JobLifecycle, TierName, AccountStatus,
+    MembershipLifecycle, JobLifecycle, TierName, AccountStatus,
     VariantType, VariantStatus
 )
 

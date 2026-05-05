@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_db
 from suno.common.models import User, Membership, Account, Tier, Clip
-from suno.common.enums import AccountStatus, MembershipLifecycle, TierName, ClipLifecycle
+from suno.common.enums import AccountStatus, MembershipLifecycle, TierName
 
 router = APIRouter(prefix="/api", tags=["profile"])
 

@@ -53,7 +53,6 @@ class AssignmentScheduler:
             Account, Clip, Campaign, ClipAssignment,
             Membership
         )
-        from suno.common.enums import ClipLifecycle
 
         stats = {"assigned": 0, "skipped": 0, "errors": 0}
 
@@ -65,7 +64,7 @@ class AssignmentScheduler:
                 return stats
 
             membership = account.membership
-            if not membership or membership.status.value != "active":
+            if not membership or membership.status != "active":
                 logger.warning(f"Membership for account {account_id} not active")
                 return stats
 
