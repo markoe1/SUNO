@@ -150,7 +150,7 @@ async def generate_clip(
         account_id=account.id,
         source_url=f"stub://{uuid.uuid4().hex}",
         source_platform="generated",
-        title=f"Generated clip for {campaign.title}",
+        title=f"Generated clip for {campaign.name}",
         description="",
         content_hash=uuid.uuid4().hex,
         status="queued",
